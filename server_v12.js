@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v13.2 ESTABLE) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v17.1 - CORS Habilitado) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -8,13 +8,28 @@ const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
 const pgSession = require('connect-pg-simple')(session);
+const cors = require('cors'); // <--- 1. LÍNEA AÑADIDA
 
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
 
 const app = express();
 app.use(express.json());
+app.use(cors()); // <--- 2. LÍNEA AÑADIDA (Permite las conexiones externas)
+
 const PORT = process.env.PORT || 3000;
+
+// --- INICIO: CONFIGURACIÓN DE SEGURIDAD PARA API ---
+const API_KEY = 'MI_LLAVE_SECRETA_12345';
+const apiKeyAuth = (req, res, next) => {
+    const providedKey = req.header('X-API-Key');
+    if (providedKey && providedKey === API_KEY) {
+        next();
+    } else {
+        res.status(401).json({ message: 'Acceso no autorizado: Llave de API inválida o ausente.' });
+    }
+};
+// --- FIN: CONFIGURACIÓN DE SEGURIDAD PARA API ---
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -31,17 +46,22 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
             CREATE TABLE IF NOT EXISTS comments ( id SERIAL PRIMARY KEY, text TEXT NOT NULL );
             CREATE TABLE IF NOT EXISTS zones ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
+            
+            -- MODIFICACIÓN: Se añaden campos de dirección y una restricción ÚNICA
             CREATE TABLE IF NOT EXISTS centers (
                 id SERIAL PRIMARY KEY,
+                code VARCHAR(50),
                 name VARCHAR(255) NOT NULL,
-                address VARCHAR(255) NOT NULL,
-                zone VARCHAR(255) NOT NULL,
+                address TEXT NOT NULL,
+                sector TEXT,
                 contactname VARCHAR(255),
                 contactnumber VARCHAR(255),
-                UNIQUE(name, address)
+                UNIQUE(name, address) -- Evita duplicados exactos de nombre y dirección
             );
+
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
+            CREATE TABLE IF NOT EXISTS payments ( id SERIAL PRIMARY KEY, quote_id INTEGER REFERENCES quotes(id), payment_date DATE NOT NULL, amount NUMERIC NOT NULL, students_covered INTEGER, comment TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
         `);
     } catch (err) {
        console.error('Error al inicializar las tablas de la aplicación:', err);
@@ -85,7 +105,26 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
-// ... (todas las rutas excepto la del PDF se mantienen igual)
+
+// --- INICIO: NUEVA RUTA DE API PARA PROGRAMAS EXTERNOS ---
+app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
+    try {
+        const query = `
+            SELECT DISTINCT c.id, c.name 
+            FROM centers c
+            JOIN visits v ON c.name = v.centername
+            WHERE v.commenttext = 'FORMALIZAR ACUERDO'
+            ORDER BY c.name ASC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener centros formalizados:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
+    }
+});
+// --- FIN: NUEVA RUTA DE API ---
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -99,7 +138,6 @@ app.post('/api/login', async (req, res) => {
         res.status(200).json({ message: 'Login exitoso', redirectTo: '/index.html', user: userResponse });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
-
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) { return res.status(500).json({ message: 'No se pudo cerrar la sesión.' }); }
@@ -107,7 +145,6 @@ app.post('/api/logout', (req, res) => {
         res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
     });
 });
-
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
@@ -123,56 +160,75 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
 });
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// MODIFICACIÓN: Lógica mejorada para crear/actualizar centros al registrar visita
 app.post('/api/visits', requireLogin, async (req, res) => {
-    const { centerName, advisorName, visitDate, commentText, coordinatorName, coordinatorContact, address, zone } = req.body;
+    const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber } = req.body;
+    
+    // Validar que los campos obligatorios no estén vacíos
+    if (!centerName || !centerAddress) {
+        return res.status(400).json({ message: 'El nombre del centro y la dirección son obligatorios.' });
+    }
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         
-        // Busca el centro por nombre Y dirección para ser más preciso
-        let centerResult = await client.query('SELECT id FROM centers WHERE name = $1 AND address = $2', [centerName, address]);
-
+        // Busca un centro por NOMBRE y DIRECCIÓN para identificarlo unívocamente
+        let centerResult = await client.query('SELECT id FROM centers WHERE name = $1 AND address = $2', [centerName, centerAddress]);
+        
         if (centerResult.rows.length === 0) {
-            // Si no existe, lo crea con todos los datos nuevos
+            // Si no existe, lo crea con toda la información nueva
             await client.query(
-                'INSERT INTO centers (name, address, zone, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5)',
-                [centerName, address, zone, coordinatorName || '', coordinatorContact || '']
+                'INSERT INTO centers (name, address, sector, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5)',
+                [centerName, centerAddress, centerSector || '', contactName || '', contactNumber || '']
             );
         } else {
-            // Si ya existe, actualiza sus datos de contacto por si han cambiado
-            await client.query(
-                'UPDATE centers SET contactname = $1, contactnumber = $2, zone = $3 WHERE id = $4',
-                [coordinatorName || '', coordinatorContact || '', zone, centerResult.rows[0].id]
-            );
+            // Si ya existe, actualiza su información de contacto (si se proporcionó)
+            const centerId = centerResult.rows[0].id;
+            if (contactName || contactNumber) {
+                 await client.query(
+                    'UPDATE centers SET contactname = $1, contactnumber = $2 WHERE id = $3',
+                    [contactName || '', contactNumber || '', centerId]
+                );
+            }
         }
 
+        // Inserta el registro de la visita
         await client.query(
             'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
         
         await client.query('COMMIT');
-        res.status(201).json({ message: "Visita registrada y centro asegurado" });
+        res.status(201).json({ message: "Visita registrada y centro de estudios gestionado correctamente." });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error("Error al registrar visita:", err);
-        res.status(500).json({ message: 'Error en el servidor' });
+        // Error específico para duplicados
+        if (err.code === '23505') {
+            return res.status(409).json({ message: 'Ya existe un centro con este nombre y dirección.' });
+        }
+        res.status(500).json({ message: 'Error en el servidor al registrar la visita.' });
     } finally {
         client.release();
     }
 });
 
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
+// MODIFICACIÓN: La búsqueda ahora devuelve todos los datos del centro para el autocompletado
 app.get('/api/centers/search', requireLogin, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
     try {
-        const result = await pool.query("SELECT id, name, address, zone, contactname, contactnumber FROM centers WHERE LOWER(name) LIKE $1", [`%${searchTerm}%`]);
+        const result = await pool.query(
+            "SELECT id, name, address, sector, contactname, contactnumber FROM centers WHERE LOWER(name) LIKE $1", 
+            [`%${searchTerm}%`]
+        );
         res.json(result.rows);
     } catch (err) {
         console.error('Error en la búsqueda de centros:', err);
@@ -180,14 +236,35 @@ app.get('/api/centers/search', requireLogin, async (req, res) => {
     }
 });
 
+app.put('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, address, sector, contactName, contactNumber } = req.body;
+    try {
+        await pool.query(
+            'UPDATE centers SET name = $1, address = $2, sector = $3, contactname = $4, contactnumber = $5 WHERE id = $6',
+            [name, address, sector, contactName, contactNumber, id]
+        );
+        res.status(200).json({ message: 'Centro actualizado con éxito' });
+    } catch (err) {
+        console.error('Error actualizando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM centers WHERE id = $1', [req.params.id]);
+        res.status(200).json({ message: 'Centro de estudio eliminado con éxito' });
+    } catch (err) {
+        console.error('Error eliminando centro:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
 app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/zones', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newZone = await pool.query('INSERT INTO zones (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newZone.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/zones/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Zona eliminada' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
 app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newComment = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [name]); res.status(201).json(newComment.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Comentario eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
 app.get('/api/next-quote-number', requireLogin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
@@ -196,7 +273,6 @@ app.get('/api/next-quote-number', requireLogin, async (req, res) => {
         res.json({ quoteNumber: `COT-${nextNumber}` });
     } catch (err) { console.error("Error getting next quote number:", err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
-
 app.get('/api/data', requireLogin, async (req, res) => {
     try {
         const [advisors, comments, centers, zones] = await Promise.all([
@@ -208,7 +284,6 @@ app.get('/api/data', requireLogin, async (req, res) => {
         res.json({ advisors: advisors.rows, comments: comments.rows, centers: centers.rows, zones: zones.rows, products: products });
     } catch (err) { console.error("Error fetching initial data:", err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
-
 app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
     const quoteInput = req.body;
     const dbDataForCalculation = { products: products };
@@ -220,13 +295,18 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
         res.status(500).json({ message: "Error al calcular la estimación." });
     }
 });
-
 app.post('/api/quote-requests', requireLogin, async (req, res) => { 
     const quoteInput = req.body; 
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
+
     const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
-    const { precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, items, totals } = calculationResult; 
+    
+    const { facilidadesAplicadas, items, totals } = calculationResult;
+    const precios = calculationResult.calculatedPrices[0] || {};
+    const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
+    const estudiantesParaFacturar = precios.estudiantesFacturables;
+
     try { 
         await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
@@ -235,23 +315,39 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
+app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+    // Primero, verificamos el rol del usuario que hace la petición
+    const userRole = req.session.user.rol;
+    const userName = req.session.user.nombre; // Usamos el nombre del asesor para filtrar
 
-app.get('/api/quote-requests', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM quotes ORDER BY createdat DESC');
-        res.status(200).json(result.rows);
-    } catch (err) { console.error('Error fetching quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
-});
+        let query;
+        let queryParams = [];
 
+        if (userRole === 'Administrador') {
+            // Si es Admin, la consulta trae todas las cotizaciones
+            query = 'SELECT * FROM quotes ORDER BY createdat DESC';
+        } else {
+            // Si es Asesor, la consulta SOLO trae las cotizaciones con su nombre
+            query = 'SELECT * FROM quotes WHERE advisorname = $1 ORDER BY createdat DESC';
+            queryParams.push(userName);
+        }
+
+        const result = await pool.query(query, queryParams);
+        res.status(200).json(result.rows);
+
+    } catch (err) {
+        console.error('Error fetching quotes:', err);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
         res.status(200).json(result.rows);
     } catch (err) { console.error('Error fetching pending quotes:', err); res.status(500).json({ message: 'Error interno del servidor.' }); }
 });
-
 app.post('/api/quote-requests/:id/approve', requireLogin, requireAdmin, async (req, res) => { try { await pool.query("UPDATE quotes SET status = 'aprobada' WHERE id = $1", [req.params.id]); res.status(200).json({ message: 'Cotización aprobada con éxito' }); } catch (err) { console.error('Error aprobando cotización:', err); res.status(500).json({ message: 'Error interno del servidor.' }); } });
-
 app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
@@ -266,56 +362,48 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-
-// --- RUTA DEL PDF RECONSTRUIDA ---
+app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1", [req.params.id]);
+        res.status(200).json({ message: 'Cotización archivada con éxito' });
+    } catch (err) {
+        console.error('Error archivando cotización:', err);
+        res.status(500).json({ message: 'Error interno del servidor.' });
+    }
+});
 app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
     try {
         const quoteId = req.params.id;
         const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
-
         if (result.rows.length === 0) {
             return res.status(404).send('Cotización no encontrada');
         }
         const quote = result.rows[0];
-
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
-
-        // --- FONDO DE PÁGINA (MEMBRETE) ---
-        const backgroundImagePath = path.join(__dirname, 'plantillas', 'Timbrada BE EVENTOS.jpg');
+        const backgroundImagePath = path.join(__dirname, 'membrete.jpg');
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
-
-        // --- CONTENIDO DEL PDF ---
         const pageMargin = 50;
         const contentWidth = doc.page.width - (pageMargin * 2);
-
-        // --- METADATOS (DERECHA) ---
+        let currentY = 150; 
         const quoteDate = quote.createdat ? new Date(quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' }) : '';
-        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', { align: 'right' });
-        doc.font('Helvetica').fontSize(10).text(quoteDate, { align: 'right' });
-        doc.moveDown(2);
-
-        // --- TÍTULO ---
-        doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', { align: 'center' });
-        doc.moveDown();
-
-        // --- INFO CLIENTE Y ASESOR ---
-        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`);
-        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`);
-        doc.moveDown();
-
-        // --- PÁRRAFO INTRODUCTORIO ---
-        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', { 
+        doc.font('Helvetica-Bold').fontSize(12).text(quote.quotenumber || '', 450, currentY, { align: 'left' });
+        doc.font('Helvetica').fontSize(10).text(quoteDate, 450, currentY + 20, { align: 'left' });
+        doc.font('Helvetica-Bold').fontSize(20).text('PROPUESTA', pageMargin, currentY + 40, { align: 'center' });
+        currentY += 80;
+        doc.font('Helvetica-Bold').fontSize(12).text(`Nombre del centro: ${quote.clientname || 'No especificado'}`, pageMargin, currentY);
+        currentY += 20;
+        doc.font('Helvetica').fontSize(12).text(`Nombre del Asesor: ${quote.advisorname || 'No especificado'}`, pageMargin, currentY);
+        currentY += 30;
+        doc.font('Helvetica').fontSize(10).text('Nos complace presentarle el presupuesto detallado. Este documento ha sido diseñado para ofrecerle una visión clara y transparente de los costos asociados a su proyecto, asegurando que cada aspecto esté cuidadosamente considerado y alineado con sus necesidades.', pageMargin, currentY, { 
             align: 'justify',
             width: contentWidth
         });
-        doc.moveDown(2);
-
-        // --- LISTA DE PRODUCTOS Y SERVICIOS ---
+        doc.y = doc.y + 20;
         const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
         if (selectedProducts.length > 0) {
             selectedProducts.forEach(product => {
@@ -333,18 +421,12 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
                 doc.moveDown();
             });
         }
-        
-        // --- LÍNEA SEPARADORA ---
         doc.moveTo(pageMargin, doc.y).lineTo(doc.page.width - pageMargin, doc.y).stroke();
         doc.moveDown();
-
-        // --- PRECIO FINAL ---
         const pricePerStudent = quote.preciofinalporestudiante || 0;
         doc.font('Helvetica-Bold').fontSize(12).text('Presupuesto por estudiante:', { align: 'right', width: contentWidth - 110 });
         doc.font('Helvetica-Bold').fontSize(14).text(`RD$ ${parseFloat(pricePerStudent).toFixed(2)}`, { align: 'right' });
         doc.moveDown();
-
-        // --- COMENTARIOS Y CONDICIONES ---
         doc.font('Helvetica-Bold').fontSize(12).text('Comentarios y Condiciones:');
         doc.moveDown(0.5);
         const conditions = [
@@ -357,20 +439,26 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
             bulletRadius: 1.5,
         });
         doc.moveDown();
-
-        // --- PÁRRAFO DE CIERRE ---
+        if(quote.facilidadesaplicadas && quote.facilidadesaplicadas.length > 0) {
+            doc.font('Helvetica-Bold').fontSize(10).text('Facilidades Aplicadas:');
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(10).list(quote.facilidadesaplicadas, {
+                width: contentWidth,
+                lineGap: 2,
+                bulletRadius: 1.5,
+            });
+            doc.moveDown();
+        }
         doc.font('Helvetica').fontSize(10).text('Agradecemos la oportunidad de colaborar con usted y estamos comprometidos a brindarle un servicio excepcional. Si tiene alguna pregunta o necesita más detalles, no dude en ponerse en contacto con nosotros.', {
             align: 'justify',
             width: contentWidth
         });
-
         doc.end();
     } catch (error) {
         console.error('Error al generar el PDF:', error);
         res.status(500).send('Error interno al generar el PDF');
     }
 });
-
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
@@ -380,5 +468,5 @@ app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join
 app.listen(PORT, async () => {
     loadProducts();
     await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v13.2 ESTABLE) corriendo en el puerto ${PORT}`);
+    console.log(`✅ Servidor de Asesores (v17.1 - CORS Habilitado) corriendo en el puerto ${PORT}`);
 });
