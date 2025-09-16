@@ -1,83 +1,82 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // --- Selección de Elementos del DOM ---
     const visitForm = document.getElementById('visit-form');
     const advisorSelect = document.getElementById('advisor');
     const centerNameInput = document.getElementById('centerName');
     const suggestionsContainer = document.getElementById('autocomplete-suggestions');
-    
-    // Campos de datos del centro
-    const addressInput = document.getElementById('address');
-    const zoneInput = document.getElementById('zone');
     const coordinatorNameInput = document.getElementById('coordinatorName');
     const coordinatorContactInput = document.getElementById('coordinatorContact');
-    
     const commentsSelect = document.getElementById('comments');
     const visitDateInput = document.getElementById('visitDate');
+    const zoneSelect = document.getElementById('zone');
+    // --- NUEVOS ELEMENTOS ---
+    const centerAddressInput = document.getElementById('centerAddress');
+    const centerSectorInput = document.getElementById('centerSector');
 
-    let isCenterSelected = false; // Flag para saber si se ha seleccionado un centro existente
+    // Variable para saber si se ha seleccionado un centro de la lista
+    let isExistingCenterSelected = false;
 
-    // Función para manejar el estado de los campos de datos del centro
-    const setCenterFieldsReadOnly = (isReadOnly) => {
-        addressInput.readOnly = isReadOnly;
-        zoneInput.readOnly = isReadOnly;
-        coordinatorNameInput.readOnly = isReadOnly;
-        coordinatorContactInput.readOnly = isReadOnly;
-        // Estilo visual para indicar que no son editables
-        [addressInput, zoneInput, coordinatorNameInput, coordinatorContactInput].forEach(input => {
-            input.style.backgroundColor = isReadOnly ? '#f0f0f0' : '#fff';
-        });
-    };
+    // --- Funciones Auxiliares ---
 
-    // Función para limpiar los campos de datos del centro
-    const clearCenterFields = () => {
-        addressInput.value = '';
-        zoneInput.value = '';
-        coordinatorNameInput.value = '';
-        coordinatorContactInput.value = '';
-    };
-
+    // Establece la fecha actual en el input de fecha
     const setCurrentDate = () => {
         const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        visitDateInput.value = `${yyyy}-${mm}-${dd}`;
+        visitDateInput.value = today.toISOString().split('T')[0];
     };
 
-    setCurrentDate();
+    // Habilita o deshabilita los campos de dirección
+    const setAddressFieldsReadOnly = (isReadOnly) => {
+        centerAddressInput.readOnly = isReadOnly;
+        centerSectorInput.readOnly = isReadOnly;
+        // Estilo visual para indicar que un campo está bloqueado
+        const lockedColor = '#e9ecef'; // Un gris claro
+        centerAddressInput.style.backgroundColor = isReadOnly ? lockedColor : '';
+        centerSectorInput.style.backgroundColor = isReadOnly ? lockedColor : '';
+    };
+    
+    // Resetea los campos del centro de estudios
+    const resetCenterFields = () => {
+        coordinatorNameInput.value = '';
+        coordinatorContactInput.value = '';
+        centerAddressInput.value = '';
+        centerSectorInput.value = '';
+        setAddressFieldsReadOnly(false);
+        isExistingCenterSelected = false;
+    };
 
-    async function loadInitialData() {
+    // Carga los datos iniciales (asesores, zonas, comentarios)
+    const loadInitialData = async () => {
         try {
-            // Solo se necesita cargar asesores y comentarios ahora
             const response = await fetch('/api/data');
             if (!response.ok) throw new Error('No se pudieron cargar los datos iniciales.');
             const data = await response.json();
 
-            if (data.advisors) {
-                data.advisors.forEach(advisor => {
-                    advisorSelect.innerHTML += `<option value="${advisor.name}">${advisor.name}</option>`;
-                });
-            }
-
-            if (data.comments) {
-                data.comments.forEach(comment => {
-                    commentsSelect.innerHTML += `<option value="${comment.text}">${comment.text}</option>`;
-                });
-            }
+            // Cargar Asesores, Comentarios y Zonas
+            data.advisors?.forEach(advisor => {
+                advisorSelect.add(new Option(advisor.name, advisor.name));
+            });
+            data.comments?.forEach(comment => {
+                commentsSelect.add(new Option(comment.text, comment.text));
+            });
+            data.zones?.forEach(zone => {
+                zoneSelect.add(new Option(zone.name, zone.name));
+            });
         } catch (error) {
-            console.error('Error cargando datos:', error);
+            console.error(error);
             alert('No se pudieron cargar los datos necesarios. Revise la consola.');
         }
-    }
+    };
+
+    // --- Lógica de Autocompletado ---
 
     centerNameInput.addEventListener('input', async () => {
-        // Si el usuario modifica el nombre, asumimos que quiere crear uno nuevo
-        if (isCenterSelected) {
-            isCenterSelected = false;
-            clearCenterFields();
-            setCenterFieldsReadOnly(false);
+        const searchTerm = centerNameInput.value;
+        
+        // Si el usuario borra o cambia el nombre, se resetean los campos
+        if (isExistingCenterSelected) {
+            resetCenterFields();
         }
 
-        const searchTerm = centerNameInput.value;
         if (searchTerm.length < 2) {
             suggestionsContainer.style.display = 'none';
             return;
@@ -91,18 +90,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (centers.length > 0) {
                 centers.forEach(center => {
                     const item = document.createElement('div');
-                    // Mostrar nombre y dirección para diferenciar
-                    item.textContent = `${center.name} (${center.address})`; 
+                    // MODIFICACIÓN: Mostrar nombre y dirección para diferenciar
+                    item.innerHTML = `<strong>${center.name}</strong><div class="suggestion-address">${center.address}</div>`;
+                    
                     item.addEventListener('click', () => {
-                        // Rellenar TODOS los campos con los datos del centro seleccionado
+                        // --- ¡LA MAGIA DEL AUTOCOMPLETADO! ---
+                        // Se rellena TODO con la info del centro seleccionado
                         centerNameInput.value = center.name;
-                        addressInput.value = center.address || '';
-                        zoneInput.value = center.zone || '';
+                        centerAddressInput.value = center.address || '';
+                        centerSectorInput.value = center.sector || '';
                         coordinatorNameInput.value = center.contactname || '';
                         coordinatorContactInput.value = center.contactnumber || '';
                         
-                        isCenterSelected = true;
-                        setCenterFieldsReadOnly(true); // Bloquear campos
+                        // Se marcan los campos de dirección como solo lectura
+                        setAddressFieldsReadOnly(true);
+                        isExistingCenterSelected = true;
                         suggestionsContainer.style.display = 'none';
                     });
                     suggestionsContainer.appendChild(item);
@@ -112,26 +114,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 suggestionsContainer.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error searching centers:', error);
+            console.error('Error buscando centros:', error);
         }
     });
     
+    // Ocultar sugerencias si se hace clic fuera
     document.addEventListener('click', (e) => {
-        if (e.target !== centerNameInput) {
+        if (!centerNameInput.contains(e.target)) {
             suggestionsContainer.style.display = 'none';
         }
     });
+
+    // --- Lógica de Envío del Formulario ---
 
     visitForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(visitForm);
         const visitData = Object.fromEntries(formData.entries());
-
-        // Asegurarse de que los campos requeridos no estén vacíos
-        if (!visitData.centerName || !visitData.address || !visitData.zone) {
-            alert('Por favor, complete todos los campos del centro: Nombre, Dirección y Zona.');
-            return;
-        }
 
         try {
             const response = await fetch('/api/visits', {
@@ -139,20 +138,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(visitData),
             });
+
+            const result = await response.json();
             if (!response.ok) {
-                 const errorResult = await response.json();
-                 throw new Error(errorResult.message || 'Error al guardar la visita.');
+                throw new Error(result.message || 'Error al guardar la visita.');
             }
+            
             alert('¡Visita registrada con éxito!');
             visitForm.reset();
             setCurrentDate();
-            setCenterFieldsReadOnly(false); // Desbloquear campos después de enviar
-            isCenterSelected = false;
+            setAddressFieldsReadOnly(false); // Desbloquear campos al resetear
+            isExistingCenterSelected = false;
+
         } catch (error) {
             alert(`Error: ${error.message}`);
         }
     });
 
+    // --- Inicialización ---
+    setCurrentDate();
     await loadInitialData();
-    setCenterFieldsReadOnly(false); // Asegurarse de que los campos estén editables al inicio
 });

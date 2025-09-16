@@ -10,11 +10,18 @@
             border: 1px solid #ccc; border-top: none;
             max-height: 150px; overflow-y: auto;
             position: absolute; background-color: white;
-            width: calc(100% - 42px); /* Ajusta el ancho al input */
+            /* Se ajusta el ancho al contenedor del formulario para que sea consistente */
+            width: calc(100% - 2px); 
+            box-sizing: border-box;
             z-index: 1000;
         }
         .autocomplete-suggestions div { padding: 10px; cursor: pointer; }
         .autocomplete-suggestions div:hover { background-color: #f0f0f0; }
+        .autocomplete-suggestions .suggestion-address {
+            font-size: 0.8em;
+            color: #555;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -40,21 +47,28 @@
                 <input type="text" id="centerName" name="centerName" required autocomplete="off">
                 <div id="autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
             </div>
+
             <div class="form-group">
-                <label for="address">Dirección Exacta:</label>
-                <input type="text" id="address" name="address" required>
+                <label for="centerAddress">Dirección Exacta:</label>
+                <input type="text" id="centerAddress" name="centerAddress" required>
             </div>
             <div class="form-group">
-                <label for="zone">Zona / Sector:</label>
-                <input type="text" id="zone" name="zone" required>
+                <label for="centerSector">Sector o Barrio:</label>
+                <input type="text" id="centerSector" name="centerSector">
+            </div>
+            <div class="form-group">
+                <label for="zone">Zona Geográfica (para reportes):</label>
+                <select id="zone" name="zone" required>
+                    <option value="">Selecciona una zona...</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="coordinatorName">Nombre del Coordinador(a):</label>
-                <input type="text" id="coordinatorName" name="coordinatorName" required>
+                <input type="text" id="coordinatorName" name="contactName" required>
             </div>
             <div class="form-group">
                 <label for="coordinatorContact">Número de Contacto:</label>
-                <input type="tel" id="coordinatorContact" name="coordinatorContact">
+                <input type="tel" id="coordinatorContact" name="contactNumber">
             </div>
             <div class="form-group">
                 <label for="comments">Comentarios sobre la visita:</label>
