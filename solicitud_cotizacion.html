@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Cotización</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        /* Estilos para el autocompletado */
+        .autocomplete-results {
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 2px);
+            background-color: #fff;
+            z-index: 100;
+        }
+        .autocomplete-results div {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .autocomplete-results div:hover {
+            background-color: #f1f1f1;
+        }
+        .form-group {
+            position: relative;
+        }
+
+        /* Estilos para el acordeón de productos */
+        #productos-por-reglon details {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        #productos-por-reglon summary {
+            font-weight: bold;
+            padding: 15px;
+            cursor: pointer;
+            background-color: #f7f7f7;
+            outline: none; /* Quita el borde al hacer clic en Chrome */
+        }
+        #productos-por-reglon details[open] summary {
+            border-bottom: 1px solid #ddd;
+        }
+        .accordion-content {
+            padding: 15px;
+        }
+        .sub-reglon-group h4 {
+            font-size: 1.1em;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .sub-reglon-group:first-child h4 {
+            margin-top: 0;
+        }
+        .product-item {
+            display: block;
+            margin-bottom: 8px;
+        }
+        .product-item label {
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .product-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .summary-box {
+            background-color: #e9f7ef;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .summary-box h3 {
+            color: #28a745;
+            margin-top: 0;
+            border-bottom: 1px solid #28a745;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .summary-box p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/asesores-menu.html" class="back-button">&larr; Volver al Menú de Asesor</a>
+            <h1>Solicitud de Cotización</h1>
+        </header>
+
+        <form id="quote-form">
+            <div class="card">
+                <h2>1. Datos del Evento</h2>
+                <div class="form-group">
+                    <label for="quoteNumber">Número de Cotización:</label>
+                    <input type="text" id="quoteNumber" name="quoteNumber" disabled value="Cargando...">
+                </div>
+                <div class="form-group">
+                    <label for="clientName">Nombre del Cliente (Centro Educativo):</label>
+                    <input type="text" id="clientName" name="clientName" required autocomplete="off">
+                    <input type="hidden" id="clientId" name="clientId">
+                    <div id="client-autocomplete-results" class="autocomplete-results"></div>
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label for="eventName">Nombre del Evento:</label>
+                    <input type="text" id="eventName" name="eventName" value="No especificado">
+                </div>
+                <div class="form-group">
+                    <label for="asesor-a-cargo-select">Asesor a Cargo:</label>
+                    <select id="asesor-a-cargo-select"></select>
+                </div>
+                <div class="form-group">
+                    <label for="studentCount">Cantidad de Estudiantes:</label>
+                    <input type="number" id="studentCount" name="studentCount" required min="1">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. Selección de Productos y Servicios</h2>
+                <div id="contenedor-productos">
+                    <p>Cargando productos...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>3. Facilidades y Condiciones Especiales</h2>
+                <div class="form-group">
+                    <label for="aporteInstitucion">Aporte a la Institución:</label>
+                    <input type="number" id="aporteInstitucion" name="aporteInstitucion" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="estudiantesCortesia">Estudiantes de Cortesía:</label>
+                    <input type="number" id="estudiantesCortesia" name="estudiantesCortesia" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Cortesías Calculadas:</label>
+                    <div id="calculated-gratuities" style="padding: 10px; border: 1px solid #eee; background-color: #f9f9f9;"></div>
+                </div>
+                <div class="form-group" id="gift-options-container" style="display: none;">
+                    <label>Selección de Regalo (por combo):</label>
+                    <div id="gift-options-radios"></div>
+                </div>
+            </div>
+
+            <div class="summary-box">
+                <h3>Resumen Estimado</h3>
+                <p>Estudiantes a Facturar: <span id="summary-billable-students">0</span></p>
+                <p>Monto Total Estimado: <span id="summary-total-amount">$0.00</span></p>
+                <p>Precio por Estudiante Estimado: <span id="summary-price-per-student">$0.00</span></p>
+            </div>
+
+            <button type="submit" class="btn">Generar y Guardar Cotización</button>
+        </form>
+        <div id="success-message" class="hidden" style="margin-top: 20px;">¡Cotización creada con éxito!</div>
+    </div>
+
+        <script src="solicitud_cotizacion.js"></script>
+</body>
+</html>

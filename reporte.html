@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Visitas</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Reporte de Visitas</h1>
+            <p>Filtrar y ver las visitas registradas.</p>
+        </header>
+
+        <main>
+            <div class="button-group" style="margin-bottom: 20px;">
+                <a href="/reporte_filtros.html" class="btn">Filtrar Reporte</a>
+            </div>
+
+            <table id="report-table" class="hidden">
+                <thead>
+                    <tr>
+                        <th>Fecha de Visita</th>
+                        <th>Asesor</th>
+                        <th>Centro de Estudios</th>
+                        <th>Contacto</th>
+                        <th>Comentarios</th>
+                    </tr>
+                </thead>
+                <tbody id="report-body">
+                    <!-- Los datos del reporte se insertarán aquí -->
+                </tbody>
+            </table>
+        </main>
+
+        <footer>
+            <a href="/" class="back-button">Volver al Menú Principal</a>
+        </footer>
+    </div>
+
+    <script src="report.js"></script>
+</body>
+</html>

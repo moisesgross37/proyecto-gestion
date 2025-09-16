@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Be Gestion</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .admin-button {
+            display: block;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .admin-button:hover {
+            background-color: #0056b3;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Panel de Administración</h1>
+        <p>Selecciona una sección para gestionar los datos maestros.</p>
+        <div class="admin-grid">
+            <a href="/panel_aprobacion_cotizaciones.html" class="admin-button">Aprobar Cotizaciones</a>
+            <a href="/admin_usuarios.html" class="admin-button">Gestionar Usuarios</a>
+            <a href="/admin_asesores.html" class="admin-button">Gestionar Asesores</a>
+            <a href="/admin_zonas.html" class="admin-button">Gestionar Zonas</a>
+            <a href="/admin_centros.html" class="admin-button">Gestionar Centros de Estudio</a>
+            <a href="/admin_productos.html" class="admin-button">Gestionar Productos</a>
+            <a href="/admin_margenes.html" class="admin-button">Gestionar Reglas de Margen</a>
+            <a href="/admin_gratuidades.html" class="admin-button">Gestionar Reglas de Gratuidad</a>
+            <a href="/admin_comentarios.html" class="admin-button">Gestionar Comentarios</a>
+            
+        </div>
+        
+        <a href="/index.html" class="back-link">Volver a la Página Principal</a>
+    </div>
+</body>
+</html>

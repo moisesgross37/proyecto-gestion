@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Productos</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2 id="form-title">Añadir Producto</h2>
+                <form id="add-product-form" class="form-group">
+                    <input type="hidden" id="product-id" name="id">
+                    <label for="product-name">Nombre del Producto:</label>
+                    <input type="text" id="product-name" name="name" required placeholder="Ej: Polo Bordado">
+                    
+                    <label for="product-type">Tipo de Producto:</label>
+                    <select id="product-type" name="product_type" required>
+                        <option value="" disabled selected>Selecciona un tipo</option>
+                        <option value="Confeccion">Confeccion</option>
+                        <option value="Paquete_Graduacion">Paquete de Graduación</option>
+                        <option value="Servicio_Alquiler">Servicio de Alquiler</option>
+                        <option value="Servicio_Individual">Servicio Individual (A la Carta)</option>
+                        <option value="Articulo_Gratuidad">Artículo de Gratuidad</option>
+                    </select>
+
+                    <label for="reglon">Reglón:</label>
+                    <input type="text" id="reglon" name="reglon" placeholder="Ej: PRENDAS PROMOCIONALES">
+
+                    <label for="sub_reglon">Sub-Reglón:</label>
+                    <input type="text" id="sub_reglon" name="sub_reglon" placeholder="Ej: Polos">
+
+                    <label for="tipo_calculo">Tipo de Cálculo:</label>
+                    <select id="tipo_calculo" name="tipo_calculo" required>
+                        <option value="por_estudiante" selected>Por Estudiante</option>
+                        <option value="total_grupo">Total Grupo</option>
+                        <option value="no_aplica">No Aplica</option>
+                    </select>
+
+                    <div class="form-group" id="costo-base-group">
+                        <label for="costoBase">Costo Base:</label>
+                        <input type="number" id="costoBase" name="costoBase" step="0.01" placeholder="Ej: 650.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="detallesIncluidos">Detalles Incluidos (para el PDF):</label>
+                        <textarea id="detallesIncluidos" name="detallesIncluidos" rows="4" placeholder="Ej: Incluye 1 Fotografía enmarcada, 2 Fotos de Padrinos..."></textarea>
+                    </div>
+
+                    <fieldset id="fieldset-servicio-individual" style="display: none;">
+                        <legend>Campos para Servicios "A la Carta"</legend>
+                        <div class="form-group">
+                            <label for="precioBaseGrupo">Precio Base para Grupo Mínimo:</label>
+                            <input type="number" id="precioBaseGrupo" name="precioBaseGrupo" step="0.01" placeholder="1500.00">
+                        </div>
+                        <div class="form-group">
+                            <label for="grupoMinimo">Grupo Mínimo (Estudiantes):</label>
+                            <input type="number" id="grupoMinimo" name="grupoMinimo" placeholder="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="precioAdicional">Precio por Estudiante Adicional:</label>
+                            <input type="number" id="precioAdicional" name="precioAdicional" step="0.01" placeholder="120.00">
+                        </div>
+                    </fieldset>
+
+                    <button type="submit" class="btn" id="submit-button">Añadir Producto</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-edit-button" style="display: none; margin-top: 10px;">Cancelar Edición</button>
+                </form>
+                <hr>
+                <h3>Productos Actuales</h3>
+                <table class="tabla-gestion">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Reglón</th>
+                            <th>Sub-Reglón</th>
+                            <th>Tipo Cálculo</th>
+                            <th>Costo Base</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-productos-body">
+                        <!-- Las filas de productos se insertarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-product-form');
+            const formTitle = document.getElementById('form-title');
+            const submitButton = document.getElementById('submit-button');
+            const cancelEditButton = document.getElementById('cancel-edit-button');
+            const tableBody = document.getElementById('lista-productos-body');
+            const API_URL = '/api/products';
+
+            let editId = null;
+
+            const productTypeSelect = document.getElementById('product-type');
+            const costoBaseGroup = document.getElementById('costo-base-group');
+            const servicioIndividualFieldset = document.getElementById('fieldset-servicio-individual');
+
+            const updateProductFormVisibility = () => {
+                const selectedType = productTypeSelect.value;
+                if (selectedType === 'Servicio_Individual') {
+                    costoBaseGroup.style.display = 'none';
+                    servicioIndividualFieldset.style.display = 'block';
+                } else {
+                    costoBaseGroup.style.display = 'block';
+                    servicioIndividualFieldset.style.display = 'none';
+                }
+            };
+
+            productTypeSelect.addEventListener('change', updateProductFormVisibility);
+
+            const resetForm = () => {
+                form.reset();
+                editId = null;
+                formTitle.textContent = 'Añadir Producto';
+                submitButton.textContent = 'Añadir Producto';
+                cancelEditButton.style.display = 'none';
+                updateProductFormVisibility();
+            };
+
+            const fetchAndDisplayItems = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error('Error al obtener productos.');
+                    const items = await response.json();
+                    tableBody.innerHTML = '';
+                    if (items.length === 0) {
+                        tableBody.innerHTML = `<tr><td colspan="7">No hay productos registrados.</td></tr>`;
+                        return;
+                    }
+                    items.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.name || 'N/A'}</td>
+                            <td>${item.product_type || 'N/A'}</td>
+                            <td>${item.reglon || 'N/A'}</td>
+                            <td>${item.sub_reglon || 'N/A'}</td>
+                            <td>${item.tipo_calculo || 'N/A'}</td>
+                            <td>${item.costoBase !== undefined ? item.costoBase : 'N/A'}</td>
+                            <td>
+                                <button class="btn-edit">Editar</button>
+                                <button class="btn-delete">Eliminar</button>
+                            </td>
+                        `;
+
+                        const editButton = row.querySelector('.btn-edit');
+                        editButton.addEventListener('click', () => {
+                            window.scrollTo(0, 0);
+                            formTitle.textContent = 'Modificar Producto';
+                            submitButton.textContent = 'Guardar Cambios';
+                            cancelEditButton.style.display = 'block';
+                            editId = item.id;
+
+                            // Poblar el formulario
+                            document.getElementById('product-id').value = item.id;
+                            document.getElementById('product-name').value = item.name || '';
+                            document.getElementById('product-type').value = item.product_type || '';
+                            document.getElementById('reglon').value = item.reglon || '';
+                            document.getElementById('sub_reglon').value = item.sub_reglon || '';
+                            document.getElementById('tipo_calculo').value = item.tipo_calculo || 'por_estudiante';
+                            document.getElementById('costoBase').value = item.costoBase || '';
+                            document.getElementById('detallesIncluidos').value = item.detallesIncluidos || '';
+                            document.getElementById('precioBaseGrupo').value = item.precioBaseGrupo || '';
+                            document.getElementById('grupoMinimo').value = item.grupoMinimo || '';
+                            document.getElementById('precioAdicional').value = item.precioAdicional || '';
+                            
+                            updateProductFormVisibility();
+                        });
+
+                        const deleteButton = row.querySelector('.btn-delete');
+                        deleteButton.addEventListener('click', () => deleteItem(item.id));
+
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error(error);
+                    tableBody.innerHTML = `<tr><td colspan="7">Error al cargar productos.</td></tr>`;
+                }
+            };
+
+            const saveData = async (data) => {
+                const isEdit = editId !== null;
+                const url = isEdit ? `${API_URL}/${editId}` : API_URL;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    if (!response.ok) {
+                         const errorData = await response.json();
+                         throw new Error(errorData.message || `Error al guardar el producto.`);
+                    }
+                    
+                    resetForm();
+                    await fetchAndDisplayItems();
+
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo guardar el producto: ' + error.message);
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Error al eliminar el producto.');
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo eliminar el producto.');
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const data = {};
+                for(const [key, value] of formData.entries()) {
+                    // Solo incluir campos que tienen valor
+                    if (value) { 
+                        data[key] = value;
+                    }
+                }
+                // Asegurarse de que los campos numéricos se envíen como números
+                if(data.costoBase) data.costoBase = parseFloat(data.costoBase);
+                if(data.precioBaseGrupo) data.precioBaseGrupo = parseFloat(data.precioBaseGrupo);
+                if(data.grupoMinimo) data.grupoMinimo = parseInt(data.grupoMinimo, 10);
+                if(data.precioAdicional) data.precioAdicional = parseFloat(data.precioAdicional);
+
+                delete data.id;
+                saveData(data);
+            });
+
+            cancelEditButton.addEventListener('click', resetForm);
+
+            updateProductFormVisibility();
+            fetchAndDisplayItems();
+        });
+    </script>
+</body>
+</html>

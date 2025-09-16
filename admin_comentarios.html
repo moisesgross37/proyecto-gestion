@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Comentarios - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Comentarios Predeterminados</h1>
+        </header>
+        <main>
+            <div class="card">
+                <h2>Añadir Comentario</h2>
+                <form id="add-comment-form" class="form-group">
+                    <label for="new-comment-name">Texto del Comentario:</label>
+                    <input type="text" id="new-comment-name" name="name" required placeholder="Escribe el comentario">
+                    <button type="submit" class="btn">Añadir Comentario</button>
+                </form>
+                <hr>
+                <h3>Comentarios Actuales</h3>
+                <ul id="comment-list" class="resource-list"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-comment-form');
+            const input = document.getElementById('new-comment-name');
+            const list = document.getElementById('comment-list');
+            const API_URL = '/api/comments'; // <-- CORRECCIÓN #1: URL correcta
+            const entityDisplayName = 'Comentario';
+
+            const fetchAndDisplayItems = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error(`Error al obtener comentarios.`);
+                    const items = await response.json();
+                    list.innerHTML = '';
+                    items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = item.text; // <-- CORRECCIÓN #2: Propiedad correcta
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Eliminar';
+                        deleteBtn.className = 'btn-delete';
+                        deleteBtn.onclick = () => deleteItem(item.id);
+                        li.appendChild(deleteBtn);
+                        list.appendChild(li);
+                    });
+                } catch (error) {
+                    console.error('Error:', error);
+                    list.innerHTML = `<li>${error.message}</li>`;
+                }
+            };
+
+            const addItem = async (name) => {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name }),
+                    });
+                    if (!response.ok) throw new Error(`Error al añadir ${entityDisplayName}.`);
+                    input.value = '';
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(`No se pudo añadir el ${entityDisplayName}.`);
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm(`¿Estás seguro de que quieres eliminar este ${entityDisplayName.toLowerCase()}?`)) return;
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error(`Error al eliminar ${entityDisplayName}.`);
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(`No se pudo eliminar el ${entityDisplayName}.`);
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const name = input.value.trim();
+                if (name) addItem(name);
+            });
+
+            fetchAndDisplayItems();
+        });
+    </script>
+</body>
+</html>

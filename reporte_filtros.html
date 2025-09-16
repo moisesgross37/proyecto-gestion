@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtros de Reporte</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Filtrar Reporte de Visitas</h1>
+            <p>Selecciona los criterios para tu reporte.</p>
+        </header>
+
+        <main>
+            <form id="filter-form">
+                <div class="form-group">
+                    <label for="advisor-filter">Asesor:</label>
+                    <select id="advisor-filter" name="advisor">
+                        <option value="">Todos los asesores</option>
+                        <!-- Opciones se cargarán desde JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="start-date">Fecha de Inicio:</label>
+                    <input type="date" id="start-date" name="startDate">
+                </div>
+                <div class="form-group">
+                    <label for="end-date">Fecha de Fin:</label>
+                    <input type="date" id="end-date" name="endDate">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-small">Filtrar</button>
+                    <button type="button" id="clear-filters" class="btn btn-small btn-secondary">Limpiar Filtros</button>
+                </div>
+            </form>
+        </main>
+
+        <footer>
+            <a href="/reporte.html" class="back-button">Volver al Reporte</a>
+        </footer>
+    </div>
+
+    <script src="reporte_filtros.js"></script>
+</body>
+</html>

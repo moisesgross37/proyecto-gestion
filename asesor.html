@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Visita</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Registro de Visita de Asesor</h1>
+            <p>Completa el formulario para documentar tu visita.</p>
+        </header>
+
+        <form id="visit-form">
+            <div class="form-group">
+                <label for="asesor-select">Tu Nombre (Asesor):</label>
+                <select id="asesor-select" name="advisorName" required>
+                    <option value="">Selecciona tu nombre...</option>
+                    <!-- Nombres se cargarán desde JS -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="visit-date">Fecha de Visita:</label>
+                <input type="date" id="visit-date" name="visitDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="center-name">Nombre del Centro de Estudios:</label>
+                <input type="text" id="center-name" name="centerName" list="centers-datalist" required placeholder="Escribe o selecciona un centro">
+                <datalist id="centers-datalist">
+                    <!-- Centros se cargarán desde JS -->
+                </datalist>
+            </div>
+
+            <div class="form-group">
+                <label for="zone-name">Zona:</label>
+                <select id="zone-name" name="zoneName" required>
+                    <option value="">Selecciona una zona...</option>
+                    <!-- Zonas se cargarán desde JS -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="contact-name">Nombre del Contacto:</label>
+                <input type="text" id="contact-name" name="contactName" required>
+            </div>
+
+            <div class="form-group">
+                <label for="contact-number">Número de Contacto:</label>
+                <input type="tel" id="contact-number" name="contactNumber">
+            </div>
+
+            <div class="form-group">
+                <label for="comments">Comentarios sobre la visita:</label>
+                <select id="comments" name="comments" required>
+                    <option value="">Selecciona un comentario...</option>
+                    <!-- Comentarios se cargarán desde JS -->
+                </select>
+            </div>
+
+            <button type="submit" class="btn">Registrar Visita</button>
+        </form>
+
+        <p id="success-message" class="hidden">¡Visita registrada con éxito!</p>
+
+        <footer>
+            <a href="/" class="back-button">Volver al Menú Principal</a>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

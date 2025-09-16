@@ -1,0 +1,1284 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "nombre": "Moises Gross",
+      "email": "admin@email.com",
+      "password": "$2b$10$B1HSS/i14d7FV5LC8b.uhu9jPi6V.Eq2/r.fTpCBC4pktPRhQoZbq",
+      "rol": "Administrador",
+      "estado": "activo"
+    },
+    {
+      "id": 2,
+      "nombre": "Genesis Suriel",
+      "email": "asesor@email.com",
+      "password": "$2b$10$5CYLP6WV0SJyrEYWREqu1u0CbZhtmbkQlFjPeXl4r7CWgk3bcQoqm",
+      "rol": "Asesor",
+      "estado": "activo"
+    },
+    {
+      "id": 1757369393265,
+      "nombre": "Carlos Perez",
+      "email": "moises_gross@email.com",
+      "password": "$2b$10$Pqch...Eci2ZCbb5p3zwi.V56n2W//mcarv6YddbwX.hRVUnnuNQ.",
+      "rol": "Asesor",
+      "estado": "inactivo"
+    },
+    {
+      "id": 1757589491103,
+      "nombre": "Wander Perez",
+      "username": "Wander",
+      "password": "$2b$10$UXiEFOumPmBp8tgjigxdAetWv3wT0UXoRam4VJdO5OVLeTkujSC9a",
+      "rol": "Administrador",
+      "estado": "activo"
+    },
+    {
+      "id": 1757590800984,
+      "nombre": "Moises Gross",
+      "username": "Moises",
+      "password": "$2b$10$OwN6htZvaEzT3atIegl9xeGHlj6n.hgl0j7.Fv3wzEWn.xHjhZdAK",
+      "rol": "Administrador",
+      "estado": "activo"
+    }
+  ],
+  "advisors": [
+    {
+      "id": 1,
+      "name": "Leudis de los Santos"
+    },
+    {
+      "id": 2,
+      "name": "Genesis Suriel"
+    },
+    {
+      "id": 1757444649464,
+      "name": "Isolina Pacheco"
+    },
+    {
+      "id": 1757444660813,
+      "name": "Griselda Paniaga"
+    },
+    {
+      "id": 1757444689248,
+      "name": "Ruth Castillo"
+    },
+    {
+      "id": 1757444708076,
+      "name": "Jose Manuel"
+    }
+  ],
+  "zones": [
+    {
+      "id": 1757453753794,
+      "name": "Santo Domingo Este"
+    },
+    {
+      "id": 1757453763494,
+      "name": "Santo Domingo Oeste"
+    },
+    {
+      "id": 1757453772243,
+      "name": "Santo Domingo Norte"
+    },
+    {
+      "id": 1757453779822,
+      "name": "Distrito Nacional"
+    },
+    {
+      "id": 1757453795560,
+      "name": "Interior Cercano"
+    }
+  ],
+  "comments": [
+    {
+      "id": 1757445887832,
+      "text": "Visita Inicial"
+    },
+    {
+      "id": 1757445895946,
+      "text": "Visita de Seguimiento"
+    },
+    {
+      "id": 1757445915197,
+      "text": "Visita de Cierre de Venta"
+    },
+    {
+      "id": 1757445954197,
+      "text": "Visita de Posposicion ano Proximo"
+    },
+    {
+      "id": 1757445969530,
+      "text": "Visita levantamiento de Debilidades"
+    }
+  ],
+  "quoteRequests": [],
+  "centers": [
+    {
+      "id": 1757451096828,
+      "code": "C-1001",
+      "name": "Colegio San Martin ",
+      "contactName": "Juan Pertez",
+      "contactNumber": "8092240000"
+    },
+    {
+      "id": 1757550906465,
+      "code": "C-1002",
+      "name": "Liceo Don Honorio",
+      "contactName": "",
+      "contactNumber": ""
+    },
+    {
+      "id": 1757596383756,
+      "code": "C-1003",
+      "name": "Colegio Caridad",
+      "contactName": "",
+      "contactNumber": ""
+    },
+    {
+      "id": 1757597812237,
+      "code": "C-1004",
+      "name": "Instituto Tecnico Fabio Amable Mota",
+      "contactName": "",
+      "contactNumber": ""
+    }
+  ],
+  "products": [
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Thirt",
+      "PRODUCTO / SERVICIO": "Tshirt Driftit / OjoAngel con DTF",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "275",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Thirt",
+      "PRODUCTO / SERVICIO": "Thisrt Sublimado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "307",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Polos",
+      "PRODUCTO / SERVICIO": "Polos Sublimados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "500",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Polos",
+      "PRODUCTO / SERVICIO": "Polos Sublimados con Bordados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "610",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Polos",
+      "PRODUCTO / SERVICIO": "Polos Algodon Sublimado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "710",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Polos",
+      "PRODUCTO / SERVICIO": "Polos Algodon Combinando",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "850",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Polos",
+      "PRODUCTO / SERVICIO": "Polo para Maestros o Directivos",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "610",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Hoodies",
+      "PRODUCTO / SERVICIO": "Hoodies Sublimado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "672",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Hoodies",
+      "PRODUCTO / SERVICIO": "Hoodies Tela Mono",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "902",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Hoodies",
+      "PRODUCTO / SERVICIO": "Hoodies Combinado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "902",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Varsity",
+      "PRODUCTO / SERVICIO": "Varsity - Chaqueta Sublimado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "780",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Varsity",
+      "PRODUCTO / SERVICIO": "Varsity - Chaqueta Tela Mono",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "1044",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Varsity",
+      "PRODUCTO / SERVICIO": "Varsity - Chaqueta Combinado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "1044",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Pantalones",
+      "PRODUCTO / SERVICIO": "Pantalones Deportivos",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "598",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Pantalones",
+      "PRODUCTO / SERVICIO": "Pantalones Confeccionados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "923",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Gorras",
+      "PRODUCTO / SERVICIO": "Gorras Estandar",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "210",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Gorras",
+      "PRODUCTO / SERVICIO": "Gorras Premium",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "360",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Toallitas",
+      "PRODUCTO / SERVICIO": "Toallitas Bordadas",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "160",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Termos",
+      "PRODUCTO / SERVICIO": "Termos Sublimados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "220",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Llaveros",
+      "PRODUCTO / SERVICIO": "Llaveros Sublimados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Llaveros",
+      "PRODUCTO / SERVICIO": "Llaveros Fotos",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "PRENDAS PROMOCIONALES",
+      "SUB RENGLON": "Botones",
+      "PRODUCTO / SERVICIO": "Botones Promocional",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN COMBOS",
+      "SUB RENGLON": "Llaveros",
+      "PRODUCTO / SERVICIO": "Llaveros Sublimables",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN COMBOS",
+      "SUB RENGLON": "Llaveros",
+      "PRODUCTO / SERVICIO": "LLaveros porta con fotos",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN COMBOS",
+      "SUB RENGLON": "Botones",
+      "PRODUCTO / SERVICIO": "Botones Promocional",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN COMBOS",
+      "SUB RENGLON": "Termos",
+      "PRODUCTO / SERVICIO": "Termos sublimados",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "220",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN COMBOS",
+      "SUB RENGLON": "Toallitas",
+      "PRODUCTO / SERVICIO": "Toallitas Bordadas",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "160",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "GRATUIDADES PARA COMBOS",
+      "SUB RENGLON": "Botones Gratis",
+      "PRODUCTO / SERVICIO": "Botones promocionales Gratis",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "GRATUIDADES PARA COMBOS",
+      "SUB RENGLON": "LLaveros Gratis",
+      "PRODUCTO / SERVICIO": "Llaveros Sublimables Gratis",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "50",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "GRATUIDADES PARA COMBOS",
+      "SUB RENGLON": "Termos Gratis",
+      "PRODUCTO / SERVICIO": "Termos Sublimados Gratis",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "220",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "INVESTIDURA",
+      "SUB RENGLON": "Sesion de fotos en Estudio o en Exterior",
+      "PRODUCTO / SERVICIO": "Sesion de fotos en Estudio o en Exterior",
+      "DETALLE / INCLUYE": "Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional, Resumen de fotos de blanco cargado a la web",
+      "COSTO BASE": "580",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "INVESTIDURA",
+      "SUB RENGLON": "Sesion de fotos de Pre Graduacion",
+      "PRODUCTO / SERVICIO": "Sesion de fotos de Pre Graduacion",
+      "DETALLE / INCLUYE": "Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2, 2 Fotografías grupales en blanco, Fotografías cargadas a la web",
+      "COSTO BASE": "930",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "INVESTIDURA",
+      "SUB RENGLON": "Realizacion del Evento",
+      "PRODUCTO / SERVICIO": "Realizacion del Evento",
+      "DETALLE / INCLUYE": "Incluye:Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Placa a la máxima excelencia académica, Placa de reconocimiento a docente, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, agua o cóctel, Video de vivencias de los estudiantes, Video TBT, Personal de protocolo y staff de ejecución, Anuario para la Dirección.",
+      "COSTO BASE": "0",
+      "TIPO DE PRECIO": "costo_por_rango"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Epic",
+      "PRODUCTO / SERVICIO": "Epic",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "35000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Coopnama",
+      "PRODUCTO / SERVICIO": "Coopnama",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "35000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Salon Aida Porta Latin",
+      "PRODUCTO / SERVICIO": "Salon Aida Porta Latin",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "25000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Auditorio Biblioteca Nacional",
+      "PRODUCTO / SERVICIO": "Auditorio Biblioteca Nacional",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "61000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Auditorio La Fama",
+      "PRODUCTO / SERVICIO": "Auditorio La Fama",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "100000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Auditorio Casa San Pablo",
+      "PRODUCTO / SERVICIO": "Auditorio Casa San Pablo",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "135000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Salon Sambil",
+      "PRODUCTO / SERVICIO": "Salon Sambil",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "295000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Hotel Catalonia Ibizza 2do Nivel",
+      "PRODUCTO / SERVICIO": "Hotel Catalonia Ibizza 2do Nivel",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "320000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Salon Restauracion MIDE",
+      "PRODUCTO / SERVICIO": "Salon Restauracion MIDE",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "125000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "SALONES",
+      "SUB RENGLON": "Salon Independencia MIDE",
+      "PRODUCTO / SERVICIO": "Salon Independencia MIDE",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "350000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Stand Personalizado",
+      "PRODUCTO / SERVICIO": "Stand Personalizado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "30000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Plataforma 360",
+      "PRODUCTO / SERVICIO": "Plataforma 360",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "15000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Esclavina Sublimada",
+      "PRODUCTO / SERVICIO": "Esclavina Sublimada",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "350",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Esclavina Bordada",
+      "PRODUCTO / SERVICIO": "Esclavina Bordada",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "550",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Porta Diploma Portada Dura Personalizado",
+      "PRODUCTO / SERVICIO": "Porta Diploma Portada Dura Personalizado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "350",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Porta Diploma Portada Blanda Personalizado",
+      "PRODUCTO / SERVICIO": "Porta Diploma Portada Blanda Personalizado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "200",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Picadera Graduando + Padrino",
+      "PRODUCTO / SERVICIO": "Picadera Graduando + Padrino",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "150",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Picadera Graduando + Invitado",
+      "PRODUCTO / SERVICIO": "Picadera Graduando + Invitado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "450",
+      "TIPO DE PRECIO": "por_estudiante"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Mesa de Dulces",
+      "PRODUCTO / SERVICIO": "Mesa de Dulces",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "15000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "After Partty",
+      "PRODUCTO / SERVICIO": "After Partty",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "75000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Solo Sesion en Exterior o de Blanco",
+      "PRODUCTO / SERVICIO": "Solo Sesion en Exterior o de Blanco",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "20000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS EN INVESTIDURA",
+      "SUB RENGLON": "Solo Sesion de Pregraduacion",
+      "PRODUCTO / SERVICIO": "Solo Sesion de Pregraduacion",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "30000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "LANZAMIENTOS",
+      "SUB RENGLON": "LANZAMIENTOS",
+      "PRODUCTO / SERVICIO": "LANZAMIENTOS",
+      "DETALLE / INCLUYE": "Incluye: Tarima, Cuadro de Truss con Banner de fondo Personalizado, Stand para fotos con banner de Fondo Personalizado, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Luces para Ambientacion, Confetti",
+      "COSTO BASE": "105000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "LANZAMIENTOS",
+      "SUB RENGLON": "LANZAMIENTO TEMATICO",
+      "PRODUCTO / SERVICIO": "LANZAMIENTO TEMATICO",
+      "DETALLE / INCLUYE": "Incluye: Decoración Temática , Fondos para Decoracion (1), Estructuras para Decoracion (1), Elementos para Decoración, Luces para Ambientacion, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Filmaker, Confetti",
+      "COSTO BASE": "165000",
+      "TIPO DE PRECIO": "total_grupo"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Fondo Personalizado ",
+      "PRODUCTO / SERVICIO": "Fondo Personalizado ",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "20000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Cuadro en Truss",
+      "PRODUCTO / SERVICIO": "Cuadro en Truss",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "10000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Banner persnalizado",
+      "PRODUCTO / SERVICIO": "Banner persnalizado",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "5000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Decoracion a Determinar",
+      "PRODUCTO / SERVICIO": "Decoracion a Determinar",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "15000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Tarima",
+      "PRODUCTO / SERVICIO": "Tarima",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "20000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Techo",
+      "PRODUCTO / SERVICIO": "Techo",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "30000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Hora Loca Standar",
+      "PRODUCTO / SERVICIO": "Hora Loca Standar",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "20000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Hora Loca Primium",
+      "PRODUCTO / SERVICIO": "Hora Loca Primium",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "65000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Show de Motores (3)",
+      "PRODUCTO / SERVICIO": "Show de Motores (3)",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "7500",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Carros de Exhibicion (2)",
+      "PRODUCTO / SERVICIO": "Carros de Exhibicion (2)",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "10000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Filmaker y Resumen de Video",
+      "PRODUCTO / SERVICIO": "Filmaker y Resumen de Video",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "8000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Carpa Maestro Mediana",
+      "PRODUCTO / SERVICIO": "Carpa Maestro Mediana",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "4000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Carpa Invitados Grandes",
+      "PRODUCTO / SERVICIO": "Carpa Invitados Grandes",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "5500",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Sonido Full (artista y grandes presentaciones)",
+      "PRODUCTO / SERVICIO": "Sonido Full (artista y grandes presentaciones)",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "40000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Drone",
+      "PRODUCTO / SERVICIO": "Drone",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "8000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Plataforma 360",
+      "PRODUCTO / SERVICIO": "Plataforma 360",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "15000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables)",
+      "PRODUCTO / SERVICIO": "Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables)",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "30000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Fuegos Artificiales",
+      "PRODUCTO / SERVICIO": "Fuegos Artificiales",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "3500",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Fondos para Decoracion (1)",
+      "PRODUCTO / SERVICIO": "Fondos para Decoracion (1)",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "5000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Estructuras para Decoracion (1),",
+      "PRODUCTO / SERVICIO": "Estructuras para Decoracion (1),",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "10000",
+      "TIPO DE PRECIO": "escalonado"
+    },
+    {
+      "RENGLON": "AMENIDADES EXTRAS LANZAMIENTOS",
+      "SUB RENGLON": "Coreografo",
+      "PRODUCTO / SERVICIO": "Coreografo",
+      "DETALLE / INCLUYE": "",
+      "COSTO BASE": "25000",
+      "TIPO DE PRECIO": "escalonado"
+    }
+  ],
+  "invitations": [],
+  "visits": [
+    {
+      "advisorName": "Genesis Suriel",
+      "centerName": "Colegio San Miguel Arcangel",
+      "coordinatorName": "Juan Perez",
+      "coordinatorContact": "8092240077",
+      "visitDate": "2025-08-01",
+      "comments": "Visita Inicial",
+      "id": 1757444795831
+    },
+    {
+      "id": 1757447090971,
+      "advisorName": "Isolina Pacheco",
+      "centerName": "Colegio San Miguel Arcangel",
+      "coordinatorName": "Juan Perez",
+      "coordinatorContact": "8093343434",
+      "visitDate": "2025-08-01",
+      "comments": "visita inicial"
+    },
+    {
+      "id": 1757451096828,
+      "advisorName": "Jose Manuel",
+      "centerName": "Colegio San Martin ",
+      "coordinatorName": "Juan Pertez",
+      "coordinatorContact": "8092240000",
+      "visitDate": "2025-08-01",
+      "comments": "v"
+    },
+    {
+      "id": 1757550906465,
+      "advisorName": "Leudis de los Santos",
+      "visitDate": "2025-09-10",
+      "centerName": "Liceo Don Honorio",
+      "zone": "Santo Domingo Este",
+      "contactName": "Juan Perez",
+      "contactNumber": "8092240076",
+      "comments": "Visita Inicial"
+    },
+    {
+      "id": 1757596383756,
+      "advisorName": "Griselda Paniaga",
+      "visitDate": "2025-09-11",
+      "centerName": "Colegio Caridad",
+      "zone": "Santo Domingo Este",
+      "contactName": "Sra Caridad",
+      "contactNumber": "8095945050",
+      "comments": "Visita Inicial"
+    },
+    {
+      "id": 1757597812237,
+      "advisorName": "Leudis de los Santos",
+      "visitDate": "2025-09-04",
+      "centerName": "Instituto Tecnico Fabio Amable Mota",
+      "zone": "Santo Domingo Este",
+      "contactName": "Jenny",
+      "contactNumber": "8094453040",
+      "comments": "Visita de Cierre de Venta"
+    }
+  ],
+  "quotes": [
+    {
+      "quoteNumber": "COT-240001",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo Promocional",
+      "advisorName": "Jose Manuel",
+      "studentCount": 40,
+      "productIds": [
+        4,
+        9
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757524309164,
+      "status": "archivada",
+      "createdAt": "2025-09-10T17:11:49.164Z"
+    },
+    {
+      "quoteNumber": "COT-240002",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Combo 02",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 33,
+      "productIds": [
+        4,
+        10,
+        17
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757530502683,
+      "status": "archivada",
+      "createdAt": "2025-09-10T18:55:02.683Z"
+    },
+    {
+      "quoteNumber": "COT-240003",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Pruea numero 03",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 60,
+      "productIds": [
+        4,
+        9,
+        16,
+        19
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "id": 1757530898129,
+      "status": "aprobada",
+      "createdAt": "2025-09-10T19:01:38.129Z"
+    },
+    {
+      "quoteNumber": "COT-240004",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Prueba 04",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 33,
+      "productIds": [
+        31,
+        32,
+        33
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "calculatedPrices": [
+        {
+          "montoTotalProyecto": "197406.00",
+          "precioFinalPorEstudiante": "6800.00",
+          "estudiantesFacturables": 29
+        }
+      ],
+      "facilidadesAplicadas": [],
+      "id": 1757531196674,
+      "status": "rechazada",
+      "createdAt": "2025-09-10T19:06:36.674Z",
+      "rejectionReason": "Los productos no son esos"
+    },
+    {
+      "quoteNumber": "COT-240005",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Pruebas 05",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 122,
+      "productIds": [
+        2,
+        7,
+        20
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "calculatedPrices": [
+        {
+          "montoTotalProyecto": "196623.33",
+          "precioFinalPorEstudiante": "1800.00",
+          "estudiantesFacturables": 109
+        }
+      ],
+      "facilidadesAplicadas": [
+        "12 polo(s) extra(s) de cortesía."
+      ],
+      "id": 1757531272826,
+      "status": "rechazada",
+      "createdAt": "2025-09-10T19:07:52.826Z",
+      "rejectionReason": "Cantidad por debajo de la Oferta"
+    },
+    {
+      "quoteNumber": "COT-240006",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "prueba 06",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 23,
+      "productIds": [
+        3
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 23 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "19491.53",
+          "subtotal": "19491.53",
+          "totalPrice": "23000.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "19491.53",
+        "itbis": "3508.47",
+        "grandTotal": "23000.00"
+      },
+      "id": 1757532527866,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T19:28:47.866Z"
+    },
+    {
+      "quoteNumber": "COT-240007",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Combo",
+      "advisorName": "Isolina Pacheco",
+      "studentCount": 40,
+      "productIds": [
+        4
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 40 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "41355.93",
+          "subtotal": "41355.93",
+          "totalPrice": "48800.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "41355.93",
+        "itbis": "7444.07",
+        "grandTotal": "48800.00"
+      },
+      "id": 1757543610934,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T22:33:30.934Z"
+    },
+    {
+      "quoteNumber": "COT-240008",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo 2025",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 70,
+      "productIds": [
+        2,
+        3,
+        8,
+        16
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 70 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "182172.58",
+          "subtotal": "182172.58",
+          "totalPrice": "214963.64"
+        }
+      ],
+      "totals": {
+        "subtotal": "182172.58",
+        "itbis": "32791.06",
+        "grandTotal": "214963.64"
+      },
+      "precioFinalPorEstudiante": "3400.00",
+      "id": 1757547715233,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:41:55.233Z"
+    },
+    {
+      "quoteNumber": "COT-240009",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Propuesta Investidura",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        31,
+        32,
+        33,
+        35
+      ],
+      "aporteInstitucion": 500,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "417691.83",
+          "subtotal": "417691.83",
+          "totalPrice": "492876.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "417691.83",
+        "itbis": "75184.53",
+        "grandTotal": "492876.36"
+      },
+      "precioFinalPorEstudiante": "7150.00",
+      "estudiantesParaFacturar": 69,
+      "id": 1757548324627,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:52:04.627Z"
+    },
+    {
+      "quoteNumber": "COT-240010",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "Combo Promocional",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        31,
+        32,
+        33,
+        35
+      ],
+      "aporteInstitucion": 500,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "417691.83",
+          "subtotal": "417691.83",
+          "totalPrice": "492876.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "417691.83",
+        "itbis": "75184.53",
+        "grandTotal": "492876.36"
+      },
+      "precioFinalPorEstudiante": "7150.00",
+      "estudiantesParaFacturar": 69,
+      "id": 1757548680811,
+      "status": "pendiente",
+      "createdAt": "2025-09-10T23:58:00.811Z"
+    },
+    {
+      "quoteNumber": "COT-240011",
+      "clientName": "Colegio San Martin ",
+      "clientId": 1757451096828,
+      "eventName": "PRueba 11",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 76,
+      "productIds": [
+        31,
+        32,
+        33,
+        40
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 76 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "781380.58",
+          "subtotal": "781380.58",
+          "totalPrice": "922029.09"
+        }
+      ],
+      "totals": {
+        "subtotal": "781380.58",
+        "itbis": "140648.51",
+        "grandTotal": "922029.09"
+      },
+      "precioFinalPorEstudiante": "13600.00",
+      "estudiantesParaFacturar": 68,
+      "id": 1757548879564,
+      "status": "aprobada",
+      "createdAt": "2025-09-11T00:01:19.564Z"
+    },
+    {
+      "quoteNumber": "COT-240012",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Combo y Graduacion",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 75,
+      "productIds": [
+        3,
+        8,
+        16,
+        56
+      ],
+      "aporteInstitucion": 1000,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 75 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "429352.85",
+          "subtotal": "429352.85",
+          "totalPrice": "506636.36"
+        }
+      ],
+      "totals": {
+        "subtotal": "429352.85",
+        "itbis": "77283.51",
+        "grandTotal": "506636.36"
+      },
+      "precioFinalPorEstudiante": "7600.00",
+      "estudiantesParaFacturar": 67,
+      "id": 1757596638604,
+      "status": "rechazada",
+      "createdAt": "2025-09-11T13:17:18.604Z",
+      "rejectionReason": "Cambio de costo en polos"
+    },
+    {
+      "quoteNumber": "COT-240013",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Combo y Lanzamiento",
+      "advisorName": "Griselda Paniaga",
+      "studentCount": 70,
+      "productIds": [
+        3,
+        8,
+        16,
+        56
+      ],
+      "aporteInstitucion": 1000,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 70 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "408690.30",
+          "subtotal": "408690.30",
+          "totalPrice": "482254.55"
+        }
+      ],
+      "totals": {
+        "subtotal": "408690.30",
+        "itbis": "73564.25",
+        "grandTotal": "482254.55"
+      },
+      "precioFinalPorEstudiante": "7700.00",
+      "estudiantesParaFacturar": 63,
+      "id": 1757597274697,
+      "status": "archivada",
+      "createdAt": "2025-09-11T13:27:54.697Z"
+    },
+    {
+      "quoteNumber": "COT-240014",
+      "clientName": "Instituto Tecnico Fabio Amable Mota",
+      "clientId": 1757597812237,
+      "eventName": "Combo y Lanzamiento",
+      "advisorName": "Leudis de los Santos",
+      "studentCount": 246,
+      "productIds": [
+        4,
+        12,
+        16,
+        19,
+        57
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 246 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "1358635.59",
+          "subtotal": "1358635.59",
+          "totalPrice": "1603190.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "1358635.59",
+        "itbis": "244554.41",
+        "grandTotal": "1603190.00"
+      },
+      "precioFinalPorEstudiante": "7300.00",
+      "estudiantesParaFacturar": 221,
+      "id": 1757597932573,
+      "status": "archivada",
+      "createdAt": "2025-09-11T13:38:52.573Z"
+    },
+    {
+      "quoteNumber": "COT-240015",
+      "clientName": "Colegio Caridad",
+      "clientId": 1757596383756,
+      "eventName": "Propiesta de Investdur",
+      "advisorName": "Genesis Suriel",
+      "studentCount": 77,
+      "productIds": [
+        3
+      ],
+      "aporteInstitucion": 0,
+      "estudiantesCortesia": 0,
+      "items": [
+        {
+          "description": "Servicios de graduación para 77 estudiantes.",
+          "quantity": 1,
+          "unitPrice": "59322.03",
+          "subtotal": "59322.03",
+          "totalPrice": "70000.00"
+        }
+      ],
+      "totals": {
+        "subtotal": "59322.03",
+        "itbis": "10677.97",
+        "grandTotal": "70000.00"
+      },
+      "precioFinalPorEstudiante": "1000.00",
+      "estudiantesParaFacturar": 69,
+      "facilidadesAplicadas": [
+        "7 polo(s) extra(s) de cortesía."
+      ],
+      "id": 1757605285748,
+      "status": "pendiente",
+      "createdAt": "2025-09-11T15:41:25.748Z"
+    }
+  ]
+}

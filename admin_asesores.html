@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Asesores - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Asesores</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Añadir Asesor</h2>
+                <form id="add-advisor-form" class="form-group">
+                    <label for="new-advisor-name">Nombre del Asesor:</label>
+                    <input type="text" id="new-advisor-name" name="name" required placeholder="Escribe el nombre completo">
+                    <button type="submit" class="btn">Añadir Asesor</button>
+                </form>
+                <hr>
+                <h3>Asesores Actuales</h3>
+                <ul id="advisor-list" class="resource-list"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-advisor-form');
+            const input = document.getElementById('new-advisor-name');
+            const list = document.getElementById('advisor-list');
+            const API_URL = '/api/advisors';
+            const resourceName = 'asesores';
+            const entityDisplayName = 'Asesor';
+
+            const fetchAndDisplayItems = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error(`Error al obtener ${resourceName}.`);
+                    const items = await response.json();
+                    list.innerHTML = '';
+                    if (items.length === 0) {
+                        list.innerHTML = `<li>No hay ${resourceName} registrados.</li>`;
+                        return;
+                    }
+                    items.forEach(item => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = item.name;
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Eliminar';
+                        deleteButton.classList.add('btn-delete');
+                        deleteButton.addEventListener('click', () => deleteItem(item.id));
+                        listItem.appendChild(deleteButton);
+                        list.appendChild(listItem);
+                    });
+                } catch (error) {
+                    console.error(error);
+                    list.innerHTML = `<li>Error al cargar ${resourceName}.</li>`;
+                }
+            };
+
+            const addItem = async (name) => {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name }),
+                    });
+                    if (!response.ok) throw new Error(`Error al añadir ${entityDisplayName}.`);
+                    input.value = '';
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert(`No se pudo añadir el ${entityDisplayName}.`);
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm(`¿Estás seguro de que quieres eliminar este ${entityDisplayName.toLowerCase()}?`)) return;
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error(`Error al eliminar ${entityDisplayName}.`);
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert(`No se pudo eliminar el ${entityDisplayName}.`);
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const name = input.value.trim();
+                if (name) addItem(name);
+            });
+
+            fetchAndDisplayItems();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Usuarios</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Crear Nuevo Usuario</h2>
+                <form id="create-user-form">
+                    <div class="form-group">
+                        <label for="new-user-nombre">Nombre Completo:</label>
+                        <input type="text" id="new-user-nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-username">Nombre de Usuario:</label>
+                        <input type="text" id="new-user-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-password">Contraseña Temporal:</label>
+                        <input type="password" id="new-user-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-user-role">Rol:</label>
+                        <select id="new-user-role" required>
+                            <option value="">Seleccione un rol...</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Coordinador">Coordinador</option>
+                            <option value="Asesor">Asesor</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Crear Usuario</button>
+                </form>
+                <hr>
+                <h3>Usuarios Actuales</h3>
+                <div id="users-table-container">
+                    </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="edit-role-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" id="modal-close-btn">&times;</span>
+        <h2>Editar Rol de Usuario</h2>
+        <p>Usuario: <strong id="modal-user-name"></strong></p>
+        <form id="edit-role-form">
+          <input type="hidden" id="modal-user-id">
+          <label for="modal-user-role">Nuevo Rol:</label>
+          <select id="modal-user-role" name="role" required>
+            <option value="Administrador">Administrador</option>
+            <option value="Coordinador">Coordinador</option>
+            <option value="Asesor">Asesor</option>
+          </select>
+          <button type="submit" class="btn">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="/admin_usuarios.js"></script>
+
+</body>
+</html>

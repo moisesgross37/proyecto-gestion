@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprobación de Cotizaciones</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Panel de Aprobación de Cotizaciones</h1>
+            <p>Revisa, aprueba o rechaza las cotizaciones pendientes.</p>
+            <a href="/asesores-menu.html" class="back-button">&larr; Volver al Menú de Asesor</a>
+        </header>
+
+        <main>
+            <!-- Tabla de Pendientes -->
+            <h2>Cotizaciones Pendientes de Descarga</h2>
+            <table class="centers-table">
+                <thead>
+                    <tr>
+                        <th>No. Cotización</th>
+                        <th>Fecha de Solicitud</th>
+                        <th>Cliente</th>
+                        <th>Asesor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="pending-quotes-table-body">
+                    <!-- Las cotizaciones pendientes se cargarán aquí -->
+                </tbody>
+            </table>
+
+            <hr style="margin: 40px 0;">
+
+            <!-- Tabla de Finalizadas -->
+            <h2>Historial de Cotizaciones Finalizadas</h2>
+            <table class="centers-table">
+                <thead>
+                    <tr>
+                        <th># Cotización</th>
+                        <th>Cliente</th>
+                        <th>Evento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="finalized-quotes-table-body">
+                    <!-- Las cotizaciones aprobadas y rechazadas se cargarán aquí -->
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <!-- Ventana Modal para Ver Detalle y Acciones -->
+    <div id="quote-details-modal" class="modal">
+        <div class="modal-content-large">
+            <span class="close-button">&times;</span>
+            <h2>Detalle de la Cotización</h2>
+            <div id="quote-details-content"></div>
+            <div id="quote-actions" class="form-group">
+                <button id="approve-button" class="btn">Aprobar</button>
+                <button id="reject-button" class="btn btn-delete">Rechazar</button>
+                <button id="modify-button" class="btn btn-edit">Modificar</button> 
+            </div>
+        </div>
+    </div>
+
+    <script src="aprobacion.js"></script>
+</body>
+</html>

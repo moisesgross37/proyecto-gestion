@@ -1,0 +1,90 @@
+RENGLON,SUB RENGLON,PRODUCTO / SERVICIO,DETALLE / INCLUYE,COSTO BASE,TIPO DE PRECIO
+PRENDAS PROMOCIONALES,Thirt,Tshirt Driftit / OjoAngel con DTF,,275,por_estudiante
+PRENDAS PROMOCIONALES,Thirt,Thisrt Sublimado,,307,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polos Sublimados,,500,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polos Sublimados con Bordados,,610,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polos Algodon Sublimado,,710,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polos Algodon Combinando,,850,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polo para Maestros o Directivos,,610,por_estudiante
+PRENDAS PROMOCIONALES,Hoodies,Hoodies Sublimado,,672,por_estudiante
+PRENDAS PROMOCIONALES,Hoodies,Hoodies Tela Mono,,902,por_estudiante
+PRENDAS PROMOCIONALES,Hoodies,Hoodies Combinado,,902,por_estudiante
+PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Sublimado,,780,por_estudiante
+PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Tela Mono,,1044,por_estudiante
+PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Combinado,,1044,por_estudiante
+PRENDAS PROMOCIONALES,Pantalones,Pantalones Deportivos,,598,por_estudiante
+PRENDAS PROMOCIONALES,Pantalones,Pantalones Confeccionados,,923,por_estudiante
+PRENDAS PROMOCIONALES,Gorras,Gorras Estandar,,210,por_estudiante
+PRENDAS PROMOCIONALES,Gorras,Gorras Premium,,360,por_estudiante
+PRENDAS PROMOCIONALES,Toallitas,Toallitas Bordadas,,160,por_estudiante
+PRENDAS PROMOCIONALES,Termos,Termos Sublimados,,220,por_estudiante
+PRENDAS PROMOCIONALES,Llaveros,Llaveros Sublimados,,50,por_estudiante
+PRENDAS PROMOCIONALES,Llaveros,Llaveros Fotos,,50,por_estudiante
+PRENDAS PROMOCIONALES,Botones,Botones Promocional,,50,por_estudiante
+AMENIDADES EXTRAS EN COMBOS,Llaveros,Llaveros Sublimables,,50,por_estudiante
+AMENIDADES EXTRAS EN COMBOS,Llaveros,LLaveros porta con fotos,,50,por_estudiante
+AMENIDADES EXTRAS EN COMBOS,Botones,Botones Promocional,,50,por_estudiante
+AMENIDADES EXTRAS EN COMBOS,TERmos,Termos sublimados,,220,por_estudiante
+AMENIDADES EXTRAS EN COMBOS,Toallitas,Toallitas Bordadas,,160,por_estudiante
+GRATUIDADES PARA COMBOS,Botones,Botones promocionales,,50,por_estudiante
+GRATUIDADES PARA COMBOS,LLaveros,Llaveros Sublimables,,50,por_estudiante
+GRATUIDADES PARA COMBOS,Termos,Termos Sublimados,,220,por_estudiante
+INVESTIDURA,Sesion de fotos en Estudio o en Exterior,Sesion de fotos en Estudio o en Exterior,,580,escalonado
+INVESTIDURA,Sesion de fotos de Pre Graduacion,Sesion de fotos de Pre Graduacion,,930,escalonado
+INVESTIDURA,Realizacion del Evento,Realizacion del Evento,,2600,escalonado
+SALONES,Epic,Epic,,1400,total_grupo
+SALONES,Coopnama,Coopnama,,1400,total_grupo
+SALONES,Salon Aida Porta Latin,Salon Aida Porta Latin,,,total_grupo
+SALONES,Auditorio Biblioteca Nacional,Auditorio Biblioteca Nacional,,,total_grupo
+SALONES,Auditorio La Fama,Auditorio La Fama,,,total_grupo
+SALONES,Auditorio Casa San Pablo,Auditorio Casa San Pablo,,,total_grupo
+SALONES,Salon Sambil,Salon Sambil,,,total_grupo
+SALONES,Hotel Catalonia Ibizza 2do Nivel,Hotel Catalonia Ibizza 2do Nivel,,,total_grupo
+SALONES,Salon Restauracion MIDE,Salon Restauracion MIDE,,,total_grupo
+SALONES,Salon Independencia MIDE,Salon Independencia MIDE,,,total_grupo
+AMENIDADES EXTRAS EN INVESTIDURA,Stand Personalizado,Stand Personalizado,,,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,Plataforma 360,Plataforma 360,,,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,Esclavina Sublimada,Esclavina Sublimada,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Esclavina Bordada,Esclavina Bordada,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Porta Diploma Portada Dura Personalizado,Porta Diploma Portada Dura Personalizado,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Porta Diploma Portada Blanda Personalizado,Porta Diploma Portada Blanda Personalizado,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Picadera Graduando + Padrino,Picadera Graduando + Padrino,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Picadera Graduando + Invitado,Picadera Graduando + Invitado,,,por_estudiante
+AMENIDADES EXTRAS EN INVESTIDURA,Mesa de Dulces,Mesa de Dulces,,,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,After Partty,After Partty,,,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,Solo Sesion en Exterior o de Blanco,Solo Sesion en Exterior o de Blanco,,,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,Solo Sesion de Pregraduacion,Solo Sesion de Pregraduacion,,,escalonado
+LANZAMIENTOS,LANZAMIENTOS,LANZAMIENTOS,"Incluye: Tarima, Techo, Cuadro de Truss con Banner de fondo Personalizado, Stand para fotos con banner de Fondo Personalizado, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Luces para Ambientacion, Confetti",,escalonado
+LANZAMIENTOS,LANZAMIENTO TEMATICO,LANZAMIENTO TEMATICO,"Incluye: Decoración Temática , Fondos para Decoracion (1), Estructuras para Decoracion (1), Elementos para Decoración, Luces para Ambientacion, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Confetti",,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Fondo Personalizado ,Fondo Personalizado ,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Cuadro en Truss,Cuadro en Truss,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Banner persnalizado,Banner persnalizado,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Decoracion a Determinar,Decoracion a Determinar,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Tarima,Tarima,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Techo,Techo,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Standar,Hora Loca Standar,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Primium,Hora Loca Primium,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Show de Motores (3),Show de Motores (3),,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carros de Exhibicion (2),Carros de Exhibicion (2),,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Filmaker y Resumen de Video,Filmaker y Resumen de Video,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carpa Maestro Mediana,Carpa Maestro Mediana,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carpa Invitados Grandes,Carpa Invitados Grandes,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Sonido Full (artista y grandes presentaciones),Sonido Full (artista y grandes presentaciones),,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Drone,Drone,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Plataforma 360,Plataforma 360,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Fuegos Artificiales,Fuegos Artificiales,,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Fondos para Decoracion (1),Fondos para Decoracion (1),,,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,"Estructuras para Decoracion (1),","Estructuras para Decoracion (1),",,,escalonado
+Show de Motores (3),,5000,,,
+Carros de Exhibicion (2),,5000,,,
+Filmaker y Resumen de Video,,5000,,,
+Carpa Maestro Mediana,,5000,,,
+Carpa Invitados Grandes,,5000,,,
+Sonido Full (artista y grandes presentaciones),,5000,,,
+Drone,,5000,,,
+Plataforma 360,,5000,,,
+Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),,5000,,,
+Fuegos Artificiales,,5000,,,
+Fondos para Decoracion (1),,5000,,,
+"Estructuras para Decoracion (1),",,5000,,,

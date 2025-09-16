@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Reglas de Gratuidad - Admin</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Reglas de Gratuidad</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Añadir Regla de Gratuidad</h2>
+                <form id="add-gratuity-rule-form" class="form-group">
+                    <label for="gratuity-rule-min-qty">Cantidad Mínima de Estudiantes:</label>
+                    <input type="number" id="gratuity-rule-min-qty" name="min_quantity" required placeholder="1">
+                    <label for="gratuity-rule-max-qty">Cantidad Máxima de Estudiantes:</label>
+                    <input type="number" id="gratuity-rule-max-qty" name="max_quantity" required placeholder="50">
+                    <label for="gratuity-rule-description">Descripción de la Gratuidad:</label>
+                    <input type="text" id="gratuity-rule-description" name="description" required placeholder="Ej: 1 Polo gratis por cada 10 estudiantes">
+                    <button type="submit" class="btn">Añadir Regla</button>
+                </form>
+                <hr>
+                <h3>Reglas de Gratuidad Actuales</h3>
+                <ul id="gratuity-rule-list" class="resource-list"></ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('add-gratuity-rule-form');
+            const list = document.getElementById('gratuity-rule-list');
+            const API_URL = '/api/gratuityRules';
+
+            const fetchAndDisplayItems = async () => {
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error('Error al obtener reglas de gratuidad.');
+                    const items = await response.json();
+                    list.innerHTML = '';
+                    if (items.length === 0) {
+                        list.innerHTML = `<li>No hay reglas de gratuidad registradas.</li>`;
+                        return;
+                    }
+                    items.forEach(item => {
+                        const listItem = document.createElement('li');
+                        const itemText = `De ${item.min_quantity} a ${item.max_quantity} estudiantes: ${item.description}`;
+                        listItem.innerHTML = itemText;
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Eliminar';
+                        deleteButton.classList.add('btn-delete');
+                        deleteButton.addEventListener('click', () => deleteItem(item.id));
+                        listItem.appendChild(deleteButton);
+                        list.appendChild(listItem);
+                    });
+                } catch (error) {
+                    console.error(error);
+                    list.innerHTML = `<li>Error al cargar las reglas.</li>`;
+                }
+            };
+
+            const addItem = async (data) => {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('Error al añadir la regla.');
+                    form.reset();
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo añadir la regla.');
+                }
+            };
+
+            const deleteItem = async (id) => {
+                if (!confirm('¿Estás seguro de que quieres eliminar esta regla?')) return;
+                try {
+                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Error al eliminar la regla.');
+                    await fetchAndDisplayItems();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo eliminar la regla.');
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                addItem(data);
+            });
+
+            fetchAndDisplayItems();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Be Gestion</title>
+    <link rel="stylesheet" href="estilos.css"> 
+</head>
+<body>
+    <div class="container">
+        <h1>Be Eventos SRL / GESTIÓN</h1>
+        <form id="login-form">
+            <div>
+                <label for="username">Nombre de Usuario</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+        <p id="error-message" style="color: red;"></p>
+    </div>
+
+    <script src="/main.js"></script> 
+</body>
+</html>

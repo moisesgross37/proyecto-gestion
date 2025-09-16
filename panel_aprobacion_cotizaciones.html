@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Aprobación de Cotizaciones</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 2em; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #444; }
+        table { width: 100%; border-collapse: collapse; margin-top: 2em; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .actions button, .actions .view-btn { margin-right: 5px; padding: 8px 12px; cursor: pointer; text-decoration: none; color: white; border: none; border-radius: 4px; font-size: 14px; }
+        .approve-btn { background-color: #28a745; }
+        .reject-btn { background-color: #dc3545; }
+        .view-btn { background-color: #007bff; display: inline-block; }
+        .back-link { display: block; text-align: center; margin-top: 1.5em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cotizaciones Pendientes de Aprobación</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Asesor</th>
+                    <th>Fecha de Creado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="pending-quotes-tbody">
+                </tbody>
+        </table>
+        <a href="/index.html" class="back-link">Volver al Menú Principal</a>
+    </div>
+
+    <script src="/panel_aprobacion_cotizaciones.js"></script>
+</body>
+</html>
