@@ -1,5 +1,19 @@
 {
+  "name": "proyecto-gestion",
+  "version": "1.0.0",
+  "description": "Aplicacion para registrar visitas de asesores a clientes.",
+  "main": "server_v12.js",
+  "scripts": {
+    "start": "node server_v12.js"
+  },
   "dependencies": {
-    "cors": "^2.8.5"
+    "bcrypt": "^5.1.1",
+    "connect-pg-simple": "^9.0.1",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.12.0"
   }
 }
