@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v17.3 - Final Fixes) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v17.4 - API de Asesores) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -105,12 +105,8 @@ const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE MODIFICADO) =====
-// ===================================================================================
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
-        // Se mejora la consulta para ignorar mayúsculas/minúsculas y espacios extra
         const query = `
             SELECT DISTINCT c.id, c.name 
             FROM centers c
@@ -125,10 +121,22 @@ app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
     }
 });
+
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE AÑADIDO) =====
+// ===================================================================================
+app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT name FROM advisors ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener lista de asesores:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar asesores.' });
+    }
+});
 // ===================================================================================
 // ===== FIN DE LA MODIFICACIÓN =====
 // ===================================================================================
-
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -143,6 +151,9 @@ app.post('/api/login', async (req, res) => {
         res.status(200).json({ message: 'Login exitoso', redirectTo: '/index.html', user: userResponse });
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
+
+// ... (El resto de tu código continúa exactamente igual desde aquí)
+
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) { return res.status(500).json({ message: 'No se pudo cerrar la sesión.' }); }
@@ -170,11 +181,9 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// MODIFICACIÓN: Lógica mejorada para crear/actualizar centros al registrar visita
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber } = req.body;
     
-    // Validar que los campos obligatorios no estén vacíos
     if (!centerName || !centerAddress) {
         return res.status(400).json({ message: 'El nombre del centro y la dirección son obligatorios.' });
     }
@@ -183,17 +192,14 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     try {
         await client.query('BEGIN');
         
-        // Busca un centro por NOMBRE y DIRECCIÓN para identificarlo unívocamente
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1 AND address = $2', [centerName, centerAddress]);
         
         if (centerResult.rows.length === 0) {
-            // Si no existe, lo crea con toda la información nueva
             await client.query(
                 'INSERT INTO centers (name, address, sector, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5)',
                 [centerName, centerAddress, centerSector || '', contactName || '', contactNumber || '']
             );
         } else {
-            // Si ya existe, actualiza su información de contacto (si se proporcionó)
             const centerId = centerResult.rows[0].id;
             if (contactName || contactNumber) {
                  await client.query(
@@ -203,7 +209,6 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             }
         }
 
-        // Inserta el registro de la visita
         await client.query(
             'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
@@ -214,7 +219,6 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error("Error al registrar visita:", err);
-        // Error específico para duplicados
         if (err.code === '23505') {
             return res.status(409).json({ message: 'Ya existe un centro con este nombre y dirección.' });
         }
@@ -226,7 +230,6 @@ app.post('/api/visits', requireLogin, async (req, res) => {
 
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
-// MODIFICACIÓN: La búsqueda ahora devuelve todos los datos del centro para el autocompletado
 app.get('/api/centers/search', requireLogin, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
     try {
@@ -326,7 +329,6 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
     const userName = req.session.user.nombre;
 
     try {
-        // Se define la consulta base con los nombres de columna corregidos usando AS
         const baseQuery = `
             SELECT 
                 id, 
