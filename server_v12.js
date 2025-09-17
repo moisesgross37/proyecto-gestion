@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v17.2 - Fix Nombres de Columnas) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v17.3 - Final Fixes) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -47,7 +47,6 @@ const initializeDatabase = async () => {
             CREATE TABLE IF NOT EXISTS comments ( id SERIAL PRIMARY KEY, text TEXT NOT NULL );
             CREATE TABLE IF NOT EXISTS zones ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
             
-            -- MODIFICACIÓN: Se añaden campos de dirección y una restricción ÚNICA
             CREATE TABLE IF NOT EXISTS centers (
                 id SERIAL PRIMARY KEY,
                 code VARCHAR(50),
@@ -56,7 +55,7 @@ const initializeDatabase = async () => {
                 sector TEXT,
                 contactname VARCHAR(255),
                 contactnumber VARCHAR(255),
-                UNIQUE(name, address) -- Evita duplicados exactos de nombre y dirección
+                UNIQUE(name, address)
             );
 
             CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
@@ -106,14 +105,17 @@ const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
 
-// --- INICIO: NUEVA RUTA DE API PARA PROGRAMAS EXTERNOS ---
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE MODIFICADO) =====
+// ===================================================================================
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
+        // Se mejora la consulta para ignorar mayúsculas/minúsculas y espacios extra
         const query = `
             SELECT DISTINCT c.id, c.name 
             FROM centers c
             JOIN visits v ON c.name = v.centername
-            WHERE v.commenttext = 'FORMALIZAR ACUERDO'
+            WHERE UPPER(TRIM(v.commenttext)) = 'FORMALIZAR ACUERDO'
             ORDER BY c.name ASC;
         `;
         const result = await pool.query(query);
@@ -123,7 +125,10 @@ app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
     }
 });
-// --- FIN: NUEVA RUTA DE API ---
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN =====
+// ===================================================================================
+
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -316,9 +321,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     } 
 });
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN =====
-// ===================================================================================
 app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const userRole = req.session.user.rol;
     const userName = req.session.user.nombre;
@@ -355,9 +357,6 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-// ===================================================================================
-// ===== FIN DE LA MODIFICACIÓN =====
-// ===================================================================================
 
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
