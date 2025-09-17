@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE ASESORES Y VENTAS (v17.1 - CORS Habilitado) ==============
+// ============== SERVIDOR DE ASESORES Y VENTAS (v17.2 - Fix Nombres de Columnas) ==============
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -8,14 +8,14 @@ const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
 const { Pool } = require('pg');
 const pgSession = require('connect-pg-simple')(session);
-const cors = require('cors'); // <--- 1. LÍNEA AÑADIDA
+const cors = require('cors');
 
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
 
 const app = express();
 app.use(express.json());
-app.use(cors()); // <--- 2. LÍNEA AÑADIDA (Permite las conexiones externas)
+app.use(cors());
 
 const PORT = process.env.PORT || 3000;
 
@@ -315,21 +315,35 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
+
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN =====
+// ===================================================================================
 app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
-    // Primero, verificamos el rol del usuario que hace la petición
     const userRole = req.session.user.rol;
-    const userName = req.session.user.nombre; // Usamos el nombre del asesor para filtrar
+    const userName = req.session.user.nombre;
 
     try {
+        // Se define la consulta base con los nombres de columna corregidos usando AS
+        const baseQuery = `
+            SELECT 
+                id, 
+                quotenumber AS "quoteNumber", 
+                clientname AS "clientName", 
+                advisorname AS "advisorName", 
+                status, 
+                rejectionreason AS "rejectionReason", 
+                createdat AS "createdAt" 
+            FROM quotes 
+        `;
+
         let query;
         let queryParams = [];
 
         if (userRole === 'Administrador') {
-            // Si es Admin, la consulta trae todas las cotizaciones
-            query = 'SELECT * FROM quotes ORDER BY createdat DESC';
+            query = `${baseQuery} ORDER BY createdat DESC`;
         } else {
-            // Si es Asesor, la consulta SOLO trae las cotizaciones con su nombre
-            query = 'SELECT * FROM quotes WHERE advisorname = $1 ORDER BY createdat DESC';
+            query = `${baseQuery} WHERE advisorname = $1 ORDER BY createdat DESC`;
             queryParams.push(userName);
         }
 
@@ -341,6 +355,11 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN =====
+// ===================================================================================
+
+
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
