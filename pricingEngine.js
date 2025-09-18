@@ -23,13 +23,13 @@ const eventCostTiers = [
 ];
 
 const launchTiers = [
-    { min: 51, max: 75, cost: 750 },
-    { min: 76, max: 100, cost: 1000 },
-    { min: 101, max: 125, cost: 1250 },
-    { min: 126, max: 150, cost: 1500 },
-    { min: 151, max: 175, cost: 1500 },
-    { min: 176, max: 250, cost: 1750 },
-    { min: 251, max: Infinity, cost: 2000 }
+    { min: 51, max: 75, cost: 450 },
+    { min: 76, max: 100, cost: 600 },
+    { min: 101, max: 125, cost: 750 },
+    { min: 126, max: 150, cost: 900 },
+    { min: 151, max: 175, cost: 900 },
+    { min: 176, max: 250, cost: 1050 },
+    { min: 251, max: Infinity, cost: 1200 }
 ];
 
 // --- FUNCIONES AUXILIARES DE CÁLCULO ---
