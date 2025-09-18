@@ -1,6 +1,7 @@
 RENGLON,SUB RENGLON,PRODUCTO / SERVICIO,DETALLE / INCLUYE,COSTO BASE,TIPO DE PRECIO
 PRENDAS PROMOCIONALES,Thirt,Tshirt Driftit / OjoAngel con DTF,,275,por_estudiante
 PRENDAS PROMOCIONALES,Thirt,Thisrt Sublimado,,307,por_estudiante
+PRENDAS PROMOCIONALES,Thirt,Thisrt Prepromo o Depor,,225,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Sublimados,,500,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Sublimados con Bordados,,610,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Algodon Sublimado,,710,por_estudiante
@@ -12,8 +13,8 @@ PRENDAS PROMOCIONALES,Hoodies,Hoodies Combinado,,902,por_estudiante
 PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Sublimado,,780,por_estudiante
 PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Tela Mono,,1044,por_estudiante
 PRENDAS PROMOCIONALES,Varsity,Varsity - Chaqueta Combinado,,1044,por_estudiante
-PRENDAS PROMOCIONALES,Pantalones,Pantalones Deportivos,,598,por_estudiante
-PRENDAS PROMOCIONALES,Pantalones,Pantalones Confeccionados,,923,por_estudiante
+PRENDAS PROMOCIONALES,Pantalones,Pantalones Deportivos,,400,por_estudiante
+PRENDAS PROMOCIONALES,Pantalones,Pantalones Confeccionados,,600,por_estudiante
 PRENDAS PROMOCIONALES,Gorras,Gorras Estandar,,210,por_estudiante
 PRENDAS PROMOCIONALES,Gorras,Gorras Premium,,360,por_estudiante
 PRENDAS PROMOCIONALES,Toallitas,Toallitas Bordadas,,160,por_estudiante
