@@ -122,9 +122,6 @@ app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     }
 });
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE AÑADIDO) =====
-// ===================================================================================
 app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT name FROM advisors ORDER BY name ASC');
@@ -134,9 +131,6 @@ app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al consultar asesores.' });
     }
 });
-// ===================================================================================
-// ===== FIN DE LA MODIFICACIÓN =====
-// ===================================================================================
 
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
@@ -152,8 +146,6 @@ app.post('/api/login', async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 
-// ... (El resto de tu código continúa exactamente igual desde aquí)
-
 app.post('/api/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) { return res.status(500).json({ message: 'No se pudo cerrar la sesión.' }); }
@@ -161,7 +153,9 @@ app.post('/api/logout', (req, res) => {
         res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
     });
 });
+
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
     const { nombre, username, password, rol } = req.body;
     try {
@@ -174,6 +168,7 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
+
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
@@ -181,8 +176,12 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { cons
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
+// ==================================================================
+// ============== INICIO DE LA SECCIÓN MODIFICADA (VISITAS) ==============
+// ==================================================================
 app.post('/api/visits', requireLogin, async (req, res) => {
-    const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber } = req.body;
+    // Leemos el nuevo campo 'formalizedQuoteId' que viene del formulario
+    const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber, formalizedQuoteId } = req.body;
     
     if (!centerName || !centerAddress) {
         return res.status(400).json({ message: 'El nombre del centro y la dirección son obligatorios.' });
@@ -214,6 +213,15 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             [centerName, advisorName, visitDate, commentText]
         );
         
+        // --- NUEVA LÓGICA ---
+        // Si la visita es de formalización y se envió un ID de cotización, la actualizamos.
+        if (commentText === 'Formalizar Acuerdo' && formalizedQuoteId) {
+            await client.query(
+                "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND status = 'aprobada'",
+                [formalizedQuoteId]
+            );
+        }
+        
         await client.query('COMMIT');
         res.status(201).json({ message: "Visita registrada y centro de estudios gestionado correctamente." });
     } catch (err) {
@@ -227,6 +235,9 @@ app.post('/api/visits', requireLogin, async (req, res) => {
         client.release();
     }
 });
+// ==================================================================
+// ============== FIN DE LA SECCIÓN MODIFICADA (VISITAS) ==============
+// ==================================================================
 
 app.get('/api/centers', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM centers ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
@@ -360,6 +371,28 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
     }
 });
 
+// ==================================================================
+// ============== INICIO DE LA NUEVA RUTA (COTIZACIONES) ==============
+// ==================================================================
+app.get('/api/quotes/approved', requireLogin, async (req, res) => {
+    const { clientName } = req.query;
+    if (!clientName) {
+        return res.status(400).json({ message: 'El nombre del cliente es requerido.' });
+    }
+    try {
+        const result = await pool.query(
+            "SELECT id, quotenumber, studentcount, preciofinalporestudiante FROM quotes WHERE clientname = $1 AND status = 'aprobada' ORDER BY createdat DESC",
+            [clientName]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener cotizaciones aprobadas:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+// ==================================================================
+// ============== FIN DE LA NUEVA RUTA (COTIZACIONES) ==============
+// ==================================================================
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
