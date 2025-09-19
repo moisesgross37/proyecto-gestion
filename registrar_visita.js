@@ -9,32 +9,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const commentsSelect = document.getElementById('comments');
     const visitDateInput = document.getElementById('visitDate');
     const zoneSelect = document.getElementById('zone');
-    // --- NUEVOS ELEMENTOS ---
     const centerAddressInput = document.getElementById('centerAddress');
     const centerSectorInput = document.getElementById('centerSector');
+    
+    // --- NUEVOS ELEMENTOS PARA FORMALIZACIÓN ---
+    const formalizeQuoteSection = document.getElementById('formalize-quote-section');
+    const quoteListContainer = document.getElementById('quote-list-container');
 
-    // Variable para saber si se ha seleccionado un centro de la lista
     let isExistingCenterSelected = false;
 
     // --- Funciones Auxiliares ---
-
-    // Establece la fecha actual en el input de fecha
     const setCurrentDate = () => {
         const today = new Date();
         visitDateInput.value = today.toISOString().split('T')[0];
     };
 
-    // Habilita o deshabilita los campos de dirección
     const setAddressFieldsReadOnly = (isReadOnly) => {
         centerAddressInput.readOnly = isReadOnly;
         centerSectorInput.readOnly = isReadOnly;
-        // Estilo visual para indicar que un campo está bloqueado
-        const lockedColor = '#e9ecef'; // Un gris claro
+        const lockedColor = '#e9ecef';
         centerAddressInput.style.backgroundColor = isReadOnly ? lockedColor : '';
         centerSectorInput.style.backgroundColor = isReadOnly ? lockedColor : '';
     };
     
-    // Resetea los campos del centro de estudios
     const resetCenterFields = () => {
         coordinatorNameInput.value = '';
         coordinatorContactInput.value = '';
@@ -44,14 +41,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         isExistingCenterSelected = false;
     };
 
-    // Carga los datos iniciales (asesores, zonas, comentarios)
     const loadInitialData = async () => {
         try {
             const response = await fetch('/api/data');
             if (!response.ok) throw new Error('No se pudieron cargar los datos iniciales.');
             const data = await response.json();
 
-            // Cargar Asesores, Comentarios y Zonas
             data.advisors?.forEach(advisor => {
                 advisorSelect.add(new Option(advisor.name, advisor.name));
             });
@@ -67,42 +62,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // --- Lógica de Autocompletado ---
-
+    // --- Lógica de Autocompletado (sin cambios) ---
     centerNameInput.addEventListener('input', async () => {
         const searchTerm = centerNameInput.value;
-        
-        // Si el usuario borra o cambia el nombre, se resetean los campos
         if (isExistingCenterSelected) {
             resetCenterFields();
         }
-
         if (searchTerm.length < 2) {
             suggestionsContainer.style.display = 'none';
             return;
         }
-
         try {
             const response = await fetch(`/api/centers/search?q=${encodeURIComponent(searchTerm)}`);
             const centers = await response.json();
-
             suggestionsContainer.innerHTML = '';
             if (centers.length > 0) {
                 centers.forEach(center => {
                     const item = document.createElement('div');
-                    // MODIFICACIÓN: Mostrar nombre y dirección para diferenciar
                     item.innerHTML = `<strong>${center.name}</strong><div class="suggestion-address">${center.address}</div>`;
-                    
                     item.addEventListener('click', () => {
-                        // --- ¡LA MAGIA DEL AUTOCOMPLETADO! ---
-                        // Se rellena TODO con la info del centro seleccionado
                         centerNameInput.value = center.name;
                         centerAddressInput.value = center.address || '';
                         centerSectorInput.value = center.sector || '';
                         coordinatorNameInput.value = center.contactname || '';
                         coordinatorContactInput.value = center.contactnumber || '';
-                        
-                        // Se marcan los campos de dirección como solo lectura
                         setAddressFieldsReadOnly(true);
                         isExistingCenterSelected = true;
                         suggestionsContainer.style.display = 'none';
@@ -118,17 +101,79 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     
-    // Ocultar sugerencias si se hace clic fuera
     document.addEventListener('click', (e) => {
         if (!centerNameInput.contains(e.target)) {
             suggestionsContainer.style.display = 'none';
         }
     });
 
-    // --- Lógica de Envío del Formulario ---
+    // =======================================================
+    // ============== INICIO DE LA NUEVA LÓGICA DE FORMALIZACIÓN ==============
+    // =======================================================
+    const loadApprovedQuotes = async (clientName) => {
+        quoteListContainer.innerHTML = '<p>Buscando cotizaciones aprobadas...</p>';
+        try {
+            const response = await fetch(`/api/quotes/approved?clientName=${encodeURIComponent(clientName)}`);
+            const quotes = await response.json();
 
+            if (quotes.length === 0) {
+                quoteListContainer.innerHTML = '<p style="color: red;"><strong>No se encontraron cotizaciones aprobadas para este centro.</strong> No se puede formalizar el acuerdo.</p>';
+                return;
+            }
+
+            quoteListContainer.innerHTML = ''; // Limpiar el contenedor
+            quotes.forEach(quote => {
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'radio'; // Usamos radio button para que solo se pueda elegir una
+                checkbox.name = 'formalizedQuoteId';
+                checkbox.value = quote.id;
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(` #${quote.quotenumber} - ${quote.studentcount} estudiantes - $${quote.preciofinalporestudiante} p/est`));
+                quoteListContainer.appendChild(label);
+            });
+
+        } catch (error) {
+            console.error('Error al cargar cotizaciones:', error);
+            quoteListContainer.innerHTML = '<p style="color: red;">Error al cargar las cotizaciones.</p>';
+        }
+    };
+
+    commentsSelect.addEventListener('change', () => {
+        const selectedComment = commentsSelect.value;
+        const clientName = centerNameInput.value;
+
+        if (selectedComment === 'Formalizar Acuerdo') {
+            if (!clientName.trim()) {
+                alert('Por favor, primero ingrese o seleccione el nombre del centro educativo.');
+                commentsSelect.value = ''; // Resetear la selección
+                return;
+            }
+            formalizeQuoteSection.style.display = 'block';
+            loadApprovedQuotes(clientName);
+        } else {
+            formalizeQuoteSection.style.display = 'none';
+            quoteListContainer.innerHTML = '';
+        }
+    });
+    // =======================================================
+    // ============== FIN DE LA NUEVA LÓGICA DE FORMALIZACIÓN ==============
+    // =======================================================
+
+    // --- Lógica de Envío del Formulario (ACTUALIZADA) ---
     visitForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        
+        // --- NUEVA VALIDACIÓN ---
+        if (commentsSelect.value === 'Formalizar Acuerdo') {
+            const selectedQuote = document.querySelector('input[name="formalizedQuoteId"]:checked');
+            if (!selectedQuote) {
+                alert('Debe seleccionar una cotización para formalizar el acuerdo.');
+                return; // Detiene el envío del formulario
+            }
+        }
+
         const formData = new FormData(visitForm);
         const visitData = Object.fromEntries(formData.entries());
 
@@ -147,8 +192,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('¡Visita registrada con éxito!');
             visitForm.reset();
             setCurrentDate();
-            setAddressFieldsReadOnly(false); // Desbloquear campos al resetear
+            setAddressFieldsReadOnly(false);
             isExistingCenterSelected = false;
+            formalizeQuoteSection.style.display = 'none'; // Ocultar sección al resetear
+            quoteListContainer.innerHTML = '';
 
         } catch (error) {
             alert(`Error: ${error.message}`);
