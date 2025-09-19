@@ -444,7 +444,15 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
-        const backgroundImagePath = path.join(__dirname, 'membrete.jpg');
+
+        // ==================================================================
+        // ============== INICIO DE LA MODIFICACIÓN (RUTA MEMBRETE) ==============
+        // ==================================================================
+        const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
+        // ==================================================================
+        // ============== FIN DE LA MODIFICACIÓN (RUTA MEMBRETE) ==============
+        // ==================================================================
+        
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         }
