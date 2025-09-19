@@ -10,7 +10,6 @@
             border: 1px solid #ccc; border-top: none;
             max-height: 150px; overflow-y: auto;
             position: absolute; background-color: white;
-            /* Se ajusta el ancho al contenedor del formulario para que sea consistente */
             width: calc(100% - 2px); 
             box-sizing: border-box;
             z-index: 1000;
@@ -21,6 +20,22 @@
             font-size: 0.8em;
             color: #555;
             margin-top: 2px;
+        }
+        /* --- NUEVOS ESTILOS --- */
+        #formalize-quote-section {
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+        #quote-list-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+        #quote-list-container input {
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -75,6 +90,12 @@
                 <select id="comments" name="commentText" required>
                     <option value="">Selecciona un comentario...</option>
                 </select>
+            </div>
+
+            <div id="formalize-quote-section" style="display: none;">
+                <label for="quote-list-container"><strong>Seleccione la Cotización a Formalizar:</strong></label>
+                <div id="quote-list-container">
+                    </div>
             </div>
             <button type="submit" class="btn">Registrar Visita</button>
         </form>
