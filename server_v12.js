@@ -415,7 +415,11 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (req, res) => {
+
+// ==================================================================
+// ============== INICIO DE LA SECCIÓN MODIFICADA (PERMISOS) ==============
+// ==================================================================
+app.post('/api/quote-requests/:id/archive', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     try {
         await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1", [req.params.id]);
         res.status(200).json({ message: 'Cotización archivada con éxito' });
@@ -424,7 +428,11 @@ app.post('/api/quote-requests/:id/archive', requireLogin, requireAdmin, async (r
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-app.get('/api/quote-requests/:id/pdf', requireLogin, async (req, res) => {
+
+app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+// ==================================================================
+// ============== FIN DE LA SECCIÓN MODIFICADA (PERMISOS) ==============
+// ==================================================================
     try {
         const quoteId = req.params.id;
         const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
