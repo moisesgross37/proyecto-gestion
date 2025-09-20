@@ -34,6 +34,23 @@ const launchTiers = [
 
 // --- FUNCIONES AUXILIARES DE CÁLCULO ---
 
+const escalonadoCostIncreaseTiers = [
+    { min: 10, max: 25, increase: 0.00 },
+    { min: 26, max: 50, increase: 0.25 },
+    { min: 51, max: 75, increase: 0.35 },
+    { min: 76, max: 100, increase: 0.45 },
+    { min: 101, max: 125, increase: 0.55 },
+    { min: 126, max: 150, increase: 0.65 },
+    { min: 151, max: 175, increase: 0.75 },
+    { min: 176, max: 250, increase: 0.85 },
+    { min: 251, max: Infinity, increase: 0.95 }
+];
+
+function getEscalonadoIncrease(studentCount) {
+    const tier = escalonadoCostIncreaseTiers.find(t => studentCount >= t.min && studentCount <= t.max);
+    return tier ? tier.increase : 0;
+}
+
 function getEventCost(studentCount) {
     const tier = eventCostTiers.find(t => studentCount >= t.min && studentCount <= t.max);
     return tier ? tier.cost : 0;
@@ -107,7 +124,13 @@ function assembleQuote(quoteInput, db) {
         else if (tipoPrecio === 'por_estudiante') {
             costoTotalProyecto += costoBase * studentCount;
             isPerStudentQuote = true;
-        } else {
+        }
+        else if (tipoPrecio === 'escalonado') {
+            const increasePercentage = getEscalonadoIncrease(studentCount);
+            const increasedCost = costoBase * (1 + increasePercentage);
+            costoTotalProyecto += increasedCost;
+        }
+        else {
             costoTotalProyecto += costoBase;
         }
     });
