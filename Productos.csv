@@ -29,6 +29,28 @@ AMENIDADES EXTRAS EN COMBOS,Toallitas,Toallitas Bordadas,,88,por_estudiante
 GRATUIDADES PARA COMBOS,Botones Gratis,Botones promocionales Gratis,,27,por_estudiante
 GRATUIDADES PARA COMBOS,LLaveros Gratis,Llaveros Sublimables Gratis,,27,por_estudiante
 GRATUIDADES PARA COMBOS,Termos Gratis,Termos Sublimados Gratis,,72,por_estudiante
+LANZAMIENTOS,LANZAMIENTOS,LANZAMIENTOS,"Incluye: Tarima, Cuadro de Truss con Banner de fondo Personalizado, Stand para fotos con banner de Fondo Personalizado, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Luces para Ambientacion, Confetti",95000,total_grupo
+LANZAMIENTOS,LANZAMIENTO TEMATICO,LANZAMIENTO TEMATICO,"Incluye: Decoración Temática , Fondos para Decoracion (1), Estructuras para Decoracion (1), Elementos para Decoración, Luces para Ambientacion, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Filmaker, Confetti",160000,total_grupo
+AMENIDADES EXTRAS LANZAMIENTOS,Fondo Personalizado ,Fondo de decoracion Personalizado ,,20000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Cuadro en Truss,Cuadro en Truss,Incluye Banner personalizado,10000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Tarima,Tarima,16x16 - 16x20 - 20x20,20000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Techo,Techo,16x16 - 16x20 - 20x20,30000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Standar,Hora Loca Standar,,25000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Primium,Hora Loca Primium,,75000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Show de Motores (3),Show de Motores (3),,7500,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carros de Exhibicion (2),Carros de Exhibicion (2),,15000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Filmaker y Resumen de Video,Filmaker y Resumen de Video,,10000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carpa Maestro Mediana,Carpa Maestro Mediana,,5500,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Carpa Invitados Grandes,Carpa Invitados Grandes,,7000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Sonido Full (artista y grandes presentaciones),Sonido Full (artista y grandes presentaciones),,40000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Drone,Drone,,10000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Plataforma 360,Plataforma 360,,10000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),,30000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Fuegos Artificiales,Fuegos Artificiales,,3500,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Coreografo,Coreografo,,25000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Fotografo,Fotografo,,1000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Sonido,Sonido Basico,,15000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,DJ,DJ Basico,,8500,escalonado
 INVESTIDURA,Sesion de fotos en Estudio o en Exterior,Sesion de fotos en Estudio o en Exterior,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,2 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",580,por_estudiante
 INVESTIDURA,Sesion de fotos de Pre Graduacion,Sesion de fotos de Pre Graduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2,Fotografías cargadas a la web",930,por_estudiante
 INVESTIDURA,Realizacion del Evento,Realizacion del Evento,"Incluye:Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Placa a la máxima excelencia académica, Placa de reconocimiento a docente, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Video de vivencias de los estudiantes, Video TBT, Personal de protocolo y staff de ejecución, Anuario para la Dirección.",0,costo_por_rango
@@ -57,25 +79,3 @@ AMENIDADES EXTRAS EN INVESTIDURA,Mesa de Dulces,Mesa de Dulces,,15000,escalonado
 AMENIDADES EXTRAS EN INVESTIDURA,After Partty,After Partty,,75000,escalonado
 AMENIDADES EXTRAS EN INVESTIDURA,Sesion en Estudio o Exterior sin combo,Sesion en Estudio o Exterior sin combo,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,4 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",1000,por_estudiante
 AMENIDADES EXTRAS EN INVESTIDURA,Sesion de Pregraduacion sin combo,Solo Sesion de Pregraduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2, Fotografías cargadas a la web",1700,por_estudiante
-LANZAMIENTOS,LANZAMIENTOS,LANZAMIENTOS,"Incluye: Tarima, Cuadro de Truss con Banner de fondo Personalizado, Stand para fotos con banner de Fondo Personalizado, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Luces para Ambientacion, Confetti",95000,total_grupo
-LANZAMIENTOS,LANZAMIENTO TEMATICO,LANZAMIENTO TEMATICO,"Incluye: Decoración Temática , Fondos para Decoracion (1), Estructuras para Decoracion (1), Elementos para Decoración, Luces para Ambientacion, Sonido Standar (no para artista) y Tecnico, DJ // Animacion, Fotografo y Resumen de fotos, Filmaker, Confetti",160000,total_grupo
-AMENIDADES EXTRAS LANZAMIENTOS,Fondo Personalizado ,Fondo de decoracion Personalizado ,,20000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Cuadro en Truss,Cuadro en Truss,Incluye Banner personalizado,10000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Tarima,Tarima,16x16 - 16x20 - 20x20,20000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Techo,Techo,16x16 - 16x20 - 20x20,30000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Standar,Hora Loca Standar,,25000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Hora Loca Primium,Hora Loca Primium,,75000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Show de Motores (3),Show de Motores (3),,7500,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Carros de Exhibicion (2),Carros de Exhibicion (2),,15000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Filmaker y Resumen de Video,Filmaker y Resumen de Video,,10000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Carpa Maestro Mediana,Carpa Maestro Mediana,,5500,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Carpa Invitados Grandes,Carpa Invitados Grandes,,7000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Sonido Full (artista y grandes presentaciones),Sonido Full (artista y grandes presentaciones),,40000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Drone,Drone,,10000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Plataforma 360,Plataforma 360,,10000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),Show de Iluminacion y Efectos Especiales (Moviles y Luces Progrables),,30000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Fuegos Artificiales,Fuegos Artificiales,,3500,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Coreografo,Coreografo,,25000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Fotografo,Fotografo,,1000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,Sonido,Sonido Basico,,15000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,DJ,DJ Basico,,8500,escalonado
