@@ -499,7 +499,7 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         doc.font('Helvetica-Bold').fontSize(12).text('Comentarios y Condiciones:');
         doc.moveDown(0.5);
         const conditions = [
-            `Cálculos basados en un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
+            `Cálculo basado en ${quote.studentcount || 0} estudiantes y evaluable a un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
             'Condiciones de Pago a debatir.'
         ];
         doc.font('Helvetica').fontSize(10).list(conditions, {
