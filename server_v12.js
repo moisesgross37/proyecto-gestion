@@ -58,7 +58,7 @@ const initializeDatabase = async () => {
                 UNIQUE(name, address)
             );
 
-            CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
+            CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], aporte_institucion NUMERIC DEFAULT 0, status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
             CREATE TABLE IF NOT EXISTS payments ( id SERIAL PRIMARY KEY, quote_id INTEGER REFERENCES quotes(id), payment_date DATE NOT NULL, amount NUMERIC NOT NULL, students_covered INTEGER, comment TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
         `);
@@ -319,7 +319,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
+    const { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion } = quoteInput; 
     
     const { facilidadesAplicadas, items, totals } = calculationResult;
     const precios = calculationResult.calculatedPrices[0] || {};
@@ -327,7 +327,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const estudiantesParaFacturar = precios.estudiantesFacturables;
 
     try { 
-        await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
+        await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber, aporteInstitucion || 0] ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
     } catch (err) { 
         console.error('Error al guardar cotización:', err); 
@@ -502,6 +502,9 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
             `Cálculo basado en ${quote.studentcount || 0} estudiantes y evaluable a un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
             'Condiciones de Pago a debatir.'
         ];
+        if (quote.aporte_institucion && parseFloat(quote.aporte_institucion) > 0) {
+            conditions.push(`Codigoapi(${parseFloat(quote.aporte_institucion)})sql`);
+        }
         doc.font('Helvetica').fontSize(10).list(conditions, {
             width: contentWidth,
             lineGap: 2,
