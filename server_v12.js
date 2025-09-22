@@ -121,6 +121,12 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
+
+// Nueva ruta para obtener los datos del usuario actual en sesión
+app.get('/api/user-session', requireLogin, (req, res) => {
+    res.json(req.session.user);
+});
+
 // Nueva ruta para obtener los datos del usuario actual en sesión
 
 ('/api/user-session', requireLogin, (req, res) => {
@@ -619,6 +625,17 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
+// --- INICIO DEL CÓDIGO AÑADIDO ---
+// Regla de seguridad específica para el reporte de visitas, ANTES de la regla general.
+app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => {
+    const requestedPath = path.join(__dirname, req.path);
+    if (fs.existsSync(requestedPath)) {
+        res.sendFile(requestedPath);
+    } else {
+        res.status(404).send('Página no encontrada');
+    }
+});
+// --- FIN DEL CÓDIGO AÑADIDO ---
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
 app.listen(PORT, async () => {
