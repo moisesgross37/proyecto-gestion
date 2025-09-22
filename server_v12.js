@@ -656,11 +656,11 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         
         const pageMargin = 60;
         const contentWidth = doc.page.width - (pageMargin * 2);
-        let currentY = 160; // Posición inicial más abajo para el membrete
+        let currentY = 200; // Posición inicial más abajo para el membrete
 
         // 2. TÍTULO Y PARTES DEL ACUERDO
         doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', { align: 'center' });
-        doc.moveDown(2);
+        doc.moveDown(4);
         currentY = doc.y;
 
         doc.font('Helvetica').fontSize(10).text(`Este acuerdo se celebra el día ${new Date().toLocaleDateString('es-DO', { timeZone: 'UTC' })}, con el fin de establecer una colaboración profesional entre:`, {
