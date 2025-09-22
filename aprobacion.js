@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const finalizedQuotes = allQuotes.filter(q => q.status === 'archivada' || q.status === 'formalizada');
 
             renderActionableQuotesTable(actionableQuotes);
-            renderFinalizedQuotesTable(finalizedQuotes);
+            renderFinalizedQuotesTable(finalizedQuotes); // Llamamos a la nueva función actualizada
 
         } catch (error) {
             console.error(error);
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
                 `;
             } else if (quote.status === 'rechazada') {
-                 actionButtons = `
+                actionButtons = `
                     <button class="btn view-rejection-reason-btn" data-reason="${quote.rejectionReason || 'No se especificó un motivo.'}">Ver Motivo</button>
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
                 `;
@@ -57,7 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- SECCIÓN MODIFICADA ---
+    // ======================================================================
+    // ========= INICIO: SECCIÓN MODIFICADA PARA EL BOTÓN DE ACUERDO ========
+    // ======================================================================
     const renderFinalizedQuotesTable = (quotes) => {
         finalizedTableBody.innerHTML = '';
         if (quotes.length === 0) {
@@ -67,28 +69,35 @@ document.addEventListener('DOMContentLoaded', () => {
         quotes.forEach(quote => {
             const row = document.createElement('tr');
             
-            // Por defecto, todas tienen un botón para descargar el PDF.
-            let actionsHTML = `<a href="/api/quote-requests/${quote.id}/pdf" class="btn" target="_blank">Descargar PDF</a>`;
+            let actionsHTML = `<a href="/api/quote-requests/${quote.id}/pdf" class="btn" target="_blank">Ver Cotización</a>`;
 
-            // AÑADIMOS LA NUEVA REGLA: Si el estado NO es 'formalizada', agregamos el botón de eliminar.
-            if (quote.status !== 'formalizada') {
+            // === LA NUEVA LÓGICA ===
+            // Si la cotización está formalizada, mostramos el botón de "Imprimir Acuerdo"
+            if (quote.status === 'formalizada') {
+                actionsHTML += ` <a href="/api/agreements/${quote.id}/pdf" class="btn btn-primary" target="_blank">Imprimir Acuerdo</a>`;
+            } 
+            // Si está archivada (y por lo tanto no formalizada), mostramos el botón de eliminar
+            else if (quote.status === 'archivada') {
                 actionsHTML += ` <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
             }
 
-            // Mantenemos el nombre de la columna "Evento" como en tu imagen original
             const eventDate = quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A';
+            const statusClass = quote.status === 'formalizada' ? 'status-formalizada' : 'status-archivada';
+
 
             row.innerHTML = `
                 <td>${quote.quoteNumber || 'N/A'}</td>
                 <td>${quote.clientName || 'N/A'}</td>
                 <td>${eventDate}</td>
-                <td><strong>${quote.status}</strong></td>
+                <td><strong class="${statusClass}">${quote.status.toUpperCase()}</strong></td>
                 <td class="actions-cell">${actionsHTML}</td>
             `;
             finalizedTableBody.appendChild(row);
         });
     };
-    // --- FIN DE LA SECCIÓN MODIFICADA ---
+    // ======================================================================
+    // ============= FIN: SECCIÓN MODIFICADA PARA EL BOTÓN DE ACUERDO =======
+    // ======================================================================
 
     const handleArchive = async (quoteId) => {
         try {
