@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Error al cargar las cotizaciones.');
             const allQuotes = await response.json();
             
-            // Ahora la tabla superior muestra cotizaciones que requieren una acción (Aprobada o Rechazada)
+            // La tabla superior sigue mostrando las cotizaciones que requieren una acción inmediata
             const actionableQuotes = allQuotes.filter(q => q.status === 'aprobada' || q.status === 'rechazada');
-            // La tabla inferior muestra el historial final (Archivada o Formalizada)
+            // La tabla inferior muestra el historial
             const finalizedQuotes = allQuotes.filter(q => q.status === 'archivada' || q.status === 'formalizada');
 
             renderActionableQuotesTable(actionableQuotes);
@@ -32,17 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         quotes.forEach(quote => {
             const row = document.createElement('tr');
-
             let actionButtons = '';
-            // Si está aprobada, se puede descargar/archivar o eliminar
+
             if (quote.status === 'aprobada') {
                 actionButtons = `
                     <button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button>
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
                 `;
-            } 
-            // Si está rechazada, se puede ver el motivo o eliminar
-            else if (quote.status === 'rechazada') {
+            } else if (quote.status === 'rechazada') {
                  actionButtons = `
                     <button class="btn view-rejection-reason-btn" data-reason="${quote.rejectionReason || 'No se especificó un motivo.'}">Ver Motivo</button>
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
@@ -60,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // --- SECCIÓN MODIFICADA ---
     const renderFinalizedQuotesTable = (quotes) => {
         finalizedTableBody.innerHTML = '';
         if (quotes.length === 0) {
@@ -68,19 +66,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         quotes.forEach(quote => {
             const row = document.createElement('tr');
-            // Para cualquier cotización finalizada, solo se puede descargar el PDF
+            
+            // Por defecto, todas tienen un botón para descargar el PDF.
             let actionsHTML = `<a href="/api/quote-requests/${quote.id}/pdf" class="btn" target="_blank">Descargar PDF</a>`;
+
+            // AÑADIMOS LA NUEVA REGLA: Si el estado NO es 'formalizada', agregamos el botón de eliminar.
+            if (quote.status !== 'formalizada') {
+                actionsHTML += ` <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
+            }
+
+            // Mantenemos el nombre de la columna "Evento" como en tu imagen original
+            const eventDate = quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A';
 
             row.innerHTML = `
                 <td>${quote.quoteNumber || 'N/A'}</td>
                 <td>${quote.clientName || 'N/A'}</td>
-                <td>${new Date(quote.createdAt).toLocaleDateString()}</td>
+                <td>${eventDate}</td>
                 <td><strong>${quote.status}</strong></td>
-                <td>${actionsHTML}</td>
+                <td class="actions-cell">${actionsHTML}</td>
             `;
             finalizedTableBody.appendChild(row);
         });
     };
+    // --- FIN DE LA SECCIÓN MODIFICADA ---
 
     const handleArchive = async (quoteId) => {
         try {
@@ -99,32 +107,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- INICIO DE LA NUEVA FUNCIÓN PARA ELIMINAR ---
     const handleDelete = async (quoteId) => {
         if (!confirm('¿Estás seguro de que deseas eliminar permanentemente esta cotización? Esta acción no se puede deshacer.')) {
             return;
         }
-
         try {
             const response = await fetch(`/api/quote-requests/${quoteId}`, {
                 method: 'DELETE',
             });
-
             const result = await response.json();
-
             if (!response.ok) {
                 throw new Error(result.message);
             }
-
-            alert(result.message); // Muestra "Cotización eliminada con éxito"
-            fetchAllQuotes(); // Refresca las tablas
-
+            alert(result.message);
+            fetchAllQuotes();
         } catch (error) {
             console.error('Error al eliminar cotización:', error);
-            alert(error.message); // Muestra el mensaje de error del servidor (ej: "No se puede eliminar...")
+            alert(error.message);
         }
     };
-    // --- FIN DE LA NUEVA FUNCIÓN PARA ELIMINAR ---
 
     document.body.addEventListener('click', (event) => {
         if (event.target.classList.contains('archive-btn')) {
@@ -133,13 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (event.target.classList.contains('view-rejection-reason-btn')) {
             const reason = event.target.dataset.reason;
             alert(`Motivo del rechazo:\n\n${reason}`);
-        } 
-        // --- INICIO DE LA NUEVA LÓGICA EN EL LISTENER ---
-        else if (event.target.classList.contains('delete-btn')) {
+        } else if (event.target.classList.contains('delete-btn')) {
             const quoteId = parseInt(event.target.dataset.id, 10);
             handleDelete(quoteId);
         }
-        // --- FIN DE LA NUEVA LÓGICA EN EL LISTENER ---
     });
 
     fetchAllQuotes();
