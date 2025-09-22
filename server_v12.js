@@ -58,7 +58,24 @@ const initializeDatabase = async () => {
                 UNIQUE(name, address)
             );
 
-            CREATE TABLE IF NOT EXISTS quotes ( id SERIAL PRIMARY KEY, quotenumber VARCHAR(50), clientname VARCHAR(255), advisorname VARCHAR(255), studentcount INTEGER, productids INTEGER[], preciofinalporestudiante NUMERIC, estudiantesparafacturar INTEGER, facilidadesaplicadas TEXT[], status VARCHAR(50) DEFAULT 'pendiente', rejectionreason TEXT, createdat TIMESTAMPTZ DEFAULT NOW(), items JSONB, totals JSONB );
+            CREATE TABLE IF NOT EXISTS quotes (
+                id SERIAL PRIMARY KEY,
+                quotenumber VARCHAR(50),
+                clientname VARCHAR(255),
+                advisorname VARCHAR(255),
+                studentcount INTEGER,
+                productids INTEGER[],
+                preciofinalporestudiante NUMERIC,
+                estudiantesparafacturar INTEGER,
+                facilidadesaplicadas TEXT[],
+                status VARCHAR(50) DEFAULT 'pendiente',
+                rejectionreason TEXT,
+                createdat TIMESTAMPTZ DEFAULT NOW(),
+                items JSONB,
+                totals JSONB,
+                aporte_institucion NUMERIC DEFAULT 0 -- <<< CAMBIO 1 DE 3: NUEVA COLUMNA AÑADIDA
+            );
+
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
             CREATE TABLE IF NOT EXISTS payments ( id SERIAL PRIMARY KEY, quote_id INTEGER REFERENCES quotes(id), payment_date DATE NOT NULL, amount NUMERIC NOT NULL, students_covered INTEGER, comment TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
         `);
@@ -314,12 +331,14 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
         res.status(500).json({ message: "Error al calcular la estimación." });
     }
 });
+
 app.post('/api/quote-requests', requireLogin, async (req, res) => { 
     const quoteInput = req.body; 
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    const { clientName, advisorName, studentCount, productIds, quoteNumber } = quoteInput; 
+    // <<< CAMBIO 2 DE 3: LEER EL NUEVO VALOR DEL FORMULARIO
+    const { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion } = quoteInput; 
     
     const { facilidadesAplicadas, items, totals } = calculationResult;
     const precios = calculationResult.calculatedPrices[0] || {};
@@ -327,7 +346,11 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const estudiantesParaFacturar = precios.estudiantesFacturables;
 
     try { 
-        await pool.query( `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10)`, [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber] ); 
+        // <<< CAMBIO 2 DE 3: GUARDAR EL NUEVO VALOR EN LA BASE DE DATOS
+        await pool.query(
+            `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11)`,
+            [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber, aporteInstitucion || 0]
+        ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
     } catch (err) { 
         console.error('Error al guardar cotización:', err); 
@@ -498,10 +521,18 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         doc.moveDown();
         doc.font('Helvetica-Bold').fontSize(12).text('Comentarios y Condiciones:');
         doc.moveDown(0.5);
+        
+        // <<< CAMBIO 3 DE 3: AÑADIR EL CÓDIGO SECRETO AL PDF
+        const aporteValor = quote.aporte_institucion || 0;
+        // Usamos .toFixed(0) para quitar decimales y parseFloat para asegurar que es un número
+        const codigoSecreto = `codigo wxz(${parseFloat(aporteValor).toFixed(0)})api`;
+
         const conditions = [
             `Cálculo basado en ${quote.studentcount || 0} estudiantes y evaluable a un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
-            'Condiciones de Pago a debatir.'
+            'Condiciones de Pago a debatir.',
+            codigoSecreto // AÑADIMOS LA LÍNEA SECRETA AQUÍ
         ];
+        
         doc.font('Helvetica').fontSize(10).list(conditions, {
             width: contentWidth,
             lineGap: 2,
