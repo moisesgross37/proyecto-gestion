@@ -34,10 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const quoteData = await quoteResponse.json();
             const initialData = await dataResponse.json();
 
-            // Cargar número de cotización
             quoteNumberInput.value = quoteData.quoteNumber;
 
-            // Cargar asesores
             if (advisorNameSelect) {
                 advisorNameSelect.innerHTML = '<option value="">Seleccione un asesor...</option>';
                 initialData.advisors.forEach(advisor => {
@@ -50,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Elemento <select> con id "asesor-a-cargo-select" no encontrado.');
             }
 
-            // Cargar productos
             allProducts = initialData.products || [];
             renderProductAccordion();
 
@@ -78,7 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             centers.forEach(center => {
                 const div = document.createElement('div');
-                div.textContent = center.name;
+                
+                // --- INICIO DEL CAMBIO ---
+                // Ahora usamos innerHTML para añadir el nombre y la dirección (address) como subtítulo.
+                div.innerHTML = `
+                    ${center.name}
+                    <small>${center.address}</small>
+                `;
+                // --- FIN DEL CAMBIO ---
+
                 div.dataset.id = center.id; 
                 div.addEventListener('click', () => {
                     clientNameInput.value = center.name;
@@ -97,7 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
     clientNameInput.addEventListener('input', (e) => {
         selectedClientId = null;
         clientIdInput.value = '';
-        searchClients(e.target.value);
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => searchClients(e.target.value), 300); // Añadido debounce para no saturar
     });
 
     document.addEventListener('click', (e) => {
@@ -109,9 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Cargar y Mostrar Productos en Acordeón ---
     const renderProductAccordion = () => {
         productAccordionContainer.innerHTML = '';
-
         const productsByReglon = allProducts.reduce((acc, product) => {
-            const reglon = product['RENGLON'] || 'Otros'; // FIX: Use correct header
+            const reglon = product['RENGLON'] || 'Otros';
             if (!acc[reglon]) acc[reglon] = [];
             acc[reglon].push(product);
             return acc;
@@ -120,17 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(productsByReglon).forEach((reglon, index) => {
             const details = document.createElement('details');
             if (index === 0) details.open = true;
-
             const summary = document.createElement('summary');
             summary.textContent = reglon;
             details.appendChild(summary);
-
             const accordionContent = document.createElement('div');
             accordionContent.classList.add('accordion-content');
-
             const productsInReglon = productsByReglon[reglon];
             const productsBySubReglon = productsInReglon.reduce((acc, product) => {
-                const subReglon = product['SUB RENGLON'] || 'General'; // FIX: Use correct header
+                const subReglon = product['SUB RENGLON'] || 'General';
                 if (!acc[subReglon]) acc[subReglon] = [];
                 acc[subReglon].push(product);
                 return acc;
@@ -140,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const subReglonGroup = document.createElement('div');
                 subReglonGroup.classList.add('sub-reglon-group');
                 subReglonGroup.innerHTML = `<h4>${subReglon}</h4>`;
-
                 productsBySubReglon[subReglon].forEach(product => {
                     const label = document.createElement('label');
                     label.classList.add('product-item');
@@ -173,21 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const aporteInstitucion = parseFloat(aporteInstitucionInput.value) || 0;
         const estudiantesCortesia = parseInt(estudiantesCortesiaInput.value, 10) || 0;
         const productIds = Array.from(selectedProductIds);
-
-        console.log('Inside actualizarResumen:');
-        console.log('studentCount:', studentCount);
-        console.log('productIds.length:', productIds.length);
-    
-        const quoteEstimateInput = {
-            studentCount,
-            productIds,
-            aporteInstitucion,
-            estudiantesCortesia,
-            tasaDesercion: 0.10 // Asumiendo un 10% por ahora
-        };
+        const quoteEstimateInput = { studentCount, productIds, aporteInstitucion, estudiantesCortesia, tasaDesercion: 0.10 };
 
         if (studentCount === 0 || productIds.length === 0) {
-            console.log('Condition met: studentCount is 0 or no products selected. Returning early.');
             summaryBillableStudents.textContent = '0';
             summaryTotalAmount.textContent = '$0.00';
             summaryPricePerStudent.textContent = '$0.00';
@@ -196,29 +185,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            console.log('Attempting to fetch /api/quotes/calculate-estimate with payload:', quoteEstimateInput);
             const response = await fetch('/api/quotes/calculate-estimate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(quoteEstimateInput),
             });
-
             if (!response.ok) throw new Error('La respuesta del servidor no fue exitosa.');
-
             const estimate = await response.json();
 
-            // La API ahora devuelve un array, tomamos la primera opción de precios.
             if (estimate.calculatedPrices && estimate.calculatedPrices.length > 0) {
                 const prices = estimate.calculatedPrices[0];
                 summaryBillableStudents.textContent = prices.estudiantesFacturables;
                 summaryTotalAmount.textContent = `${parseFloat(prices.montoTotalProyecto).toFixed(2)}`;
                 summaryPricePerStudent.textContent = `${parseFloat(prices.precioFinalPorEstudiante).toFixed(2)}`;
             } else {
-                // Manejar el caso donde no hay precios calculados
                 summaryBillableStudents.textContent = '0';
                 summaryTotalAmount.textContent = '0.00';
                 summaryPricePerStudent.textContent = '0.00';
-                console.warn('La respuesta de estimación no contenía opciones de precios.');
             }
 
             calculatedGratuitiesDiv.innerHTML = '';
@@ -252,9 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Manejar Envío del Formulario ---
     quoteForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-
         successMessage.classList.add('hidden'); 
-
         if (advisorNameSelect.value === '') {
             alert('Por favor, seleccione un asesor.');
             return;
@@ -263,8 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Por favor, seleccione al menos un producto o salón.');
             return;
         }
-        if (!selectedClientId) {
-            alert('Error: Debe seleccionar un centro educativo de la lista. Si el centro es nuevo, por favor, regístrelo primero en el formulario de visitas.');
+        if (!clientNameInput.value.trim()) { // Cambiado para verificar el nombre en lugar del ID
+            alert('Error: Debe escribir el nombre de un centro educativo.');
             return;
         }
 
@@ -287,14 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(quoteData),
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Error al generar la cotización.');
             }
 
             const result = await response.json();
-            console.log('Cotización generada:', result);
             quoteForm.reset();
             selectedProductIds.clear();
             selectedClientId = null;
@@ -302,13 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
             actualizarResumen();
             successMessage.classList.remove('hidden');
             window.scrollTo(0, 0);
-
         } catch (error) {
             console.error('Error al generar cotización:', error);
             alert(`Error: ${error.message}`);
         }
     });
 
-    // Carga inicial de datos
     loadInitialData();
 });
