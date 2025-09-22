@@ -123,7 +123,7 @@ const requireAdmin = checkRole(['Administrador']);
 // --- RUTAS DE API ---
 
 // Nueva ruta para obtener los datos del usuario actual en sesión
-app.get('/api/user-session', requireLogin, (req, res) => {
+('/api/user-session', requireLogin, (req, res) => {
     res.json(req.session.user);
 });
 
@@ -621,7 +621,137 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         res.status(500).send('Error interno al generar el PDF');
     }
 });
+// ======================================================================
+// ========= INICIO: NUEVA RUTA PARA GENERAR PDF DEL ACUERDO ============
+// ======================================================================
+app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+    try {
+        const quoteId = req.params.id;
+        const client = await pool.connect();
+        let quote, center;
 
+        try {
+            // Primero, obtenemos la cotización
+            const quoteResult = await client.query("SELECT q.*, c.address as center_address FROM quotes q LEFT JOIN centers c ON q.clientname = c.name WHERE q.id = $1 AND q.status = 'formalizada'", [quoteId]);
+            if (quoteResult.rows.length === 0) {
+                client.release();
+                return res.status(404).send('Acuerdo no encontrado o la cotización no está formalizada.');
+            }
+            quote = quoteResult.rows[0];
+
+        } finally {
+            client.release();
+        }
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename=ACUERDO-${quote.quotenumber}.pdf`);
+        doc.pipe(res);
+
+        // 1. DIBUJAR EL MEMBRETE DE FONDO
+        const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
+        if (fs.existsSync(backgroundImagePath)) {
+            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        }
+        
+        const pageMargin = 60;
+        const contentWidth = doc.page.width - (pageMargin * 2);
+        let currentY = 160; // Posición inicial más abajo para el membrete
+
+        // 2. TÍTULO Y PARTES DEL ACUERDO
+        doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', { align: 'center' });
+        doc.moveDown(2);
+        currentY = doc.y;
+
+        doc.font('Helvetica').fontSize(10).text(`Este acuerdo se celebra el día ${new Date().toLocaleDateString('es-DO', { timeZone: 'UTC' })}, con el fin de establecer una colaboración profesional entre:`, {
+            align: 'justify',
+            width: contentWidth
+        });
+        doc.moveDown(1.5);
+
+        doc.font('Helvetica-Bold').text('Be Eventos SRL ("El Organizador")', { continued: true }).font('Helvetica').text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
+        doc.moveDown(1);
+        doc.font('Helvetica').text('y');
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold').text(`${quote.clientname || '[Nombre del Centro Educativo]'} ("El Centro")`, { continued: true }).font('Helvetica').text(', con quien nos complace colaborar.');
+        doc.moveDown(2);
+
+        // 3. SECCIONES DEL ACUERDO
+        const drawSection = (title, content) => {
+            doc.font('Helvetica-Bold').fontSize(11).text(title);
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(10).text(content, { align: 'justify', width: contentWidth });
+            doc.moveDown(1.5);
+        };
+
+        drawSection('1. Nuestro Propósito Común', 'Ambas partes unimos esfuerzos para la colaboración creativa, montaje o ejecución de un evento, asegurando una experiencia de la más alta calidad para todos los involucrados. Los servicios específicos, productos y detalles de esta colaboración se encuentran desglosados en la propuesta adjunta, que forma parte integral de este acuerdo.');
+
+        doc.font('Helvetica-Bold').fontSize(11).text('2. Detalle de la Experiencia (Servicios Contratados)');
+        doc.moveDown(0.5);
+        doc.font('Helvetica').fontSize(10).text(`Nos emociona crear la siguiente experiencia, cuyos detalles se describen en la Propuesta de Servicios No. ${quote.quotenumber}, la cual se adjunta y forma parte integral de este acuerdo:`);
+        doc.moveDown(1);
+
+        // Insertar los detalles de los productos/servicios de la cotización
+        const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
+        if (selectedProducts.length > 0) {
+            selectedProducts.forEach(product => {
+                if (doc.y > 680) doc.addPage().image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+                doc.font('Helvetica-Bold').fontSize(10).text(product['PRODUCTO / SERVICIO'].trim(), { indent: 15 });
+                const detail = product['DETALLE / INCLUYE'];
+                if (detail && detail.trim() !== '') {
+                    const detailItems = detail.split(',').map(item => `${item.trim()}`);
+                    doc.font('Helvetica').fontSize(9).list(detailItems, {
+                        bulletIndent: 30,
+                        textIndent: 30,
+                        lineGap: 2,
+                        width: contentWidth - 30,
+                    });
+                }
+                doc.moveDown(0.8);
+            });
+        }
+        
+        doc.moveDown(1);
+        
+        // --- Datos Económicos y Compromisos ---
+        // (Asegurarse de que no se corte la página)
+        if (doc.y > 500) doc.addPage().image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });;
+
+        drawSection('3. Fechas Clave para Recordar', 'Las fechas principales del evento o actividades relacionadas serán coordinadas y confirmadas entre ambas partes a través de los canales de comunicación habituales.');
+        
+        const totalProyectado = (quote.preciofinalporestudiante * quote.studentcount).toLocaleString('en-US', { style: 'currency', currency: 'USD' }).replace('$', 'RD$ ');
+        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.preciofinalporestudiante).toFixed(2)} por estudiante, basado en una participación estimada de ${quote.studentcount} estudiantes, para un total proyectado de ${totalProyectado}.\n\nLa forma y el calendario de pagos serán coordinados y acordados directamente entre ambas partes para asegurar la comodidad y viabilidad del proyecto.\n\nSe acuerda que el Centro no asumirá el costo de los estudiantes que decidan no participar. Si el número final de participantes es inferior a ${quote.estudiantesparafacturar}, se revisará el acuerdo para un ajuste justo y transparente.`);
+
+        drawSection('5. Nuestro Compromiso Mutuo', 'Calidad y Confianza: Be Eventos se compromete a entregar cada servicio con la máxima calidad. Si se sustituye un servicio, será por otro de valor y calidad equivalentes.\nColaboración: El Centro se compromete a facilitar la comunicación y coordinación necesarias.\nUso de Imagen: El Centro autoriza la realización de fotografías y grabaciones del evento para el disfrute y recuerdo de la comunidad educativa.');
+
+        drawSection('6. Marco Legal', 'Este acuerdo se rige por las leyes de la República Dominicana. Cualquier modificación será formalizada por escrito entre ambas partes.');
+
+        // 6. FIRMAS
+        doc.y = doc.page.height - 150; // Posicionar las firmas al final
+        doc.font('Helvetica-Bold').fontSize(10);
+        doc.text('___________________________', pageMargin, doc.y, { align: 'left' });
+        doc.text('___________________________', null, doc.y, { align: 'right' });
+        doc.moveDown(0.5);
+        doc.text('Moisés Gross López', pageMargin, doc.y, { align: 'left' });
+        doc.text('[Nombre Representante]', null, doc.y, { align: 'right' });
+        doc.moveDown(0.5);
+        doc.text('Gerente General', pageMargin, doc.y, { align: 'left' });
+        doc.text('Director(a) del Centro', null, doc.y, { align: 'right' });
+        doc.moveDown(0.5);
+        doc.text('Cédula: 001-1189663-5', pageMargin, doc.y, { align: 'left' });
+        doc.text('Cédula: [Cédula Representante]', null, doc.y, { align: 'right' });
+
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Error al generar el PDF del acuerdo:', error);
+        res.status(500).send('Error interno al generar el PDF del acuerdo.');
+    }
+});
+// ======================================================================
+// ============= FIN: NUEVA RUTA PARA GENERAR PDF DEL ACUERDO ===========
+// ======================================================================
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
