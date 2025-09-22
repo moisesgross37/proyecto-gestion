@@ -13,15 +13,36 @@
         <h1 class="main-title">Módulo de Asesores</h1>
         <nav class="nav-grid">
             <a href="/registrar_visita.html" class="nav-button">Registrar Visita</a>
-            <a href="/reporte_visitas.html" class="nav-button">Reporte de Visitas</a>
+            <a href="/reporte_visitas.html" class="nav-button" id="btn-reporte-visitas">Reporte de Visitas</a>
             <a href="/solicitud_cotizacion.html" class="nav-button">Solicitud de Cotización</a>
             <a href="/aprobacion.html" class="nav-button">Revisión de Cotizaciones</a>
-            <a href="/asesor_centros.html" class="nav-button">Gestionar Centros</a>
         </nav>
         
         <a href="#" id="logout-btn" class="back-link" style="margin-top: 20px;">Cerrar Sesión</a>
     </div>
 
     <script src="/main.js"></script>
-</body>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Hacemos una llamada a la nueva API para obtener los datos del usuario en sesión
+                const response = await fetch('/api/user-session');
+                if (response.ok) {
+                    const user = await response.json();
+                    const reporteVisitasBtn = document.getElementById('btn-reporte-visitas');
+                    
+                    // Si el rol del usuario es 'Asesor' (y solo Asesor), ocultamos el botón
+                    if (user && user.rol === 'Asesor') {
+                        if(reporteVisitasBtn) {
+                           reporteVisitasBtn.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('No se pudo verificar el rol del usuario para el menú:', error);
+            }
+        });
+    </script>
+    </body>
 </html>
