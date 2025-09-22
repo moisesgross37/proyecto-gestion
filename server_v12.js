@@ -73,7 +73,7 @@ const initializeDatabase = async () => {
                 createdat TIMESTAMPTZ DEFAULT NOW(),
                 items JSONB,
                 totals JSONB,
-                aporte_institucion NUMERIC DEFAULT 0 -- <<< CAMBIO 1 DE 3: NUEVA COLUMNA AÑADIDA
+                aporte_institucion NUMERIC DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
@@ -337,7 +337,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    // <<< CAMBIO 2 DE 3: LEER EL NUEVO VALOR DEL FORMULARIO
     const { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion } = quoteInput; 
     
     const { facilidadesAplicadas, items, totals } = calculationResult;
@@ -346,7 +345,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     const estudiantesParaFacturar = precios.estudiantesFacturables;
 
     try { 
-        // <<< CAMBIO 2 DE 3: GUARDAR EL NUEVO VALOR EN LA BASE DE DATOS
         await pool.query(
             `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11)`,
             [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber, aporteInstitucion || 0]
@@ -394,9 +392,6 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
     }
 });
 
-// ==================================================================
-// ============== INICIO DE LA NUEVA RUTA (COTIZACIONES) ==============
-// ==================================================================
 app.get('/api/quotes/approved', requireLogin, async (req, res) => {
     const { clientName } = req.query;
     if (!clientName) {
@@ -413,9 +408,6 @@ app.get('/api/quotes/approved', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-// ==================================================================
-// ============== FIN DE LA NUEVA RUTA (COTIZACIONES) ==============
-// ==================================================================
 
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
@@ -439,9 +431,6 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
     }
 });
 
-// ==================================================================
-// ============== INICIO DE LA SECCIÓN MODIFICADA (PERMISOS) ==============
-// ==================================================================
 app.post('/api/quote-requests/:id/archive', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     try {
         await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1", [req.params.id]);
@@ -452,10 +441,54 @@ app.post('/api/quote-requests/:id/archive', requireLogin, checkRole(['Administra
     }
 });
 
+// --- INICIO DEL NUEVO CÓDIGO PARA ELIMINAR COTIZACIÓN ---
+app.delete('/api/quote-requests/:id', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+    const quoteId = req.params.id;
+    const user = req.session.user;
+
+    const client = await pool.connect();
+    try {
+        // Primero, obtenemos la cotización para verificar su estado y propietario
+        const quoteResult = await client.query('SELECT status, advisorname FROM quotes WHERE id = $1', [quoteId]);
+
+        if (quoteResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Cotización no encontrada.' });
+        }
+        const quote = quoteResult.rows[0];
+
+        // REGLA 1: No se puede eliminar una cotización formalizada
+        if (quote.status === 'formalizada') {
+            return res.status(403).json({ message: 'ERROR: No se puede eliminar una cotización que ya ha sido formalizada.' });
+        }
+
+        // REGLA 2: Verificar permisos
+        // Un Administrador puede borrar todo (excepto lo formalizado).
+        // Un Asesor solo puede borrar lo suyo.
+        if (user.rol !== 'Administrador' && quote.advisorname !== user.nombre) {
+            return res.status(403).json({ message: 'No tienes permiso para eliminar esta cotización.' });
+        }
+
+        // Si pasamos las validaciones, procedemos a eliminar usando una transacción
+        await client.query('BEGIN');
+        // Primero eliminamos los pagos asociados para evitar errores de restricción de clave foránea
+        await client.query('DELETE FROM payments WHERE quote_id = $1', [quoteId]);
+        // Luego, eliminamos la cotización
+        await client.query('DELETE FROM quotes WHERE id = $1', [quoteId]);
+        await client.query('COMMIT');
+        
+        res.status(200).json({ message: 'Cotización eliminada con éxito.' });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al eliminar cotización:', err);
+        res.status(500).json({ message: 'Error interno del servidor al intentar eliminar la cotización.' });
+    } finally {
+        client.release();
+    }
+});
+// --- FIN DEL NUEVO CÓDIGO PARA ELIMINAR COTIZACIÓN ---
+
 app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
-// ==================================================================
-// ============== FIN DE LA SECCIÓN MODIFICADA (PERMISOS) ==============
-// ==================================================================
     try {
         const quoteId = req.params.id;
         const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
@@ -467,14 +500,8 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
-
-        // ==================================================================
-        // ============== INICIO DE LA MODIFICACIÓN (RUTA MEMBRETE) ==============
-        // ==================================================================
+        
         const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
-        // ==================================================================
-        // ============== FIN DE LA MODIFICACIÓN (RUTA MEMBRETE) ==============
-        // ==================================================================
         
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
@@ -522,15 +549,13 @@ app.get('/api/quote-requests/:id/pdf', requireLogin, checkRole(['Administrador',
         doc.font('Helvetica-Bold').fontSize(12).text('Comentarios y Condiciones:');
         doc.moveDown(0.5);
         
-        // <<< CAMBIO 3 DE 3: AÑADIR EL CÓDIGO SECRETO AL PDF
         const aporteValor = quote.aporte_institucion || 0;
-        // Usamos .toFixed(0) para quitar decimales y parseFloat para asegurar que es un número
         const codigoSecreto = `codigo wxz(${parseFloat(aporteValor).toFixed(0)})api`;
 
         const conditions = [
             `Cálculo basado en ${quote.studentcount || 0} estudiantes y evaluable a un mínimo de ${quote.estudiantesparafacturar || 0} estudiantes.`,
             'Condiciones de Pago a debatir.',
-            codigoSecreto // AÑADIMOS LA LÍNEA SECRETA AQUÍ
+            codigoSecreto
         ];
         
         doc.font('Helvetica').fontSize(10).list(conditions, {
