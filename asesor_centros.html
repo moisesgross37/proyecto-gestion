@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Centros de Estudio - Asesor</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/asesores-menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Gestión de Centros de Estudio</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Centros de Estudio Registrados</h2>
+                <p>Aquí puedes editar los centros para corregir sus datos.</p>
+                <table class="centers-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Centro</th>
+                            <th>Contacto</th>
+                            <th>Teléfono</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="centers-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="edit-center-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Editar Centro de Estudio</h2>
+            <form id="edit-center-form">
+                <input type="hidden" id="edit-center-id">
+                <div class="form-group">
+                    <label for="edit-center-name">Nombre del Centro:</label>
+                    <input type="text" id="edit-center-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-address">Dirección Exacta:</label>
+                    <input type="text" id="edit-address">
+                </div>
+                <div class="form-group">
+                    <label for="edit-sector">Sector o Barrio:</label>
+                    <input type="text" id="edit-sector">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-name">Nombre del Contacto:</label>
+                    <input type="text" id="edit-contact-name">
+                </div>
+                <div class="form-group">
+                    <label for="edit-contact-number">Número de Contacto:</label>
+                    <input type="tel" id="edit-contact-number">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const centersTableBody = document.getElementById('centers-table-body');
+            const modal = document.getElementById('edit-center-modal');
+            const closeModalButton = modal.querySelector('.close-button');
+            const editCenterForm = document.getElementById('edit-center-form');
+            
+            const editCenterId = document.getElementById('edit-center-id');
+            const editCenterName = document.getElementById('edit-center-name');
+            const editAddress = document.getElementById('edit-address');
+            const editSector = document.getElementById('edit-sector');
+            const editContactName = document.getElementById('edit-contact-name');
+            const editContactNumber = document.getElementById('edit-contact-number');
+
+            let currentUser = null;
+
+            const fetchCurrentUser = async () => {
+                try {
+                    const response = await fetch('/api/user-session');
+                    if (!response.ok) return null;
+                    return await response.json();
+                } catch (error) {
+                    console.error('Error fetching user session:', error);
+                    return null;
+                }
+            };
+            
+            const fetchAndDisplayCenters = async () => {
+                try {
+                    const response = await fetch('/api/centers');
+                    if (!response.ok) throw new Error('Error al obtener centros.');
+                    const centers = await response.json();
+                    
+                    centersTableBody.innerHTML = '';
+                    if (centers.length === 0) {
+                        centersTableBody.innerHTML = '<tr><td colspan="4">No hay centros registrados.</td></tr>';
+                        return;
+                    }
+                    
+                    centers.forEach(center => {
+                        const row = document.createElement('tr');
+                        
+                        let actionButtons = `<button class="btn btn-edit" data-id="${center.id}">Editar</button>`;
+                        if (currentUser && currentUser.rol === 'Administrador') {
+                            actionButtons += ` <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>`;
+                        }
+
+                        row.innerHTML = `
+                            <td>${center.name}</td>
+                            <td>${center.contactname || ''}</td>
+                            <td>${center.contactnumber || ''}</td>
+                            <td class="actions-cell">${actionButtons}</td>
+                        `;
+                        centersTableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Error al mostrar centros:', error);
+                    centersTableBody.innerHTML = '<tr><td colspan="4">Error al cargar los centros.</td></tr>';
+                }
+            };
+
+            const openEditModal = (center) => {
+                editCenterId.value = center.id;
+                editCenterName.value = center.name;
+                editAddress.value = center.address || '';
+                editSector.value = center.sector || '';
+                editContactName.value = center.contactname || '';
+                editContactNumber.value = center.contactnumber || '';
+                modal.style.display = 'block';
+            };
+
+            const handleTableClick = async (event) => {
+                const target = event.target;
+                if (!target.dataset.id) return;
+                
+                const centerId = parseInt(target.dataset.id, 10);
+
+                if (target.classList.contains('btn-edit')) {
+                    try {
+                        const response = await fetch('/api/centers');
+                        const centers = await response.json();
+                        const centerToEdit = centers.find(c => c.id === centerId);
+                        if (centerToEdit) openEditModal(centerToEdit);
+                    } catch (error) {
+                        console.error('Error al buscar centro para editar:', error);
+                    }
+                } else if (target.classList.contains('btn-delete')) {
+                    if (!confirm('¿Estás seguro de que quieres eliminar este centro? Esta acción no se puede deshacer.')) return;
+                    try {
+                        const response = await fetch(`/api/centers/${centerId}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Error al eliminar el centro.');
+                        await fetchAndDisplayCenters();
+                    } catch (error) {
+                        console.error(error);
+                        alert('No se pudo eliminar el centro.');
+                    }
+                }
+            };
+
+            const handleUpdateCenter = async (event) => {
+                event.preventDefault();
+                const id = parseInt(editCenterId.value, 10);
+                
+                const updatedData = {
+                    name: editCenterName.value,
+                    address: editAddress.value,
+                    sector: editSector.value,
+                    contactName: editContactName.value,
+                    contactNumber: editContactNumber.value
+                };
+
+                try {
+                    const response = await fetch(`/api/centers/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+                    if (!response.ok) throw new Error('Error al actualizar el centro.');
+                    modal.style.display = 'none';
+                    await fetchAndDisplayCenters();
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo actualizar el centro.');
+                }
+            };
+
+            currentUser = await fetchCurrentUser();
+            await fetchAndDisplayCenters();
+
+            closeModalButton.addEventListener('click', () => modal.style.display = 'none');
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) modal.style.display = 'none';
+            });
+            centersTableBody.addEventListener('click', handleTableClick);
+            editCenterForm.addEventListener('submit', handleUpdateCenter);
+        });
+    </script>
+</body>
+</html>
