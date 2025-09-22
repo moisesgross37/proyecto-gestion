@@ -121,6 +121,11 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // --- RUTAS DE API ---
+// Nueva ruta para obtener los datos del usuario actual en sesión
+
+app.get('/api/user-session', requireLogin, (req, res) => {
+    res.json(req.session.user);
+});
 
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
@@ -272,8 +277,10 @@ app.get('/api/centers/search', requireLogin, async (req, res) => {
     }
 });
 
-app.put('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+// Se cambia 'requireAdmin' por 'checkRole' para permitir a los Asesores editar.
+app.put('/api/centers/:id', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
+    // Se incluyen todos los campos del formulario de edición.
     const { name, address, sector, contactName, contactNumber } = req.body;
     try {
         await pool.query(
@@ -286,6 +293,7 @@ app.put('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
+
 app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM centers WHERE id = $1', [req.params.id]);
