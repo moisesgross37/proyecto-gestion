@@ -648,7 +648,7 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         res.setHeader('Content-Disposition', `inline; filename=ACUERDO-${quote.quotenumber}.pdf`);
         doc.pipe(res);
 
-        // 1. DIBUJAR EL MEMBRETE DE FONDO
+// 1. DIBUJAR EL MEMBRETE DE FONDO
         const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
         if (fs.existsSync(backgroundImagePath)) {
             doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
@@ -658,7 +658,7 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         const contentWidth = doc.page.width - (pageMargin * 2);
         
         // 2. TÍTULO Y PARTES DEL ACUERDO
-        // Forzamos la posición Y a 200 para bajar el título y le damos el ancho para que se centre correctamente
+        // Forzamos la posición Y a 200 para bajar el título
         doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', pageMargin, 200, { 
             align: 'center', 
             width: contentWidth 
@@ -724,21 +724,28 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
 
         drawSection('6. Marco Legal', 'Este acuerdo se rige por las leyes de la República Dominicana. Cualquier modificación será formalizada por escrito entre ambas partes.');
 
-        // 6. FIRMAS
-        doc.y = doc.page.height - 150; // Posicionar las firmas al final
-        doc.font('Helvetica-Bold').fontSize(10);
-        doc.text('___________________________', pageMargin, doc.y, { align: 'left' });
-        doc.text('___________________________', null, doc.y, { align: 'right' });
-        doc.moveDown(0.5);
-        doc.text('Moisés Gross López', pageMargin, doc.y, { align: 'left' });
-        doc.text('[Nombre Representante]', null, doc.y, { align: 'right' });
-        doc.moveDown(0.5);
-        doc.text('Gerente General', pageMargin, doc.y, { align: 'left' });
-        doc.text('Director(a) del Centro', null, doc.y, { align: 'right' });
-        doc.moveDown(0.5);
-        doc.text('Cédula: 001-1189663-5', pageMargin, doc.y, { align: 'left' });
-        doc.text('Cédula: [Cédula Representante]', null, doc.y, { align: 'right' });
+       // 6. FIRMAS
+        // Posicionamos las firmas de forma controlada para evitar superposición
+        const signatureY = doc.page.height - 180; // Posición vertical inicial para las firmas
+        const signatureLineY = signatureY + 35;
+        const col1X = pageMargin;
+        const col2X = doc.page.width / 2;
 
+        doc.font('Helvetica-Bold').fontSize(10);
+        
+        // Líneas de firma
+        doc.text('___________________________', col1X, signatureY);
+        doc.text('___________________________', col2X, signatureY, { align: 'right' });
+
+        // Nombres y Títulos
+        doc.text('Moisés Gross López', col1X, signatureLineY + 5);
+        doc.text('[Nombre Representante]', col2X, signatureLineY + 5, { align: 'right' });
+        
+        doc.text('Gerente General', col1X, signatureLineY + 20);
+        doc.text('Director(a) del Centro', col2X, signatureLineY + 20, { align: 'right' });
+
+        doc.text('Cédula: 001-1189663-5', col1X, signatureLineY + 35);
+        doc.text('Cédula: [Cédula Representante]', col2X, signatureLineY + 35, { align: 'right' });
 
         doc.end();
 
