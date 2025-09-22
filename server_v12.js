@@ -667,14 +667,31 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         // Dejamos un espacio generoso después del título
         doc.moveDown(4);
 
-        doc.font('Helvetica-Bold').text('Be Eventos SRL ("El Organizador")', { continued: true }).font('Helvetica').text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
-        doc.moveDown(1);
-        doc.font('Helvetica').text('y');
-        doc.moveDown(1);
-        doc.font('Helvetica-Bold').text(`${quote.clientname || '[Nombre del Centro Educativo]'} ("El Centro")`, { continued: true }).font('Helvetica').text(', con quien nos complace colaborar.');
-        doc.moveDown(2);
+        // --- INICIO DEL BLOQUE CORREGIDO CON TAMAÑO DE LETRA EXPLÍCITO ---
 
-        // 3. SECCIONES DEL ACUERDO
+        // Párrafo introductorio con tamaño 11
+        doc.font('Helvetica', 11)
+           .text(`Este acuerdo se celebra el día ${new Date().toLocaleDateString('es-DO', { timeZone: 'UTC' })}, con el fin de establecer una colaboración profesional entre:`, {
+            align: 'justify',
+            width: contentWidth
+        });
+        doc.moveDown(1.5);
+
+        // Nombre de la empresa en negrita 12, y descripción en normal 11
+        doc.font('Helvetica-Bold', 12).text('Be Eventos SRL ("El Organizador")', { continued: true })
+           .font('Helvetica', 11).text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
+        doc.moveDown(1);
+
+        // La letra "y" en tamaño 11
+        doc.font('Helvetica', 11).text('y');
+        doc.moveDown(1);
+
+        // Nombre del cliente en negrita 12, y descripción en normal 11
+        doc.font('Helvetica-Bold', 12).text(`${quote.clientname} ("El Centro")`, { continued: true })
+           .font('Helvetica', 11).text(', con quien nos complace colaborar.');
+        doc.moveDown(3); // Damos más espacio antes de la primera sección numerada
+
+        // --- FIN DEL BLOQUE CORREGIDO ---        // 3. SECCIONES DEL ACUERDO
         const drawSection = (title, content) => {
             doc.font('Helvetica-Bold').fontSize(11).text(title);
             doc.moveDown(0.5);
