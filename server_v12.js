@@ -656,18 +656,16 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         
         const pageMargin = 60;
         const contentWidth = doc.page.width - (pageMargin * 2);
-        let currentY = 200; // Posición inicial más abajo para el membrete
-
+        
         // 2. TÍTULO Y PARTES DEL ACUERDO
-        doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', { align: 'center' });
-        doc.moveDown(4);
-        currentY = doc.y;
-
-        doc.font('Helvetica').fontSize(10).text(`Este acuerdo se celebra el día ${new Date().toLocaleDateString('es-DO', { timeZone: 'UTC' })}, con el fin de establecer una colaboración profesional entre:`, {
-            align: 'justify',
-            width: contentWidth
+        // Forzamos la posición Y a 200 para bajar el título y le damos el ancho para que se centre correctamente
+        doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', pageMargin, 200, { 
+            align: 'center', 
+            width: contentWidth 
         });
-        doc.moveDown(1.5);
+        
+        // Dejamos un espacio generoso después del título
+        doc.moveDown(4);
 
         doc.font('Helvetica-Bold').text('Be Eventos SRL ("El Organizador")', { continued: true }).font('Helvetica').text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
         doc.moveDown(1);
