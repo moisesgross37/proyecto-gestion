@@ -133,19 +133,25 @@ const requireAdmin = checkRole(['Administrador']);
     res.json(req.session.user);
 });
 
-('/api/formalized-centers', apiKeyAuth, async (req, res) => {
+// PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
+app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
+        // Lógica mejorada: Buscamos directamente las cotizaciones formalizadas.
+        // Es más rápido, directo y confiable.
         const query = `
-            SELECT DISTINCT c.id, c.name 
-            FROM centers c
-            JOIN visits v ON c.name = v.centername
-            WHERE UPPER(TRIM(v.commenttext)) = 'FORMALIZAR ACUERDO'
-            ORDER BY c.name ASC;
+            SELECT DISTINCT clientname AS name 
+            FROM quotes 
+            WHERE status = 'formalizada' 
+            ORDER BY clientname ASC;
         `;
         const result = await pool.query(query);
+        
+        // Devolvemos un array de objetos con la propiedad 'name', 
+        // que es lo que el frontend espera.
         res.json(result.rows);
+
     } catch (err) {
-        console.error('Error al obtener centros formalizados:', err);
+        console.error('Error al obtener centros con cotizaciones formalizadas:', err);
         res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
     }
 });
