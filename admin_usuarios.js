@@ -60,47 +60,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Lógica para los botones de la tabla (Cambiar Estado y Editar Rol) ---
-    if (tableContainer) {
-        tableContainer.addEventListener('click', async (e) => {
-            const target = e.target;
+  // --- Lógica para los botones de la tabla (Corregida y Limpiada) ---
+if (tableContainer) {
+    tableContainer.addEventListener('click', async (e) => {
+        const target = e.target;
 
-            // Botón de Cambiar Estado
-            if (target.classList.contains('status-btn')) {
-                const userId = target.dataset.id;
-                const userName = target.closest('tr').querySelector('td').textContent;
+        // Botón de Editar Rol
+        if (target.classList.contains('edit-btn')) {
+            const userRow = target.closest('tr');
+            const userId = target.dataset.id;
+            const userName = userRow.cells[0].textContent;
+            // CORRECCIÓN: El rol ahora está en la segunda columna (índice 1)
+            const userRole = userRow.cells[1].textContent;
 
-                if (confirm(`¿Estás seguro de que quieres cambiar el estado del usuario "${userName}"?`)) {
-                    try {
-                        const response = await fetch(`/api/users/${userId}/toggle-status`, {
-                            method: 'POST'
-                        });
-                        const result = await response.json();
-                        if (!response.ok) {
-                            throw new Error(result.message || 'Error en el servidor.');
-                        }
-                        cargarUsuarios();
-                    } catch (error) {
-                        alert(`Error: ${error.message}`);
-                    }
-                }
-            }
-
-            // Botón de Editar Rol
-            if (target.classList.contains('edit-btn')) {
-                const userRow = target.closest('tr');
-                const userId = target.dataset.id;
-                const userName = userRow.cells[0].textContent;
-                const userRole = userRow.cells[2].textContent;
-
-                // Llenar y mostrar el modal
-                modalUserIdInput.value = userId;
-                modalUserName.textContent = userName;
-                modalUserRoleSelect.value = userRole;
-                editModal.style.display = 'block';
-            }
-        });
-    }
+            // Llenar y mostrar el modal
+            modalUserIdInput.value = userId;
+            modalUserName.textContent = userName;
+            modalUserRoleSelect.value = userRole;
+            editModal.style.display = 'block';
+        }
+    });
+}
 
     // --- Lógica para guardar el cambio de Rol desde el Modal ---
     if (editForm) {
@@ -145,54 +125,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function mostrarUsuariosEnTabla(users) {
-        if (!users || users.length === 0) {
-            // Se añade un título para claridad
-            tableContainer.innerHTML = '<h3>Usuarios Actuales</h3><p>No hay usuarios registrados.</p>';
-            return;
-        }
+   // Reemplaza tu función completa con esta
+function mostrarUsuariosEnTabla(users) {
+    if (!users || users.length === 0) {
+        tableContainer.innerHTML = '<h3>Usuarios Actuales</h3><p>No hay usuarios registrados.</p>';
+        return;
+    }
 
-        // Corregido: Se elimina la columna "Nombre" y se deja solo "Nombre de Usuario"
-        let tablaHTML = `
-            <h3>Usuarios Actuales</h3>
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>Nombre de Usuario</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-
-        users.forEach(user => {
-            tablaHTML += `
+    // Corregido: La tabla ahora solo tiene las columnas que sí existen
+    let tablaHTML = `
+        <h3>Usuarios Actuales</h3>
+        <table class="users-table">
+            <thead>
                 <tr>
-                    <td>${user.nombre}</td>
-                    <td>${user.username}</td>
-                    <td>${user.rol}</td>
-                    <td><span class="status-${user.estado}">${user.estado}</span></td>
-                    <td>
-                        <button class="edit-btn" data-id="${user.id}">Editar</button>
-                        <button class="status-btn" data-id="${user.id}">Cambiar Estado</button>
-                    </td>
+                    <th>Nombre de Usuario</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
                 </tr>
-            `;
-        });
+            </thead>
+            <tbody>
+    `;
 
+    users.forEach(user => {
+        // Corregido: Se eliminan las columnas y datos que no existen ('nombre', 'estado')
         tablaHTML += `
-                </tbody>
-            </table>
+            <tr>
+                <td>${user.username}</td>
+                <td>${user.rol}</td>
+                <td>
+                    <button class="edit-btn" data-id="${user.id}">Editar Rol</button>
+                </td>
+            </tr>
         `;
-
-        tableContainer.innerHTML = tablaHTML;
-    }
-
-    // Iniciar la carga de usuarios solo si estamos en la página correcta
-    if (tableContainer) {
-        cargarUsuarios();
-    }
-});
+    });
