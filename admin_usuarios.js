@@ -10,27 +10,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalUserIdInput = document.getElementById('modal-user-id');
     const modalUserRoleSelect = document.getElementById('modal-user-role');
 
-    // --- Lógica para enviar el formulario de CREACIÓN de usuario ---
-    // REEMPLAZADO: Toda la lógica de invitación fue sustituida por esta nueva lógica de creación.
+  // --- Lógica para enviar el formulario de CREACIÓN de usuario ---
     if (createForm) {
         createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const nombre = document.getElementById('new-user-nombre').value;
+            // Corregido: Se elimina la variable 'nombre' que no se usa.
             const username = document.getElementById('new-user-username').value;
             const password = document.getElementById('new-user-password').value;
             const rol = document.getElementById('new-user-role').value;
 
-            if (!nombre || !username || !password || !rol) {
+            // Corregido: Se elimina la validación para 'nombre'.
+            if (!username || !password || !rol) {
                 alert('Por favor, complete todos los campos.');
                 return;
             }
 
             try {
-                const response = await fetch('/api/users', { // Llama a la nueva ruta para crear usuarios
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, username, password, rol })
+                    // Corregido: Se envía solo username, password y rol, que es lo que el servidor espera.
+                    body: JSON.stringify({ username, password, rol })
                 });
                 
                 const result = await response.json();
@@ -146,15 +147,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function mostrarUsuariosEnTabla(users) {
         if (!users || users.length === 0) {
-            tableContainer.innerHTML = '<p>No hay usuarios registrados.</p>';
+            // Se añade un título para claridad
+            tableContainer.innerHTML = '<h3>Usuarios Actuales</h3><p>No hay usuarios registrados.</p>';
             return;
         }
 
+        // Corregido: Se elimina la columna "Nombre" y se deja solo "Nombre de Usuario"
         let tablaHTML = `
+            <h3>Usuarios Actuales</h3>
             <table class="users-table">
                 <thead>
                     <tr>
-                        <th>Nombre</th>
                         <th>Nombre de Usuario</th>
                         <th>Rol</th>
                         <th>Estado</th>
@@ -163,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </thead>
                 <tbody>
         `;
+
 
         users.forEach(user => {
             tablaHTML += `
