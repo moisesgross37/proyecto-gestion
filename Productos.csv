@@ -77,7 +77,7 @@ SALONES,Hotel Catalonia Ibizza 2do Nivel,Hotel Catalonia Ibizza 2do Nivel,,40000
 SALONES,Salon Restauracion MIDE,Salon Restauracion MIDE,Capacidad Aproximada 500,200000,total_grupo
 SALONES,Salon Independencia MIDE,Salon Independencia MIDE,Capacidad Aproximada 1500,350000,total_grupo
 SALONES,En el Centro con Facilidades,En el Centro con Facilidades,,20000,total_grupo
-SALONES,En el Centro sin Facilidades,En el Centro con Facilidades,,30000,total_grupo
+SALONES,En el Centro sin Facilidades,En el Centro sin Facilidades,,30000,total_grupo
 AMENIDADES EXTRAS EN INVESTIDURA,Stand Personalizado,Stand Personalizado,,20000,escalonado
 AMENIDADES EXTRAS EN INVESTIDURA,Plataforma 360,Plataforma 360,,10000,escalonado
 AMENIDADES EXTRAS EN INVESTIDURA,Esclavina Sublimada,Esclavina Sublimada,,175,por_estudiante
