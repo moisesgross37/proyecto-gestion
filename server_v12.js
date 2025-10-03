@@ -750,6 +750,47 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         res.status(500).send('Error interno al generar el PDF del acuerdo.');
     }
 });
+
+// ======================================================================
+// ========= INICIO: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN =====
+// ======================================================================
+app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Cotización no encontrada.' });
+        }
+
+        const quote = result.rows[0];
+
+        // Buscar los nombres de los productos basados en sus IDs
+        const productDetails = (quote.productids || []).map(productId => {
+            const product = products.find(p => p.id == productId);
+            return product ? product['PRODUCTO / SERVICIO'] : 'Producto no encontrado';
+        });
+
+        // Preparar la respuesta con toda la información necesaria
+        const responseData = {
+            quoteNumber: quote.quotenumber,
+            rejectionReason: quote.rejectionreason,
+            products: productDetails,
+            studentCount: quote.studentcount,
+            pricePerStudent: quote.preciofinalporestudiante
+        };
+
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('Error al obtener detalles de la cotización:', error);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+// ======================================================================
+// ========= FIN: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN ======
+// ======================================================================
+
 // ======================================================================
 // ============= FIN: RUTA DEFINITIVA PARA GENERAR PDF DEL ACUERDO ======
 // ======================================================================
