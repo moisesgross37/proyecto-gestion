@@ -9,10 +9,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalUserIdInput = document.getElementById('modal-user-id');
     const modalUserRoleSelect = document.getElementById('modal-user-role');
 
+    // --- LÓGICA DE CREACIÓN DE USUARIO (RESTAURADA) ---
     if (createForm) {
         createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Lógica de creación de usuario (la corregiremos después)
+            
+            const nombre = document.getElementById('new-user-nombre').value;
+            const username = document.getElementById('new-user-username').value;
+            const password = document.getElementById('new-user-password').value;
+            const rol = document.getElementById('new-user-role').value;
+
+            if (!nombre || !username || !password || !rol) {
+                alert('Por favor, complete todos los campos.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, username, password, rol })
+                });
+                
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Error del servidor.');
+                
+                alert('¡Usuario creado exitosamente!');
+                createForm.reset();
+                cargarUsuarios();
+
+            } catch (error) {
+                alert(`Error al crear el usuario: ${error.message}`);
+            }
         });
     }
 
@@ -25,13 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- LÓGICA DE BOTONES DE LA TABLA (RESTAURADA) ---
     if (tableContainer) {
         tableContainer.addEventListener('click', async (e) => {
             const target = e.target;
+
+            // Botón Editar Rol
             if (target.classList.contains('edit-btn')) {
                 const userRow = target.closest('tr');
                 const userId = target.dataset.id;
-                // Ajustado para tomar el nombre y rol correctos de la nueva tabla
                 const userName = userRow.cells[1].textContent; 
                 const userRole = userRow.cells[2].textContent;
 
@@ -39,6 +69,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 modalUserName.textContent = userName;
                 modalUserRoleSelect.value = userRole;
                 editModal.style.display = 'block';
+            }
+            // Botón Cambiar Estado (Lógica Añadida)
+            else if (target.classList.contains('btn-toggle-status')) {
+                const userId = target.dataset.id;
+                if (confirm('¿Estás seguro de que deseas cambiar el estado de este usuario?')) {
+                    try {
+                        const response = await fetch(`/api/users/${userId}/toggle-status`, { method: 'POST' });
+                        if (!response.ok) throw new Error('Error al cambiar el estado.');
+                        cargarUsuarios(); // Recargar la tabla para mostrar el cambio
+                    } catch (error) {
+                        alert(error.message);
+                    }
+                }
             }
         });
     }
@@ -81,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Tabla con todas las columnas correctas
         let tablaHTML = `
             <h3>Usuarios Actuales</h3>
             <table class="users-table">
@@ -114,6 +156,5 @@ document.addEventListener('DOMContentLoaded', () => {
         tableContainer.innerHTML = tablaHTML;
     }
 
-    // Llamada inicial para cargar los usuarios cuando la página esté lista
     cargarUsuarios();
-}); // <-- LA LLAVE DE CIERRE QUE PROBABLEMENTE FALTABA
+});
