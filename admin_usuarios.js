@@ -158,3 +158,5 @@ function mostrarUsuariosEnTabla(users) {
             </tr>
         `;
     });
+// Llamada inicial para cargar los usuarios cuando la página esté lista
+cargarUsuarios();
