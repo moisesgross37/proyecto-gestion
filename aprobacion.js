@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
                 `;
             } else if (quote.status === 'rechazada') {
-                // El botón ahora tiene una nueva clase 'view-rejection-details-btn'
                 actionButtons = `
                     <button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button>
                     <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
@@ -64,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // Función para la tabla de historial (sin cambios)
     const renderFinalizedQuotesTable = (quotes) => {
          finalizedTableBody.innerHTML = '';
          if (quotes.length === 0) {
@@ -93,24 +91,52 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const handleArchive = async (quoteId) => {
-        // ... (sin cambios)
+        try {
+            window.open(`/api/quote-requests/${quoteId}/pdf`, '_blank');
+            const response = await fetch(`/api/quote-requests/${quoteId}/archive`, {
+                method: 'POST',
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al archivar la cotización.');
+            }
+            fetchAllQuotes();
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+        }
     };
+    
     const handleDelete = async (quoteId) => {
-        // ... (sin cambios)
+        if (!confirm('¿Estás seguro de que deseas eliminar permanentemente esta cotización? Esta acción no se puede deshacer.')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/quote-requests/${quoteId}`, {
+                method: 'DELETE',
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message);
+            }
+            alert(result.message);
+            fetchAllQuotes();
+        } catch (error) {
+            console.error('Error al eliminar cotización:', error);
+            alert(error.message);
+        }
     };
 
-    // --- NUEVA FUNCIÓN PARA ABRIR LA VENTANA MODAL ---
     const showRejectionDetails = async (quoteId) => {
         try {
             const response = await fetch(`/api/quote-requests/${quoteId}/details`);
             if (!response.ok) throw new Error('No se pudieron cargar los detalles.');
             const data = await response.json();
 
-            // Llenar la ventana con los datos
             rejectionReasonText.textContent = data.rejectionReason || 'No se especificó un motivo.';
             rejectedQuoteNumber.textContent = `Resumen de ${data.quoteNumber}:`;
             
-            rejectedQuoteProducts.innerHTML = ''; // Limpiar lista anterior
+            rejectedQuoteProducts.innerHTML = '';
             data.products.forEach(productName => {
                 const li = document.createElement('li');
                 li.textContent = productName;
@@ -122,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p><strong>Precio Calculado:</strong> RD$ ${parseFloat(data.pricePerStudent).toFixed(2)} c/u</p>
             `;
 
-            // Mostrar la ventana
             rejectedModal.style.display = 'block';
 
         } catch (error) {
@@ -131,18 +156,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- MANEJO DE EVENTOS ---
+    // --- MANEJO DE EVENTOS CORREGIDO ---
     document.body.addEventListener('click', (event) => {
-        // ... (código existente para archivar y eliminar)
-
-        // Nuevo evento para el botón "Ver Detalles del Rechazo"
-        if (event.target.classList.contains('view-rejection-details-btn')) {
-            const quoteId = event.target.dataset.id;
+        const target = event.target;
+        
+        // Lógica para el botón "Archivar"
+        if (target.classList.contains('archive-btn')) {
+            const quoteId = target.dataset.id;
+            handleArchive(quoteId);
+        } 
+        // Lógica para el botón "Eliminar"
+        else if (target.classList.contains('delete-btn')) {
+            const quoteId = target.dataset.id;
+            handleDelete(quoteId);
+        } 
+        // Lógica para el nuevo botón "Ver Detalles"
+        else if (target.classList.contains('view-rejection-details-btn')) {
+            const quoteId = target.dataset.id;
             showRejectionDetails(quoteId);
         }
     });
 
-    // Evento para cerrar la ventana modal
+    // Eventos para cerrar la ventana modal
     closeRejectedModalBtn.addEventListener('click', () => {
         rejectedModal.style.display = 'none';
     });
