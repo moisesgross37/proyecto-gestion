@@ -16,7 +16,6 @@
         </header>
 
         <main>
-            <!-- Tabla de Pendientes -->
             <h2>Cotizaciones Pendientes de Descarga</h2>
             <table class="centers-table">
                 <thead>
@@ -29,13 +28,11 @@
                     </tr>
                 </thead>
                 <tbody id="pending-quotes-table-body">
-                    <!-- Las cotizaciones pendientes se cargarán aquí -->
-                </tbody>
+                    </tbody>
             </table>
 
             <hr style="margin: 40px 0;">
 
-            <!-- Tabla de Finalizadas -->
             <h2>Historial de Cotizaciones Finalizadas</h2>
             <table class="centers-table">
                 <thead>
@@ -48,26 +45,31 @@
                     </tr>
                 </thead>
                 <tbody id="finalized-quotes-table-body">
-                    <!-- Las cotizaciones aprobadas y rechazadas se cargarán aquí -->
-                </tbody>
+                    </tbody>
             </table>
         </main>
     </div>
 
-    <!-- Ventana Modal para Ver Detalle y Acciones -->
-    <div id="quote-details-modal" class="modal">
-        <div class="modal-content-large">
-            <span class="close-button">&times;</span>
-            <h2>Detalle de la Cotización</h2>
-            <div id="quote-details-content"></div>
-            <div id="quote-actions" class="form-group">
-                <button id="approve-button" class="btn">Aprobar</button>
-                <button id="reject-button" class="btn btn-delete">Rechazar</button>
-                <button id="modify-button" class="btn btn-edit">Modificar</button> 
+    <div id="rejected-quote-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-rejected-modal-btn">&times;</span>
+            <h2>Detalles del Rechazo</h2>
+            
+            <div class="rejection-reason-box">
+                <h4>Motivo del Rechazo:</h4>
+                <p id="rejection-reason-text"></p>
+            </div>
+
+            <div class="quote-summary">
+                <h4>Resumen de la Cotización Rechazada:</h4>
+                <span id="rejected-quote-number"></span>
+                <ul id="rejected-quote-products">
+                    </ul>
+                <div id="rejected-quote-summary-details">
+                    </div>
             </div>
         </div>
     </div>
-
     <script src="aprobacion.js"></script>
 </body>
 </html>
