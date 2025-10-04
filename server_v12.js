@@ -788,6 +788,34 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
     }
 });
 // ======================================================================
+// ========= INICIO: NUEVA RUTA PARA EL RANKING DE ASESORES =============
+// ======================================================================
+app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                advisorname, 
+                COUNT(*) AS formalized_count
+            FROM 
+                visits
+            WHERE 
+                LOWER(TRIM(commenttext)) = 'formalizar acuerdo'
+            GROUP BY 
+                advisorname
+            ORDER BY 
+                formalized_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener el ranking de asesores:', error);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
+    }
+});
+// ======================================================================
+// ========= FIN: NUEVA RUTA PARA EL RANKING DE ASESORES ==============
+// ======================================================================
+// ======================================================================
 // ========= FIN: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN ======
 // ======================================================================
 
