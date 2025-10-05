@@ -816,25 +816,33 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
     }
 });
 // ======================================================================
-// ========= RUTA ACTUALIZADA PARA EL RANKING DE ASESORES ===============
+// ========= RUTA ACTUALIZADA PARA EL RANKING DE ASESORES (LÓGICA ESTRICTA) =====
 // ======================================================================
 app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
     try {
-        // CORRECCIÓN: La consulta ahora une 'visits' y 'centers'
-        // para contar solo las formalizaciones de centros que existen.
+        // CORRECCIÓN: Esta consulta ahora solo cuenta si 'Formalizar Acuerdo'
+        // es la ÚLTIMA visita registrada para un centro existente.
         const query = `
-            SELECT 
-                v.advisorname, 
+            WITH LatestVisits AS (
+                SELECT
+                    v.advisorname,
+                    v.commenttext,
+                    ROW_NUMBER() OVER(PARTITION BY v.centername ORDER BY v.visitdate DESC, v.createdat DESC) as rn
+                FROM
+                    visits v
+                INNER JOIN
+                    centers c ON v.centername = c.name
+            )
+            SELECT
+                advisorname,
                 COUNT(*) AS formalized_count
-            FROM 
-                visits v
-            INNER JOIN 
-                centers c ON v.centername = c.name
-            WHERE 
-                LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
-            GROUP BY 
-                v.advisorname
-            ORDER BY 
+            FROM
+                LatestVisits
+            WHERE
+                rn = 1 AND LOWER(TRIM(commenttext)) = 'formalizar acuerdo'
+            GROUP BY
+                advisorname
+            ORDER BY
                 formalized_count DESC;
         `;
         const result = await pool.query(query);
