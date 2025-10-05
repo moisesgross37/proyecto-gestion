@@ -816,20 +816,24 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
     }
 });
 // ======================================================================
-// ========= INICIO: NUEVA RUTA PARA EL RANKING DE ASESORES =============
+// ========= RUTA ACTUALIZADA PARA EL RANKING DE ASESORES ===============
 // ======================================================================
 app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
     try {
+        // CORRECCIÓN: La consulta ahora une 'visits' y 'centers'
+        // para contar solo las formalizaciones de centros que existen.
         const query = `
             SELECT 
-                advisorname, 
+                v.advisorname, 
                 COUNT(*) AS formalized_count
             FROM 
-                visits
+                visits v
+            INNER JOIN 
+                centers c ON v.centername = c.name
             WHERE 
-                LOWER(TRIM(commenttext)) = 'formalizar acuerdo'
+                LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
             GROUP BY 
-                advisorname
+                v.advisorname
             ORDER BY 
                 formalized_count DESC;
         `;
@@ -841,7 +845,7 @@ app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
     }
 });
 // ======================================================================
-// ========= FIN: NUEVA RUTA PARA EL RANKING DE ASESORES ==============
+// ========= FIN: RUTA ACTUALIZADA PARA EL RANKING DE ASESORES =========
 // ======================================================================
 // ======================================================================
 // ========= FIN: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN ======
