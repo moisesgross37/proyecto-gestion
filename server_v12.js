@@ -275,36 +275,50 @@ app.post('/api/visits', requireLogin, async (req, res) => {
 
 app.get('/api/centers', requireLogin, async (req, res) => {
     try {
-        // Nueva consulta SQL que une centros con su última visita
-        const query = `
+        // Obtenemos los posibles filtros desde la URL (ej: /api/centers?advisor=nombre)
+        const { advisor, comment } = req.query;
+
+        let queryParams = [];
+        let whereClauses = [];
+
+        // Construimos la consulta SQL base
+        let query = `
             SELECT
-                c.id,
-                c.name,
-                c.address,
-                c.sector,
-                c.contactname,
-                c.contactnumber,
+                c.id, c.name, c.address, c.sector, c.contactname, c.contactnumber,
                 latest_visit.advisorname,
                 latest_visit.commenttext
             FROM
                 centers c
             LEFT JOIN LATERAL (
-                SELECT
-                    v.advisorname,
-                    v.commenttext
-                FROM
-                    visits v
-                WHERE
-                    v.centername = c.name
-                ORDER BY
-                    v.visitdate DESC, v.createdat DESC
+                SELECT v.advisorname, v.commenttext
+                FROM visits v
+                WHERE v.centername = c.name
+                ORDER BY v.visitdate DESC, v.createdat DESC
                 LIMIT 1
             ) AS latest_visit ON true
-            ORDER BY
-                c.name ASC;
         `;
+
+        // Si se envió un filtro de asesor, lo añadimos a la consulta
+        if (advisor) {
+            queryParams.push(advisor);
+            whereClauses.push(`latest_visit.advisorname = $${queryParams.length}`);
+        }
+
+        // Si se envió un filtro de comentario, lo añadimos a la consulta
+        if (comment) {
+            queryParams.push(comment);
+            whereClauses.push(`latest_visit.commenttext = $${queryParams.length}`);
+        }
+
+        // Unimos todas las condiciones de filtro
+        if (whereClauses.length > 0) {
+            query += ` WHERE ${whereClauses.join(' AND ')}`;
+        }
+
+        // Añadimos el orden alfabético al final
+        query += ' ORDER BY c.name ASC;';
         
-        const result = await pool.query(query);
+        const result = await pool.query(query, queryParams);
         res.json(result.rows);
 
     } catch (err) {
@@ -312,7 +326,6 @@ app.get('/api/centers', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
-
 app.get('/api/centers/search', requireLogin, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
     try {
