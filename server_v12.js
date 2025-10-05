@@ -274,26 +274,41 @@ app.post('/api/visits', requireLogin, async (req, res) => {
 // ==================================================================
 
 app.get('/api/centers', requireLogin, async (req, res) => {
-    const user = req.session.user;
-
     try {
-        let result;
-        if (user.rol === 'Administrador') {
-            // Los administradores ven todos los centros
-            result = await pool.query('SELECT * FROM centers ORDER BY name ASC');
-        } else {
-            // Los asesores solo ven los centros a los que han registrado al menos una visita
-            const advisorName = user.nombre;
-            const query = `
-                SELECT c.* FROM centers c
-                WHERE c.name IN (SELECT DISTINCT v.centername FROM visits v WHERE v.advisorname = $1)
-                ORDER BY c.name ASC
-            `;
-            result = await pool.query(query, [advisorName]);
-        }
+        // Nueva consulta SQL que une centros con su última visita
+        const query = `
+            SELECT
+                c.id,
+                c.name,
+                c.address,
+                c.sector,
+                c.contactname,
+                c.contactnumber,
+                latest_visit.advisorname,
+                latest_visit.commenttext
+            FROM
+                centers c
+            LEFT JOIN LATERAL (
+                SELECT
+                    v.advisorname,
+                    v.commenttext
+                FROM
+                    visits v
+                WHERE
+                    v.centername = c.name
+                ORDER BY
+                    v.visitdate DESC, v.createdat DESC
+                LIMIT 1
+            ) AS latest_visit ON true
+            ORDER BY
+                c.name ASC;
+        `;
+        
+        const result = await pool.query(query);
         res.json(result.rows);
+
     } catch (err) {
-        console.error('Error al obtener los centros:', err);
+        console.error('Error al obtener los centros con su última visita:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
