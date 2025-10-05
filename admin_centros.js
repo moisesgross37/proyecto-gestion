@@ -1,27 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
     const centersTableBody = document.getElementById('centers-table-body');
+    // Referencia al thead para poder cambiar los encabezados
+    const centersTableHead = document.querySelector('.centers-table thead'); 
     const modal = document.getElementById('edit-center-modal');
     const closeModalButton = modal.querySelector('.close-button');
     const editCenterForm = document.getElementById('edit-center-form');
 
-    // --- Inputs del Formulario ---
     const editCenterId = document.getElementById('edit-center-id');
     const editCenterName = document.getElementById('edit-center-name');
-    const editCenterAddress = document.getElementById('edit-center-address'); // Campo que faltaba
-    const editCenterSector = document.getElementById('edit-center-sector');   // Campo que faltaba
+    const editCenterAddress = document.getElementById('edit-center-address');
+    const editCenterSector = document.getElementById('edit-center-sector');
     const editContactName = document.getElementById('edit-contact-name');
     const editContactNumber = document.getElementById('edit-contact-number');
 
-    let allCenters = []; // Caché para guardar los centros y no pedirlos cada vez
+    let allCenters = [];
 
-    // --- Función Principal para Cargar y Mostrar Centros ---
     const fetchAndDisplayCenters = async () => {
         try {
             const response = await fetch('/api/centers');
             if (!response.ok) throw new Error('Error al obtener centros.');
             
-            allCenters = await response.json(); // Guardar en caché
+            allCenters = await response.json();
             
+            // --- INICIO DE CAMBIOS EN LA TABLA ---
+            // 1. Actualizar los encabezados de la tabla
+            centersTableHead.innerHTML = `
+                <tr>
+                    <th>Nombre del Centro</th>
+                    <th>Asesor Principal</th>
+                    <th>Último Comentario</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+
+            // 2. Llenar la tabla con la nueva información
             centersTableBody.innerHTML = '';
             if (allCenters.length === 0) {
                 centersTableBody.innerHTML = '<tr><td colspan="4">No hay centros registrados.</td></tr>';
@@ -30,11 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allCenters.forEach(center => {
                 const row = document.createElement('tr');
-                // Columnas ajustadas para ser más limpias
                 row.innerHTML = `
                     <td>${center.name}</td>
-                    <td>${center.contactname || ''}</td>
-                    <td>${center.contactnumber || ''}</td>
+                    <td>${center.advisorname || 'N/A'}</td>
+                    <td>${center.commenttext || 'Sin visitas'}</td>
                     <td class="actions-cell">
                         <button class="btn btn-edit" data-id="${center.id}">Editar</button>
                         <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
@@ -42,13 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 centersTableBody.appendChild(row);
             });
+            // --- FIN DE CAMBIOS EN LA TABLA ---
+
         } catch (error) {
             console.error('Error al mostrar centros:', error);
             centersTableBody.innerHTML = '<tr><td colspan="4">Error al cargar los centros.</td></tr>';
         }
     };
 
-    // --- Lógica del Modal ---
     const openEditModal = (center) => {
         editCenterId.value = center.id;
         editCenterName.value = center.name;
@@ -63,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     };
 
-    // --- Manejo de Eventos de la Tabla ---
     centersTableBody.addEventListener('click', (event) => {
         const target = event.target;
         const centerId = parseInt(target.dataset.id, 10);
@@ -76,25 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Manejo de la Eliminación ---
     const handleDeleteCenter = async (centerId) => {
         if (!confirm('¿Estás seguro de que quieres eliminar este centro? Esta acción no se puede deshacer.')) return;
         try {
             const response = await fetch(`/api/centers/${centerId}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Error al eliminar el centro.');
-            await fetchAndDisplayCenters(); // Recargar la tabla
+            await fetchAndDisplayCenters();
         } catch (error) {
             console.error(error);
             alert('No se pudo eliminar el centro.');
         }
     };
 
-    // --- Manejo de la Actualización (CORREGIDO) ---
     editCenterForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const id = parseInt(editCenterId.value, 10);
         
-        // CORRECCIÓN: Se incluyen todos los campos que el servidor espera
         const updatedData = {
             name: editCenterName.value,
             address: editCenterAddress.value,
@@ -120,12 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Eventos para cerrar el modal ---
     closeModalButton.addEventListener('click', closeEditModal);
     window.addEventListener('click', (event) => {
         if (event.target === modal) closeEditModal();
     });
 
-    // --- Carga Inicial ---
     fetchAndDisplayCenters();
 });
