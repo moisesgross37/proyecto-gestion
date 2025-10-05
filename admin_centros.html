@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Centros de Estudio - Admin</title>
-    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/confeccion_estilos.css"> 
     <link rel="stylesheet" href="/admin-estilos.css">
 </head>
 <body>
@@ -18,6 +18,24 @@
             <div class="card">
                 <h2>Centros de Estudio Registrados</h2>
                 <p>Aquí puedes editar los centros para corregir sus datos.</p>
+
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="filter-advisor">Filtrar por Asesor:</label>
+                        <select id="filter-advisor">
+                            <option value="">Todos los asesores</option>
+                            </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-comment">Filtrar por Último Comentario:</label>
+                        <select id="filter-comment">
+                            <option value="">Todos los comentarios</option>
+                            </select>
+                    </div>
+                    <div class="filter-group">
+                        <button id="clear-filters-btn" class="btn btn-secondary">Limpiar Filtros</button>
+                    </div>
+                </div>
                 <table class="centers-table">
                     <thead>
                         <tr>
