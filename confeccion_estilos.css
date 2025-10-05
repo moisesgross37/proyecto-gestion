@@ -14,7 +14,7 @@ body {
 
 /* --- Contenedor Principal --- */
 .container {
-    max-width: 1200px; /* <-- ÚNICO CAMBIO: Aumentado de 900px a 1200px */
+    max-width: 1200px; /* Ancho ampliado */
     margin: 0 auto;
     padding: 20px;
     background-color: #ffffff;
@@ -22,7 +22,6 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* ... el resto del archivo css permanece igual ... */
 header {
     margin-bottom: 30px;
     padding-bottom: 15px;
@@ -90,6 +89,7 @@ header h1 {
 
 .form-group input[type="text"],
 .form-group input[type="password"],
+.form-group input[type="tel"], /* Añadido para números de teléfono */
 .form-group select {
     width: 100%;
     padding: 10px;
@@ -99,33 +99,38 @@ header h1 {
     font-size: 1em;
 }
 
-/* --- Tabla de Usuarios --- */
-.users-table {
+/* --- Tablas --- */
+.users-table,
+.centers-table { /* Aplicamos el mismo estilo a ambas tablas */
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
 }
 
-.users-table th,
-.users-table td {
+.users-table th, .users-table td,
+.centers-table th, .centers-table td {
     border: 1px solid #e0e0e0;
     padding: 12px;
     text-align: left;
+    vertical-align: middle; /* Centra el contenido verticalmente */
 }
 
-.users-table th {
+.users-table th,
+.centers-table th {
     background-color: #f2f5f7;
     font-weight: 600;
     color: #34495e;
 }
 
-.users-table tr:nth-child(even) {
+.users-table tr:nth-child(even),
+.centers-table tr:nth-child(even) {
     background-color: #f9fafb;
 }
 
-.users-table .actions-cell {
+.actions-cell {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap; /* Permite que los botones pasen a la siguiente línea si no caben */
+    gap: 8px; /* Espacio entre botones */
 }
 
 /* --- Estilos para el Estado del Usuario --- */
@@ -139,4 +144,43 @@ header h1 {
     color: #e74c3c;
     font-weight: bold;
     text-transform: capitalize;
+}
+
+/* ============================================== */
+/* ========= ESTILOS PARA LA SECCIÓN DE FILTROS === */
+/* ============================================== */
+.filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.9em;
+}
+
+.filter-group select {
+    width: 100%;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
 }
