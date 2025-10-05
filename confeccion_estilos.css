@@ -14,7 +14,7 @@ body {
 
 /* --- Contenedor Principal --- */
 .container {
-    max-width: 900px;
+    max-width: 1200px; /* <-- ÚNICO CAMBIO: Aumentado de 900px a 1200px */
     margin: 0 auto;
     padding: 20px;
     background-color: #ffffff;
@@ -22,6 +22,7 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
+/* ... el resto del archivo css permanece igual ... */
 header {
     margin-bottom: 30px;
     padding-bottom: 15px;
@@ -94,7 +95,7 @@ header h1 {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+    box-sizing: border-box; 
     font-size: 1em;
 }
 
@@ -124,7 +125,7 @@ header h1 {
 
 .users-table .actions-cell {
     display: flex;
-    gap: 8px; /* Espacio entre botones */
+    gap: 8px;
 }
 
 /* --- Estilos para el Estado del Usuario --- */
