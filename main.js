@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menuContainer.innerHTML = buttonsHTML;
 
             // 2. Cargar y mostrar el ranking de asesores (NUEVO)
-            // loadAdvisorRanking();
+            loadAdvisorRanking();
 
         } else {
             window.location.href = '/login.html';
