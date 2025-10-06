@@ -918,6 +918,75 @@ app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
 // ========= FIN: NUEVA RUTA PARA RANKING DE VISITAS TOTALES ==========
 // ======================================================================
 
+// ======================================================================
+// ========= INICIO: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) ==========
+// ======================================================================
+app.get('/api/advisor-performance', requireLogin, async (req, res) => {
+    try {
+        console.log("Iniciando cálculo de /api/advisor-performance...");
+
+        const query = `
+            WITH VisitCounts AS (
+                SELECT v.advisorname, COUNT(*) AS visit_count
+                FROM visits v
+                JOIN centers c ON v.centername = c.name
+                GROUP BY v.advisorname
+            ),
+            FormalizationCounts AS (
+                SELECT v.advisorname, COUNT(*) AS formalization_count
+                FROM visits v
+                JOIN centers c ON v.centername = c.name
+                WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
+                GROUP BY v.advisorname
+            )
+            SELECT
+                vc.advisorname,
+                vc.visit_count,
+                COALESCE(fc.formalization_count, 0) AS formalization_count
+            FROM VisitCounts vc
+            LEFT JOIN FormalizationCounts fc ON vc.advisorname = fc.advisorname;
+        `;
+
+        const { rows: advisorsData } = await pool.query(query);
+        console.log(`Datos crudos de la BD: ${advisorsData.length} asesores encontrados.`);
+
+        if (advisorsData.length === 0) {
+            console.log("No hay datos de asesores, devolviendo array vacío.");
+            return res.json([]);
+        }
+
+        const maxVisits = Math.max(...advisorsData.map(a => a.visit_count));
+        const maxFormalizations = Math.max(...advisorsData.map(a => a.formalization_count));
+        console.log(`Valores máximos - Visitas: ${maxVisits}, Formalizaciones: ${maxFormalizations}`);
+
+        const performanceData = advisorsData.map(advisor => {
+            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
+            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
+            const totalScore = visitScore + formalizationScore;
+
+            return {
+                advisorname: advisor.advisorname,
+                performance_score: parseFloat(totalScore.toFixed(1))
+            };
+        });
+
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+        console.log("Cálculo de desempeño completado exitosamente.");
+
+        res.json(performanceData);
+
+    } catch (error) {
+        console.error('ERROR DETALLADO en /api/advisor-performance:', error);
+        res.status(500).json({
+            message: 'Error en el servidor al calcular el desempeño.',
+            error: error.message
+        });
+    }
+});
+// ======================================================================
+// ========= FIN: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) =============
+// ======================================================================
+
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
