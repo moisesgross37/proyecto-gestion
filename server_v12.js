@@ -31,13 +31,27 @@ const apiKeyAuth = (req, res, next) => {
 };
 // --- FIN: CONFIGURACIÓN DE SEGURIDAD PARA API ---
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
 
+// PEGA ESTE NUEVO BLOQUE DE CÓDIGO AQUÍ
+// =================================================================
+// ============== NUEVO MIDDLEWARE DE ACCESO DUAL ==================
+// =================================================================
+const allowUserOrApiKey = (req, res, next) => {
+    // 1. ¿Hay una sesión de usuario válida?
+    if (req.session && req.session.user) {
+        return next(); // Sí, es un usuario logueado. ¡Adelante!
+    }
+
+    // 2. Si no hay sesión, ¿hay una llave de API válida?
+    const providedKey = req.header('X-API-Key');
+    if (providedKey && providedKey === API_KEY) {
+        return next(); // Sí, es un sistema autorizado. ¡Adelante!
+    }
+
+    // 3. Si no es ninguna de las dos, se niega el acceso.
+    res.status(401).json({ message: 'Acceso no autorizado: Se requiere iniciar sesión o una llave de API válida.' });
+};
+// =================================================================
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
