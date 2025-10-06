@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- LÓGICA DE INICIO DE SESIÓN (SIN CAMBIOS) ---
+
+    // --- LÓGICA PARA EL FORMULARIO DE INICIO DE SESIÓN ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -26,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA DE CERRAR SESIÓN (SIN CAMBIOS) ---
+    // --- LÓGICA PARA EL BOTÓN DE CERRAR SESIÓN ---
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
@@ -44,17 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA DEL MENÚ PRINCIPAL (ACTUALIZADA) ---
+    // --- LÓGICA PARA EL MENÚ PRINCIPAL DINÁMICO ---
     const menuContainer = document.getElementById('menu-buttons-container');
     const userNameSpan = document.getElementById('user-name');
-    const rankingContainer = document.getElementById('ranking-container'); // Contenedor del ranking
-
+    
     if (menuContainer) { // Si estamos en el menú principal
         const user = JSON.parse(localStorage.getItem('currentUser'));
         if (user) {
             userNameSpan.textContent = user.nombre;
             
-            // 1. Cargar botones del menú (sin cambios)
+            // 1. Cargar botones del menú
             let buttonsHTML = '';
             if (user.rol === 'Administrador') {
                 buttonsHTML += '<a href="/admin_menu.html" class="nav-button">Panel de Administración</a>';
@@ -64,16 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             menuContainer.innerHTML = buttonsHTML;
 
-            // 2. Cargar y mostrar el ranking de asesores (NUEVO)
+            // 2. Cargar y mostrar los rankings
             loadAdvisorRanking();
+            loadAdvisorVisitRanking(); // Llamada a la nueva función
 
         } else {
+            // Si no hay usuario, redirigir al login
             window.location.href = '/login.html';
         }
     }
 
-    // --- NUEVA FUNCIÓN PARA CARGAR Y MOSTRAR EL RANKING ---
+    // --- FUNCIÓN PARA CARGAR RANKING DE FORMALIZACIONES ---
     async function loadAdvisorRanking() {
+        const rankingContainer = document.getElementById('ranking-container');
         if (!rankingContainer) return;
 
         try {
@@ -88,10 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let rankingHTML = '<h3>Líderes de Formalización</h3>';
-            const maxCount = rankingData[0].formalized_count; // El líder establece el 100%
+            const maxCount = rankingData[0].formalized_count;
 
             rankingData.forEach(advisor => {
-                const percentage = (advisor.formalized_count / maxCount) * 100;
+                const percentage = maxCount > 0 ? (advisor.formalized_count / maxCount) * 100 : 0;
                 rankingHTML += `
                     <div class="advisor-ranking-item">
                         <div class="advisor-info">
@@ -109,6 +112,47 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(error);
             rankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de rendimiento.</p>';
+        }
+    }
+
+    // --- NUEVA FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES ---
+    async function loadAdvisorVisitRanking() {
+        const visitRankingContainer = document.getElementById('visit-ranking-container');
+        if (!visitRankingContainer) return;
+
+        try {
+            const response = await fetch('/api/advisor-visit-ranking');
+            if (!response.ok) throw new Error('No se pudo cargar el ranking de visitas.');
+            
+            const rankingData = await response.json();
+
+            if (rankingData.length === 0) {
+                visitRankingContainer.innerHTML = '<h3>Líderes de Visitas</h3><p>Aún no hay visitas registradas.</p>';
+                return;
+            }
+
+            let rankingHTML = '<h3>Líderes de Visitas</h3>';
+            const maxCount = rankingData[0].visit_count;
+
+            rankingData.forEach(advisor => {
+                const percentage = maxCount > 0 ? (advisor.visit_count / maxCount) * 100 : 0;
+                rankingHTML += `
+                    <div class="advisor-ranking-item">
+                        <div class="advisor-info">
+                            <span class="advisor-name">${advisor.advisorname}</span>
+                            <span class="advisor-count">${advisor.visit_count}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${percentage}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            visitRankingContainer.innerHTML = rankingHTML;
+
+        } catch (error) {
+            console.error(error);
+            visitRankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de visitas.</p>';
         }
     }
 });
