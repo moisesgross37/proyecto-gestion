@@ -573,7 +573,7 @@ app.delete('/api/quote-requests/:id', requireLogin, checkRole(['Administrador', 
 });
 // --- FIN DEL NUEVO CÓDIGO PARA ELIMINAR COTIZACIÓN ---
 // PARA Habilitar acceso a PDF por API Key para panel de admin
-app.get('/api/quote-requests/:id/pdf', apiKeyAuth, async (req, res) => {
+app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
     try {
         const quoteId = req.params.id;
         const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [quoteId]);
