@@ -886,13 +886,38 @@ app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 // ========= FIN: RUTA ACTUALIZADA PARA EL RANKING DE ASESORES =========
 // ======================================================================
-// ======================================================================
-// ========= FIN: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN ======
-// ======================================================================
+
 
 // ======================================================================
-// ============= FIN: RUTA DEFINITIVA PARA GENERAR PDF DEL ACUERDO ======
+// ========= INICIO: NUEVA RUTA PARA RANKING DE VISITAS TOTALES =========
 // ======================================================================
+app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
+    try {
+        // Esta consulta cuenta TODAS las visitas de asesores a centros existentes.
+        const query = `
+            SELECT 
+                v.advisorname, 
+                COUNT(*) AS visit_count
+            FROM 
+                visits v
+            INNER JOIN 
+                centers c ON v.centername = c.name
+            GROUP BY 
+                v.advisorname
+            ORDER BY 
+                visit_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener el ranking de visitas:', error);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking de visitas.' });
+    }
+});
+// ======================================================================
+// ========= FIN: NUEVA RUTA PARA RANKING DE VISITAS TOTALES ==========
+// ======================================================================
+
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
