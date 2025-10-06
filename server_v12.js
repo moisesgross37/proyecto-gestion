@@ -114,10 +114,23 @@ const loadProducts = () => {
         });
 };
 
+// =======================================================
+//   INICIO: BLOQUE CORREGIDO PARA CONEXIÓN Y SESIONES
+// =======================================================
+
+// 1. CREA LA CONEXIÓN A LA BASE DE DATOS ('pool')
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+// 2. CONFIGURA LAS SESIONES (USA 'pool')
 app.set('trust proxy', 1);
 app.use(session({
     store: new pgSession({
-        pool: pool,
+        pool: pool, // Ahora 'pool' ya existe y no dará error
         tableName: 'session'
     }),
     secret: 'un_secreto_mucho_mas_largo_y_seguro_para_produccion_final',
@@ -131,9 +144,13 @@ app.use(session({
     }
 }));
 
+// 3. MIDDLEWARE DE AUTENTICACIÓN
 const requireLogin = (req, res, next) => { if (!req.session.user) { return res.status(401).json({ message: 'No autenticado.' }); } next(); };
 const requireAdmin = checkRole(['Administrador']);
 
+// =======================================================
+//     FIN: BLOQUE CORREGIDO PARA CONEXIÓN Y SESIONES
+// =======================================================
 // --- RUTAS DE API ---
 
 // Nueva ruta para obtener los datos del usuario actual en sesión
