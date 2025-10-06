@@ -145,50 +145,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON COLORES) ---
-    async function loadAdvisorPerformance() {
-        const performanceContainer = document.getElementById('performance-container');
-        if (!performanceContainer) return;
+   // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON EXPLICACIÓN) ---
+async function loadAdvisorPerformance() {
+    const performanceContainer = document.getElementById('performance-container');
+    if (!performanceContainer) return;
 
-        const getScoreClass = (score) => {
-            if (score >= 75) return 'score-high';
-            if (score >= 40) return 'score-medium';
-            return 'score-low';
-        };
+    const getScoreClass = (score) => {
+        if (score >= 75) return 'score-high';
+        if (score >= 40) return 'score-medium';
+        return 'score-low';
+    };
 
-        try {
-            const response = await fetch('/api/advisor-performance');
-            if (!response.ok) throw new Error('No se pudo cargar la valoración de desempeño.');
-            
-            const performanceData = await response.json();
+    try {
+        const response = await fetch('/api/advisor-performance');
+        if (!response.ok) throw new Error('No se pudo cargar la valoración de desempeño.');
+        
+        const performanceData = await response.json();
 
-            if (performanceData.length === 0) {
-                performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay datos suficientes para calcular.</p>';
-                return;
-            }
-
-            let performanceHTML = '<h3>Valoración de Desempeño (70/30)</h3>';
-            
-            performanceData.forEach((advisor, index) => {
-                let medal = '';
-                if (index === 0) medal = '🥇';
-                if (index === 1) medal = '🥈';
-                if (index === 2) medal = '🥉';
-
-                const scoreClass = getScoreClass(advisor.performance_score);
-
-                performanceHTML += `
-                    <div class="performance-item">
-                        <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
-                        <span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span>
-                    </div>
-                `;
-            });
-            performanceContainer.innerHTML = performanceHTML;
-
-        } catch (error) {
-            console.error(error);
-            performanceContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño.</p>';
+        if (performanceData.length === 0) {
+            performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay datos suficientes para calcular.</p>';
+            return;
         }
+
+        // Se añade el nuevo párrafo explicativo aquí
+        let performanceHTML = `
+            <h3>Valoración de Desempeño (70/30)</h3>
+            <p class="performance-note">
+                Calculado con un 70% del rendimiento en Visitas y un 30% en Formalizaciones.
+            </p>
+        `;
+        
+        performanceData.forEach((advisor, index) => {
+            let medal = '';
+            if (index === 0) medal = '🥇';
+            if (index === 1) medal = '🥈';
+            if (index === 2) medal = '🥉';
+
+            const scoreClass = getScoreClass(advisor.performance_score);
+
+            performanceHTML += `
+                <div class="performance-item">
+                    <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
+                    <span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span>
+                </div>
+            `;
+        });
+        performanceContainer.innerHTML = performanceHTML;
+
+    } catch (error) {
+        console.error(error);
+        performanceContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño.</p>';
     }
+}
 });
