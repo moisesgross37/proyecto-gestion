@@ -64,9 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             menuContainer.innerHTML = buttonsHTML;
 
-            // 2. Cargar y mostrar los rankings
+            // 2. Cargar y mostrar los tres rankings
             loadAdvisorRanking();
-            loadAdvisorVisitRanking(); // Llamada a la nueva función
+            loadAdvisorVisitRanking();
+            loadAdvisorPerformance(); // <-- Llamada a la nueva función de desempeño
 
         } else {
             // Si no hay usuario, redirigir al login
@@ -78,21 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAdvisorRanking() {
         const rankingContainer = document.getElementById('ranking-container');
         if (!rankingContainer) return;
-
         try {
             const response = await fetch('/api/advisor-ranking');
             if (!response.ok) throw new Error('No se pudo cargar el ranking.');
-            
             const rankingData = await response.json();
-
             if (rankingData.length === 0) {
                 rankingContainer.innerHTML = '<h3>Líderes de Formalización</h3><p>Aún no hay datos de formalización registrados.</p>';
                 return;
             }
-
             let rankingHTML = '<h3>Líderes de Formalización</h3>';
             const maxCount = rankingData[0].formalized_count;
-
             rankingData.forEach(advisor => {
                 const percentage = maxCount > 0 ? (advisor.formalized_count / maxCount) * 100 : 0;
                 rankingHTML += `
@@ -108,32 +104,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             });
             rankingContainer.innerHTML = rankingHTML;
-
         } catch (error) {
             console.error(error);
             rankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de rendimiento.</p>';
         }
     }
 
-    // --- NUEVA FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES ---
+    // --- FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES ---
     async function loadAdvisorVisitRanking() {
         const visitRankingContainer = document.getElementById('visit-ranking-container');
         if (!visitRankingContainer) return;
-
         try {
             const response = await fetch('/api/advisor-visit-ranking');
             if (!response.ok) throw new Error('No se pudo cargar el ranking de visitas.');
-            
             const rankingData = await response.json();
-
             if (rankingData.length === 0) {
                 visitRankingContainer.innerHTML = '<h3>Líderes de Visitas</h3><p>Aún no hay visitas registradas.</p>';
                 return;
             }
-
             let rankingHTML = '<h3>Líderes de Visitas</h3>';
             const maxCount = rankingData[0].visit_count;
-
             rankingData.forEach(advisor => {
                 const percentage = maxCount > 0 ? (advisor.visit_count / maxCount) * 100 : 0;
                 rankingHTML += `
@@ -149,10 +139,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             });
             visitRankingContainer.innerHTML = rankingHTML;
-
         } catch (error) {
             console.error(error);
             visitRankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de visitas.</p>';
+        }
+    }
+
+    // --- NUEVA FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON COLORES) ---
+    async function loadAdvisorPerformance() {
+        const performanceContainer = document.getElementById('performance-container');
+        if (!performanceContainer) return;
+
+        const getScoreClass = (score) => {
+            if (score >= 75) return 'score-high';
+            if (score >= 40) return 'score-medium';
+            return 'score-low';
+        };
+
+        try {
+            const response = await fetch('/api/advisor-performance');
+            if (!response.ok) throw new Error('No se pudo cargar la valoración de desempeño.');
+            
+            const performanceData = await response.json();
+
+            if (performanceData.length === 0) {
+                performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay datos suficientes para calcular.</p>';
+                return;
+            }
+
+            let performanceHTML = '<h3>Valoración de Desempeño (70/30)</h3>';
+            
+            performanceData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇';
+                if (index === 1) medal = '🥈';
+                if (index === 2) medal = '🥉';
+
+                const scoreClass = getScoreClass(advisor.performance_score);
+
+                performanceHTML += `
+                    <div class="performance-item">
+                        <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
+                        <span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span>
+                    </div>
+                `;
+            });
+            performanceContainer.innerHTML = performanceHTML;
+
+        } catch (error) {
+            console.error(error);
+            performanceContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño.</p>';
         }
     }
 });
