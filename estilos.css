@@ -279,3 +279,11 @@ tr:hover {
 .performance-score.score-low {
     color: #dc3545; /* Rojo - Desempeño a Mejorar */
 }
+/* Estilo para la nota explicativa del panel de desempeño */
+.performance-note {
+    font-size: 0.8em;
+    text-align: center;
+    color: #6c757d;
+    margin-top: -15px; /* Sube la nota para que quede más cerca del título */
+    margin-bottom: 20px;
+}
