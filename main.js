@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. Cargar y mostrar los tres rankings
             loadAdvisorRanking();
             loadAdvisorVisitRanking();
-            loadAdvisorPerformance(); // <-- Llamada a la nueva función de desempeño
+            loadAdvisorPerformance(); 
 
         } else {
             // Si no hay usuario, redirigir al login
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- NUEVA FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON COLORES) ---
+    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON COLORES) ---
     async function loadAdvisorPerformance() {
         const performanceContainer = document.getElementById('performance-container');
         if (!performanceContainer) return;
