@@ -1,34 +1,53 @@
-/* --- Estilos Generales --- */
+/* ================================================= */
+/* ==== ARCHIVO DE ESTILOS PRINCIPAL: BE-GESTION === */
+/* ================================================= */
+
+/* --- 1. Estructura General y Cuerpo de la Página --- */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f4f7f9;
     color: #333;
     margin: 0;
     padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
+    line-height: 1.6;
 }
 
 .container {
     width: 100%;
-    max-width: 600px;
+    max-width: 900px; /* Ancho general para las tarjetas principales */
     background-color: #ffffff;
     padding: 30px 40px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin: 20px auto; /* Centra el contenedor */
 }
 
-header, footer {
+header {
     text-align: center;
     margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* --- 2. Tipografía (Títulos y Párrafos) --- */
 h1 {
     color: #2c3e50;
     font-size: 1.8em;
     margin-bottom: 5px;
+}
+
+.main-title {
+    font-size: 2.2em;
+    color: #34495e;
+    margin-bottom: 40px;
+    text-align: center;
 }
 
 p, label {
@@ -36,7 +55,17 @@ p, label {
     line-height: 1.6;
 }
 
-/* --- Formularios --- */
+footer a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* --- 3. Formularios (Inputs, Selects, Labels) --- */
 .form-group {
     margin-bottom: 20px;
 }
@@ -50,13 +79,14 @@ label {
 input[type="text"],
 input[type="date"],
 input[type="tel"],
+input[type="password"],
 select,
 textarea {
     width: 100%;
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 6px;
-    box-sizing: border-box; /* Importante para que el padding no afecte el ancho */
+    box-sizing: border-box;
     font-size: 1em;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
@@ -71,57 +101,76 @@ textarea {
     resize: vertical;
 }
 
-/* --- Botones --- */
+/* --- 4. Botones --- */
 .btn {
-    display: block;
-    width: 100%;
-    padding: 15px;
+    display: inline-block; /* Cambiado para que no ocupe todo el ancho por defecto */
+    width: auto;
+    padding: 12px 20px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s;
+    text-align: center;
 }
 
 .btn:hover {
     background-color: #0056b3;
 }
 
-/* --- Mensajes y Links --- */
-#success-message {
-    text-align: center;
-    color: #28a745;
-    font-weight: bold;
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #e9f7ef;
-    border-radius: 6px;
-}
-
-.hidden {
-    display: none;
-}
-
-footer {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
-}
-
-footer a {
+.back-button {
+    display: inline-block;
+    margin-bottom: 25px;
+    font-size: 1em;
     color: #007bff;
     text-decoration: none;
     font-weight: 500;
 }
 
-footer a:hover {
+.back-button:hover {
     text-decoration: underline;
 }
 
-/* --- Estilos para la tabla de reportes --- */
+/* --- 5. Menú Principal y Navegación --- */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    width: 100%;
+    margin: 40px auto 20px;
+}
+
+.nav-button {
+    background-color: #3498db;
+    color: white !important;
+    padding: 30px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 1.3em;
+    font-weight: 500;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.nav-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    text-decoration: none;
+}
+
+.nav-button.disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* --- 6. Tablas --- */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -148,68 +197,7 @@ tr:hover {
     background-color: #f1f1f1;
 }
 
-/* --- Estilos para la Página de Inicio (Menú) --- */
-
-.main-title {
-    font-size: 2.2em;
-    color: #34495e;
-    margin-bottom: 40px;
-    text-align: center;
-}
-
-.nav-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.nav-button {
-    background-color: #3498db;
-    color: white !important; /* Forzar color de texto */
-    padding: 30px;
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 1.3em;
-    font-weight: 500;
-    text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.nav-button:hover {
-    background-color: #2980b9;
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.15);
-    text-decoration: none;
-}
-
-.nav-button.disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* --- Botón para Volver --- */
-.back-button {
-    display: inline-block;
-    margin-bottom: 25px;
-    font-size: 1em;
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.back-button:hover {
-    text-decoration: underline;
-}
-
-/* ======================================================= */
-/* ===== ESTILOS PARA EL PANEL DE RANKING DE ASESORES ==== */
-/* ======================================================= */
+/* --- 7. Paneles de Ranking (Dashboard) --- */
 .ranking-card {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -265,25 +253,55 @@ tr:hover {
     border-radius: 5px;
     transition: width 0.5s ease-in-out;
 }
-/* ======================================================= */
-/* ===== ESTILOS PARA COLORES DE DESEMPEÑO =============== */
-/* ======================================================= */
-.performance-score.score-high {
-    color: #007bff; /* Azul - Desempeño Alto */
+
+/* --- 8. Panel de Valoración de Desempeño --- */
+/* ESTILOS AÑADIDOS PARA ALINEAR EN DOS COLUMNAS */
+.performance-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    align-items: center;
+    padding: 10px 5px;
+    border-bottom: 1px solid #e9ecef;
 }
 
-.performance-score.score-medium {
-    color: #fd7e14; /* Naranja - Desempeño Medio */
+.performance-item:last-child {
+    border-bottom: none;
 }
 
-.performance-score.score-low {
-    color: #dc3545; /* Rojo - Desempeño a Mejorar */
+.performance-advisor {
+    font-weight: 500;
+    color: #495057;
+    text-align: left;
 }
-/* Estilo para la nota explicativa del panel de desempeño */
+
+.performance-score {
+    font-weight: bold;
+    font-size: 1.1em;
+    text-align: right;
+}
+
 .performance-note {
     font-size: 0.8em;
     text-align: center;
     color: #6c757d;
-    margin-top: -15px; /* Sube la nota para que quede más cerca del título */
+    margin-top: -15px;
     margin-bottom: 20px;
+}
+
+.performance-score.score-high {
+    color: #007bff; /* Azul */
+}
+
+.performance-score.score-medium {
+    color: #fd7e14; /* Naranja */
+}
+
+.performance-score.score-low {
+    color: #dc3545; /* Rojo */
+}
+
+/* --- 9. Clases Utilitarias --- */
+.hidden {
+    display: none;
 }
