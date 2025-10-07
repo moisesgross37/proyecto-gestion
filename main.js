@@ -157,17 +157,60 @@ async function loadAdvisorPerformance() {
     };
 
     try {
-        const response = await fetch('/api/advisor-performance');
-        if (!response.ok) throw new Error('No se pudo cargar la valoración de desempeño.');
-        
-        const performanceData = await response.json();
+        // 1. PEDIMOS LOS DATOS A LAS DOS FUENTES QUE YA FUNCIONAN
+        const [formalizationRes, visitRes] = await Promise.all([
+            fetch('/api/advisor-ranking'),
+            fetch('/api/advisor-visit-ranking')
+        ]);
 
-        if (performanceData.length === 0) {
-            performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay datos suficientes para calcular.</p>';
+        if (!formalizationRes.ok || !visitRes.ok) {
+            throw new Error('No se pudieron cargar los datos base para el cálculo.');
+        }
+
+        const formalizationData = await formalizationRes.json();
+        const visitData = await visitRes.json();
+
+        if (visitData.length === 0) {
+            performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay visitas registradas para calcular.</p>';
             return;
         }
 
-        // Se añade el nuevo párrafo explicativo aquí
+        // 2. UNIFICAMOS LOS DATOS EN UN SOLO LUGAR
+        const advisors = {};
+
+        visitData.forEach(item => {
+            advisors[item.advisorname] = {
+                advisorname: item.advisorname,
+                visit_count: parseInt(item.visit_count, 10),
+                formalization_count: 0 // Valor inicial
+            };
+        });
+
+        formalizationData.forEach(item => {
+            if (advisors[item.advisorname]) {
+                advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
+            }
+        });
+
+        const combinedData = Object.values(advisors);
+
+        // 3. HACEMOS LA FÓRMULA (EL MISMO CÁLCULO, PERO EN EL NAVEGADOR)
+        const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
+        const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
+
+        const performanceData = combinedData.map(advisor => {
+            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
+            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
+            const totalScore = visitScore + formalizationScore;
+            return {
+                advisorname: advisor.advisorname,
+                performance_score: parseFloat(totalScore.toFixed(1))
+            };
+        });
+
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+
+        // 4. MOSTRAMOS LOS RESULTADOS
         let performanceHTML = `
             <h3>Valoración de Desempeño (70/30)</h3>
             <p class="performance-note">
@@ -180,9 +223,7 @@ async function loadAdvisorPerformance() {
             if (index === 0) medal = '🥇';
             if (index === 1) medal = '🥈';
             if (index === 2) medal = '🥉';
-
             const scoreClass = getScoreClass(advisor.performance_score);
-
             performanceHTML += `
                 <div class="performance-item">
                     <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
@@ -193,8 +234,7 @@ async function loadAdvisorPerformance() {
         performanceContainer.innerHTML = performanceHTML;
 
     } catch (error) {
-        console.error(error);
-        performanceContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño.</p>';
+        console.error("Error en loadAdvisorPerformance:", error);
+        performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño: ${error.message}</p>`;
     }
-}
-});
+}});
