@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadAdvisorPerformance(); 
 
         } else {
-            // Si no hay usuario, redirigir al login
             window.location.href = '/login.html';
         }
     }
@@ -106,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             rankingContainer.innerHTML = rankingHTML;
         } catch (error) {
             console.error(error);
-            rankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de rendimiento.</p>';
+            rankingContainer.innerHTML = `<p style="color: #e74c3c;">Error al cargar panel de formalizaciones: ${error.message}</p>`;
         }
     }
 
@@ -141,118 +140,102 @@ document.addEventListener('DOMContentLoaded', () => {
             visitRankingContainer.innerHTML = rankingHTML;
         } catch (error) {
             console.error(error);
-            visitRankingContainer.innerHTML = '<p style="color: #e74c3c;">No se pudo cargar el panel de visitas.</p>';
+            visitRankingContainer.innerHTML = `<p style="color: #e74c3c;">Error al cargar panel de visitas: ${error.message}</p>`;
         }
     }
 
-   // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON EXPLICACIÓN) ---
-async function loadAdvisorPerformance() {
-    const performanceContainer = document.getElementById('performance-container');
-    if (!performanceContainer) {
-        console.error("No se encontró el contenedor #performance-container. Saliendo.");
-        return;
-    }
+    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (LÓGICA EN CLIENTE) ---
+    async function loadAdvisorPerformance() {
+        const performanceContainer = document.getElementById('performance-container');
+        if (!performanceContainer) return;
 
-    console.log("1. Iniciando loadAdvisorPerformance...");
+        const getScoreClass = (score) => {
+            if (score >= 75) return 'score-high';
+            if (score >= 40) return 'score-medium';
+            return 'score-low';
+        };
 
-    const getScoreClass = (score) => {
-        if (score >= 75) return 'score-high';
-        if (score >= 40) return 'score-medium';
-        return 'score-low';
-    };
+        try {
+            const [formalizationRes, visitRes] = await Promise.all([
+                fetch('/api/advisor-ranking'),
+                fetch('/api/advisor-visit-ranking')
+            ]);
 
-    try {
-        console.log("2. Obteniendo datos de las APIs...");
-        const [formalizationRes, visitRes] = await Promise.all([
-            fetch('/api/advisor-ranking'),
-            fetch('/api/advisor-visit-ranking')
-        ]);
-
-        if (!formalizationRes.ok || !visitRes.ok) {
-            throw new Error('No se pudieron cargar los datos base para el cálculo.');
-        }
-
-        const formalizationData = await formalizationRes.json();
-        const visitData = await visitRes.json();
-        console.log("3. Datos recibidos:", { formalizationData, visitData });
-
-        if (visitData.length === 0) {
-            performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay visitas registradas para calcular.</p>';
-            console.log("Proceso detenido: no hay datos de visitas.");
-            return;
-        }
-
-        console.log("4. Unificando datos...");
-        const advisors = {};
-        visitData.forEach(item => {
-            advisors[item.advisorname] = {
-                advisorname: item.advisorname,
-                visit_count: parseInt(item.visit_count, 10),
-                formalization_count: 0
-            };
-        });
-        formalizationData.forEach(item => {
-            if (advisors[item.advisorname]) {
-                advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
+            if (!formalizationRes.ok || !visitRes.ok) {
+                throw new Error('No se pudieron cargar los datos base para el cálculo.');
             }
-        });
-        const combinedData = Object.values(advisors);
-        console.log("5. Datos combinados:", combinedData);
-        
-        console.log("6. Calculando puntuaciones...");
-        const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
-        const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
 
-        const performanceData = combinedData.map(advisor => {
-            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
-            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
-            const totalScore = visitScore + formalizationScore;
-            return {
-                advisorname: advisor.advisorname,
-                performance_score: parseFloat(totalScore.toFixed(1))
-            };
-        });
-        performanceData.sort((a, b) => b.performance_score - a.performance_score);
-        console.log("7. Datos finales con puntuación:", performanceData);
+            const formalizationData = await formalizationRes.json();
+            const visitData = await visitRes.json();
 
-        console.log("8. Renderizando HTML...");
-        let performanceHTML = `...`; // (El HTML se genera aquí)
-        performanceContainer.innerHTML = performanceHTML;
-        console.log("9. ¡Proceso completado con éxito!");
+            if (visitData.length === 0) {
+                performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay visitas registradas para calcular.</p>';
+                return;
+            }
 
+            const advisors = {};
+            visitData.forEach(item => {
+                advisors[item.advisorname] = {
+                    advisorname: item.advisorname,
+                    visit_count: parseInt(item.visit_count, 10),
+                    formalization_count: 0
+                };
+            });
+            formalizationData.forEach(item => {
+                if (advisors[item.advisorname]) {
+                    advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
+                } else {
+                    // Añadir asesor si solo tiene formalizaciones y no otras visitas
+                    advisors[item.advisorname] = {
+                        advisorname: item.advisorname,
+                        visit_count: parseInt(item.formalized_count, 10), // Su total de visitas es igual a sus formalizaciones
+                        formalization_count: parseInt(item.formalized_count, 10)
+                    };
+                }
+            });
 
-    } catch (error) {
-        console.error("!!! ERROR CAPTURADO en loadAdvisorPerformance:", error);
-        performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño: ${error.message}</p>`;
-    }
-}
-        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+            const combinedData = Object.values(advisors);
 
-        // 4. MOSTRAMOS LOS RESULTADOS
-        let performanceHTML = `
-            <h3>Valoración de Desempeño (70/30)</h3>
-            <p class="performance-note">
-                Calculado con un 70% del rendimiento en Visitas y un 30% en Formalizaciones.
-            </p>
-        `;
-        
-        performanceData.forEach((advisor, index) => {
-            let medal = '';
-            if (index === 0) medal = '🥇';
-            if (index === 1) medal = '🥈';
-            if (index === 2) medal = '🥉';
-            const scoreClass = getScoreClass(advisor.performance_score);
-            performanceHTML += `
-                <div class="performance-item">
-                    <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
-                    <span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span>
-                </div>
+            const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
+            const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
+
+            const performanceData = combinedData.map(advisor => {
+                const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
+                const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
+                const totalScore = visitScore + formalizationScore;
+                return {
+                    advisorname: advisor.advisorname,
+                    performance_score: parseFloat(totalScore.toFixed(1))
+                };
+            });
+
+            performanceData.sort((a, b) => b.performance_score - a.performance_score);
+
+            let performanceHTML = `
+                <h3>Valoración de Desempeño (70/30)</h3>
+                <p class="performance-note">
+                    Calculado con un 70% del rendimiento en Visitas y un 30% en Formalizaciones.
+                </p>
             `;
-        });
-        performanceContainer.innerHTML = performanceHTML;
+            
+            performanceData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇';
+                if (index === 1) medal = '🥈';
+                if (index === 2) medal = '🥉';
+                const scoreClass = getScoreClass(advisor.performance_score);
+                performanceHTML += `
+                    <div class="performance-item">
+                        <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
+                        <span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span>
+                    </div>
+                `;
+            });
+            performanceContainer.innerHTML = performanceHTML;
 
-    } catch (error) {
-        console.error("Error en loadAdvisorPerformance:", error);
-        performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño: ${error.message}</p>`;
+        } catch (error) {
+            console.error("Error en loadAdvisorPerformance:", error);
+            performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño: ${error.message}</p>`;
+        }
     }
-}});
+});
