@@ -31,8 +31,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // --- LÓGICA PARA EL BOTÓN DE CERRAR SESIÓN ---
-    // (Se mueve a menu.js ya que solo aparece en el menú principal)
-
 });
