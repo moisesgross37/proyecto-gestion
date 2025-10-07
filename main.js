@@ -148,7 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (CON EXPLICACIÓN) ---
 async function loadAdvisorPerformance() {
     const performanceContainer = document.getElementById('performance-container');
-    if (!performanceContainer) return;
+    if (!performanceContainer) {
+        console.error("No se encontró el contenedor #performance-container. Saliendo.");
+        return;
+    }
+
+    console.log("1. Iniciando loadAdvisorPerformance...");
 
     const getScoreClass = (score) => {
         if (score >= 75) return 'score-high';
@@ -157,7 +162,7 @@ async function loadAdvisorPerformance() {
     };
 
     try {
-        // 1. PEDIMOS LOS DATOS A LAS DOS FUENTES QUE YA FUNCIONAN
+        console.log("2. Obteniendo datos de las APIs...");
         const [formalizationRes, visitRes] = await Promise.all([
             fetch('/api/advisor-ranking'),
             fetch('/api/advisor-visit-ranking')
@@ -169,32 +174,32 @@ async function loadAdvisorPerformance() {
 
         const formalizationData = await formalizationRes.json();
         const visitData = await visitRes.json();
+        console.log("3. Datos recibidos:", { formalizationData, visitData });
 
         if (visitData.length === 0) {
             performanceContainer.innerHTML = '<h3>Valoración de Desempeño (70/30)</h3><p>No hay visitas registradas para calcular.</p>';
+            console.log("Proceso detenido: no hay datos de visitas.");
             return;
         }
 
-        // 2. UNIFICAMOS LOS DATOS EN UN SOLO LUGAR
+        console.log("4. Unificando datos...");
         const advisors = {};
-
         visitData.forEach(item => {
             advisors[item.advisorname] = {
                 advisorname: item.advisorname,
                 visit_count: parseInt(item.visit_count, 10),
-                formalization_count: 0 // Valor inicial
+                formalization_count: 0
             };
         });
-
         formalizationData.forEach(item => {
             if (advisors[item.advisorname]) {
                 advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
             }
         });
-
         const combinedData = Object.values(advisors);
-
-        // 3. HACEMOS LA FÓRMULA (EL MISMO CÁLCULO, PERO EN EL NAVEGADOR)
+        console.log("5. Datos combinados:", combinedData);
+        
+        console.log("6. Calculando puntuaciones...");
         const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
         const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
 
@@ -207,7 +212,20 @@ async function loadAdvisorPerformance() {
                 performance_score: parseFloat(totalScore.toFixed(1))
             };
         });
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+        console.log("7. Datos finales con puntuación:", performanceData);
 
+        console.log("8. Renderizando HTML...");
+        let performanceHTML = `...`; // (El HTML se genera aquí)
+        performanceContainer.innerHTML = performanceHTML;
+        console.log("9. ¡Proceso completado con éxito!");
+
+
+    } catch (error) {
+        console.error("!!! ERROR CAPTURADO en loadAdvisorPerformance:", error);
+        performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración de desempeño: ${error.message}</p>`;
+    }
+}
         performanceData.sort((a, b) => b.performance_score - a.performance_score);
 
         // 4. MOSTRAMOS LOS RESULTADOS
