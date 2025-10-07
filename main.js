@@ -1,3 +1,5 @@
+alert('PROBANDO VERSIÓN NUEVA DE MAIN.JS');
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- LÓGICA PARA EL FORMULARIO DE INICIO DE SESIÓN ---
@@ -185,10 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (advisors[item.advisorname]) {
                     advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
                 } else {
-                    // Añadir asesor si solo tiene formalizaciones y no otras visitas
                     advisors[item.advisorname] = {
                         advisorname: item.advisorname,
-                        visit_count: parseInt(item.formalized_count, 10), // Su total de visitas es igual a sus formalizaciones
+                        visit_count: parseInt(item.formalized_count, 10),
                         formalization_count: parseInt(item.formalized_count, 10)
                     };
                 }
