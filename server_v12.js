@@ -458,7 +458,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     } 
 });
 
-app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor' ,'Coordinador']), async (req, res) => {
     const userRole = req.session.user.rol;
     const userName = req.session.user.nombre;
 
