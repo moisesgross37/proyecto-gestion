@@ -249,19 +249,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const formData = new FormData(quoteForm);
-        const quoteData = {
-            quoteNumber: quoteNumberInput.value,
-            clientName: formData.get('clientName'),
-            clientId: selectedClientId,
-            eventName: formData.get('eventName'),
-            advisorName: advisorNameSelect.value,
-            studentCount: parseInt(formData.get('studentCount'), 10),
-            productIds: Array.from(selectedProductIds),
-            aporteInstitucion: parseFloat(formData.get('aporteInstitucion')) || 0,
-            estudiantesCortesia: parseInt(formData.get('estudiantesCortesia'), 10) || 0
-        };
+     const formData = new FormData(quoteForm);
 
+// --- INICIO DE LA MODIFICACIÓN ---
+
+// 1. Leemos la opción de membrete seleccionada por el usuario.
+const membreteSeleccionado = document.querySelector('input[name="membrete"]:checked').value;
+
+const quoteData = {
+    quoteNumber: quoteNumberInput.value,
+    clientName: formData.get('clientName'),
+    clientId: selectedClientId,
+    eventName: formData.get('eventName'),
+    advisorName: advisorNameSelect.value,
+    studentCount: parseInt(formData.get('studentCount'), 10),
+    productIds: Array.from(selectedProductIds),
+    aporteInstitucion: parseFloat(formData.get('aporteInstitucion')) || 0,
+    estudiantesCortesia: parseInt(formData.get('estudiantesCortesia'), 10) || 0,
+    membrete_tipo: membreteSeleccionado // 2. Añadimos el valor al objeto que se enviará.
+};
+
+// --- FIN DE LA MODIFICACIÓN ---
         try {
             const response = await fetch('/api/quote-requests', {
                 method: 'POST',
