@@ -399,6 +399,7 @@ app.put('/api/centers/:id', requireLogin, checkRole(['Administrador', 'Asesor'])
 });
 
 // REEMPLAZA TU RUTA '/api/centers/:id' CON ESTA VERSIÓN MEJORADA
+
 app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     const client = await pool.connect();
@@ -406,21 +407,20 @@ app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Antes de borrar el centro, obtenemos su nombre para limpiar los registros asociados.
+        // 1. Antes de borrar el centro, obtenemos su nombre.
         const centerResult = await client.query('SELECT name FROM centers WHERE id = $1', [id]);
         if (centerResult.rows.length === 0) {
             throw new Error('Centro no encontrado para eliminar.');
         }
         const centerName = centerResult.rows[0].name;
 
-        // 2. Borramos todas las visitas asociadas a ese nombre de centro.
+        // 2. Borramos todas las visitas asociadas.
         await client.query('DELETE FROM visits WHERE centername = $1', [centerName]);
 
-        // 3. Borramos todas las cotizaciones asociadas a ese nombre de cliente/centro.
-        // OJO: Esto asume que no necesitas guardar un historial de cotizaciones de centros eliminados.
+        // 3. Borramos todas las cotizaciones asociadas.
         await client.query('DELETE FROM quotes WHERE clientname = $1', [centerName]);
         
-        // 4. Finalmente, borramos el centro de la tabla principal.
+        // 4. Finalmente, borramos el centro.
         await client.query('DELETE FROM centers WHERE id = $1', [id]);
 
         await client.query('COMMIT');
