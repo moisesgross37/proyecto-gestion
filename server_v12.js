@@ -1036,6 +1036,23 @@ app.get('/api/debug/raw-table', requireLogin, requireAdmin, async (req, res) => 
 
 
 // ======================================================================
+// ========= !! TEMPORAL !! RUTA PARA MODIFICAR LA BASE DE DATOS ========
+// ======================================================================
+app.get('/api/admin/run-db-update', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const client = await pool.connect();
+        // El comando SQL que necesitamos ejecutar
+        const sqlCommand = "ALTER TABLE quotes ADD COLUMN IF NOT EXISTS membrete_tipo VARCHAR(50) DEFAULT 'Be Eventos';";
+        await client.query(sqlCommand);
+        client.release();
+        res.send('<h1>¡Éxito! La tabla "quotes" ha sido actualizada con la nueva columna. Ya puedes borrar este código del servidor.</h1>');
+    } catch (error) {
+        console.error("Error al ejecutar el comando de actualización:", error);
+        res.status(500).send(`<h1>Error al actualizar la tabla:</h1><pre>${error.message}</pre>`);
+    }
+});
+
+// ======================================================================
 // ========= FIN: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) =============
 // ======================================================================
 
