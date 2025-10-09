@@ -167,24 +167,25 @@ const requireAdmin = checkRole(['Administrador']);
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
+        // Usamos la consulta simple que solo busca en la tabla de cotizaciones.
+        // Como tu función de borrado ahora limpia todo, esta lista
+        // ya no debería contener "fantasmas" a futuro.
         const query = `
-            SELECT DISTINCT v.centername AS name
-            FROM visits v
-            WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
-            ORDER BY name ASC;
+            SELECT DISTINCT clientname AS name 
+            FROM quotes 
+            WHERE status = 'formalizada'
+            ORDER BY clientname ASC;
         `;
-        const result = await pool.query(query);
         
-        if (result.rows.length === 0) {
-            return res.status(204).send();
-        }
+        const result = await pool.query(query);
         res.json(result.rows);
 
     } catch (err) {
-        console.error('Error al obtener centros formalizados por visita:', err);
+        console.error('Error al obtener centros formalizados:', err);
         res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
     }
 });
+
 app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT name FROM advisors ORDER BY name ASC');
