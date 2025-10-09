@@ -167,21 +167,22 @@ const requireAdmin = checkRole(['Administrador']);
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
-        // Usamos la consulta simple que solo busca en la tabla de cotizaciones.
-        // Como tu función de borrado ahora limpia todo, esta lista
-        // ya no debería contener "fantasmas" a futuro.
+        // Lógica mejorada: Buscamos directamente las cotizaciones formalizadas.
+        // Es más rápido, directo y confiable.
         const query = `
             SELECT DISTINCT clientname AS name 
             FROM quotes 
-            WHERE status = 'formalizada'
+            WHERE status = 'formalizada' 
             ORDER BY clientname ASC;
         `;
-        
         const result = await pool.query(query);
+        
+        // Devolvemos un array de objetos con la propiedad 'name', 
+        // que es lo que el frontend espera.
         res.json(result.rows);
 
     } catch (err) {
-        console.error('Error al obtener centros formalizados:', err);
+        console.error('Error al obtener centros con cotizaciones formalizadas:', err);
         res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
     }
 });
@@ -217,17 +218,7 @@ app.post('/api/logout', (req, res) => {
         res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
     });
 });
-app.get('/api/next-quote-number', requireLogin, async (req, res) => {
-    try {
-        const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
-        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
-        const nextNumber = lastNumber + 1;
-        res.json({ quoteNumber: `COT-${nextNumber}` });
-    } catch (err) {
-        console.error("Error getting next quote number:", err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
-});
+
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
