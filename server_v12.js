@@ -1006,6 +1006,37 @@ app.get('/api/advisor-performance', requireLogin, async (req, res) => {
         });
     }
 });
+
+// ======================================================================
+// ========= INICIO: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ========
+// ======================================================================
+app.get('/api/debug/raw-table', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const { tableName } = req.query;
+
+        // Lista de tablas permitidas para evitar riesgos de seguridad
+        const allowedTables = ['centers', 'visits', 'quotes', 'users', 'advisors'];
+
+        if (!tableName || !allowedTables.includes(tableName)) {
+            return res.status(400).json({ message: 'Nombre de tabla no válido o no permitido.' });
+        }
+
+        // Usamos una sintaxis segura para construir la consulta
+        const query = `SELECT * FROM ${tableName} ORDER BY id DESC;`;
+        const result = await pool.query(query);
+        
+        res.json(result.rows);
+
+    } catch (error) {
+        console.error(`Error al leer la tabla cruda ${req.query.tableName}:`, error);
+        res.status(500).json({ message: 'Error en el servidor al leer la tabla.' });
+    }
+});
+// ======================================================================
+// ========= FIN: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ===========
+// ======================================================================
+
+
 // ======================================================================
 // ========= FIN: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) =============
 // ======================================================================
