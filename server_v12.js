@@ -217,7 +217,17 @@ app.post('/api/logout', (req, res) => {
         res.status(200).json({ message: 'Sesión cerrada exitosamente.' });
     });
 });
-
+app.get('/api/next-quote-number', requireLogin, async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
+        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
+        const nextNumber = lastNumber + 1;
+        res.json({ quoteNumber: `COT-${nextNumber}` });
+    } catch (err) {
+        console.error("Error getting next quote number:", err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
 app.get('/api/users', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT id, nombre, username, rol, estado FROM users ORDER BY nombre ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
