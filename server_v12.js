@@ -386,28 +386,41 @@ app.put('/api/centers/:id', requireLogin, checkRole(['Administrador', 'Asesor'])
     }
 });
 
+// REEMPLAZA TU RUTA '/api/centers/:id' CON ESTA VERSIÓN MEJORADA
 app.delete('/api/centers/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+
     try {
-        await pool.query('DELETE FROM centers WHERE id = $1', [req.params.id]);
-        res.status(200).json({ message: 'Centro de estudio eliminado con éxito' });
+        await client.query('BEGIN');
+
+        // 1. Antes de borrar el centro, obtenemos su nombre para limpiar los registros asociados.
+        const centerResult = await client.query('SELECT name FROM centers WHERE id = $1', [id]);
+        if (centerResult.rows.length === 0) {
+            throw new Error('Centro no encontrado para eliminar.');
+        }
+        const centerName = centerResult.rows[0].name;
+
+        // 2. Borramos todas las visitas asociadas a ese nombre de centro.
+        await client.query('DELETE FROM visits WHERE centername = $1', [centerName]);
+
+        // 3. Borramos todas las cotizaciones asociadas a ese nombre de cliente/centro.
+        // OJO: Esto asume que no necesitas guardar un historial de cotizaciones de centros eliminados.
+        await client.query('DELETE FROM quotes WHERE clientname = $1', [centerName]);
+        
+        // 4. Finalmente, borramos el centro de la tabla principal.
+        await client.query('DELETE FROM centers WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Centro y todos sus datos asociados eliminados con éxito' });
+
     } catch (err) {
-        console.error('Error eliminando centro:', err);
+        await client.query('ROLLBACK');
+        console.error('Error eliminando centro y sus datos asociados:', err);
         res.status(500).json({ message: 'Error en el servidor.' });
+    } finally {
+        client.release();
     }
-});
-app.get('/api/zones', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM zones ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.post('/api/zones', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newZone = await pool.query('INSERT INTO zones (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newZone.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.delete('/api/zones/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Zona eliminada' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { try { const result = await pool.query('SELECT * FROM comments ORDER BY text ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newComment = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [name]); res.status(201).json(newComment.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Comentario eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/next-quote-number', requireLogin, async (req, res) => {
-    try {
-        const result = await pool.query(`SELECT quotenumber FROM quotes WHERE quotenumber LIKE 'COT-%' ORDER BY CAST(SUBSTRING(quotenumber FROM 5) AS INTEGER) DESC LIMIT 1`);
-        const lastNumber = result.rows.length > 0 ? parseInt(result.rows[0].quotenumber.split('-')[1]) : 240000;
-        const nextNumber = lastNumber + 1;
-        res.json({ quoteNumber: `COT-${nextNumber}` });
-    } catch (err) { console.error("Error getting next quote number:", err); res.status(500).json({ message: 'Error en el servidor' }); }
 });
 app.get('/api/data', requireLogin, async (req, res) => {
     try {
