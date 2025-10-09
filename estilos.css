@@ -305,3 +305,6 @@ tr:hover {
 .hidden {
     display: none;
 }
+.radio-group { display: flex; align-items: center; gap: 20px; }
+.radio-group input[type="radio"] { width: auto; }
+.radio-label { font-weight: normal; margin-bottom: 0; }
