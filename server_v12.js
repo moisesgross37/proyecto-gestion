@@ -167,10 +167,10 @@ const requireAdmin = checkRole(['Administrador']);
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
+        // Volvemos a la consulta simple que solo busca en la tabla de Visitas
         const query = `
             SELECT DISTINCT v.centername AS name
             FROM visits v
-            INNER JOIN centers c ON v.centername = c.name 
             WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
             ORDER BY name ASC;
         `;
