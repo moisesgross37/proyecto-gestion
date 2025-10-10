@@ -456,21 +456,24 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
 });
 
 app.post('/api/quote-requests', requireLogin, async (req, res) => { 
-    const quoteInput = req.body; 
+    // 1. Añadimos 'membrete_tipo' a la lista de datos que recibimos
+    const { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion, membrete_tipo } = req.body; 
+    
+    const quoteInput = { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion, membrete_tipo };
     const dbDataForCalculation = { products: products }; 
     const calculationResult = assembleQuote(quoteInput, dbDataForCalculation); 
 
-    const { clientName, advisorName, studentCount, productIds, quoteNumber, aporteInstitucion } = quoteInput; 
-    
     const { facilidadesAplicadas, items, totals } = calculationResult;
     const precios = calculationResult.calculatedPrices[0] || {};
     const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
     const estudiantesParaFacturar = precios.estudiantesFacturables;
 
     try { 
+        // 2. Añadimos la nueva columna 'membrete_tipo' a la consulta para guardarla
         await pool.query(
-            `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11)`,
-            [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber, aporteInstitucion || 0]
+            `INSERT INTO quotes (clientname, advisorname, studentcount, productids, preciofinalporestudiante, estudiantesparafacturar, facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion, membrete_tipo) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11, $12)`,
+            [clientName, advisorName, studentCount, productIds, precioFinalPorEstudiante, estudiantesParaFacturar, facilidadesAplicadas, JSON.stringify(items), JSON.stringify(totals), quoteNumber, aporteInstitucion || 0, membrete_tipo || 'Be Eventos']
         ); 
         res.status(201).json({ message: 'Cotización guardada con éxito' }); 
     } catch (err) { 
@@ -478,7 +481,6 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
-
 app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor' ,'Coordinador']), async (req, res) => {
     const userRole = req.session.user.rol;
     const userName = req.session.user.nombre;
