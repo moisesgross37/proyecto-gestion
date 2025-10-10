@@ -626,11 +626,19 @@ app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
         res.setHeader('Content-Disposition', `inline; filename=${quote.quotenumber}.pdf`);
         doc.pipe(res);
         
-        const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
-        
-        if (fs.existsSync(backgroundImagePath)) {
-            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
-        }
+        // --- LÓGICA DE SELECCIÓN DE MEMBRETE ---
+      let backgroundImagePath;
+      if (quote.membrete_tipo === 'Peque Planner') {
+          backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete_peque_planner.jpg');
+      } else {
+          // Si es 'Be Eventos' o cualquier otro caso, usa el membrete normal
+          backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
+      }
+      
+      if (fs.existsSync(backgroundImagePath)) {
+          doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+      }
+      // --- FIN DE LA LÓGICA ---
         const pageMargin = 50;
         const contentWidth = doc.page.width - (pageMargin * 2);
         let currentY = 150; 
@@ -708,7 +716,8 @@ app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
         console.error('Error al generar el PDF:', error);
         res.status(500).send('Error interno al generar el PDF');
     }
-});// ======================================================================
+});
+// ======================================================================
 // ========= INICIO: RUTA DEFINITIVA PARA GENERAR PDF DEL ACUERDO =======
 // ======================================================================
 app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
