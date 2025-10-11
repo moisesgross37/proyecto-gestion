@@ -314,22 +314,21 @@ app.post('/api/visits', requireLogin, async (req, res) => {
 
 app.get('/api/centers', requireLogin, async (req, res) => {
     try {
-        // Obtenemos los posibles filtros desde la URL (ej: /api/centers?advisor=nombre)
         const { advisor, comment } = req.query;
-
         let queryParams = [];
         let whereClauses = [];
 
-        // Construimos la consulta SQL base
+        // CORRECCIÓN: Ahora también seleccionamos la fecha de la última visita (visitdate)
         let query = `
             SELECT
                 c.id, c.name, c.address, c.sector, c.contactname, c.contactnumber,
                 latest_visit.advisorname,
-                latest_visit.commenttext
+                latest_visit.commenttext,
+                latest_visit.visitdate 
             FROM
                 centers c
             LEFT JOIN LATERAL (
-                SELECT v.advisorname, v.commenttext
+                SELECT v.advisorname, v.commenttext, v.visitdate
                 FROM visits v
                 WHERE v.centername = c.name
                 ORDER BY v.visitdate DESC, v.createdat DESC
@@ -337,24 +336,17 @@ app.get('/api/centers', requireLogin, async (req, res) => {
             ) AS latest_visit ON true
         `;
 
-        // Si se envió un filtro de asesor, lo añadimos a la consulta
         if (advisor) {
             queryParams.push(advisor);
             whereClauses.push(`latest_visit.advisorname = $${queryParams.length}`);
         }
-
-        // Si se envió un filtro de comentario, lo añadimos a la consulta
         if (comment) {
             queryParams.push(comment);
             whereClauses.push(`latest_visit.commenttext = $${queryParams.length}`);
         }
-
-        // Unimos todas las condiciones de filtro
         if (whereClauses.length > 0) {
             query += ` WHERE ${whereClauses.join(' AND ')}`;
         }
-
-        // Añadimos el orden alfabético al final
         query += ' ORDER BY c.name ASC;';
         
         const result = await pool.query(query, queryParams);
