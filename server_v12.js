@@ -1036,6 +1036,53 @@ app.get('/api/debug/raw-table', requireLogin, requireAdmin, async (req, res) => 
 // ======================================================================
 // ========= FIN: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ===========
 // ======================================================================
+// ======================================================================
+// ========= INICIO: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO =====
+// ======================================================================
+app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
+    try {
+        // Esta consulta calcula el promedio de días desde la última visita
+        // para todos los centros que no están en un estado final.
+        const query = `
+            WITH ActiveCentersLastVisit AS (
+                SELECT
+                    latest_visit.advisorname,
+                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
+                FROM
+                    centers c
+                JOIN LATERAL (
+                    SELECT v.advisorname, v.commenttext, v.visitdate
+                    FROM visits v
+                    WHERE v.centername = c.name
+                    ORDER BY v.visitdate DESC, v.createdat DESC
+                    LIMIT 1
+                ) AS latest_visit ON true
+                WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
+            )
+            SELECT
+                advisorname,
+                AVG(days_since_last_visit) AS average_follow_up_days
+            FROM
+                ActiveCentersLastVisit
+            WHERE
+                advisorname IS NOT NULL
+            GROUP BY
+                advisorname
+            ORDER BY
+                average_follow_up_days ASC;
+        `;
+        
+        const result = await pool.query(query);
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error('Error al obtener el ranking de seguimiento:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
+    }
+});
+// ======================================================================
+// ========= FIN: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ========
+// ======================================================================
 
 
 
