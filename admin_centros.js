@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENTOS DE LA PÁGINA ---
     const centersTableBody = document.getElementById('centers-table-body');
-    const centersTableHead = document.querySelector('.centers-table thead'); 
+    const centersTableHead = document.querySelector('.centers-table thead');
     
     // --- ELEMENTOS DEL MODAL ---
     const modal = document.getElementById('edit-center-modal');
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterComment = document.getElementById('filter-comment');
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
 
-    let allCenters = []; // Caché local de centros
+    let allCenters = []; // Caché para guardar los centros
 
-    // --- FUNCIÓN PRINCIPAL PARA CARGAR Y MOSTRAR CENTROS ---
+    // --- FUNCIÓN PARA CARGAR Y MOSTRAR CENTROS (ACTUALIZADA) ---
     const fetchAndDisplayCenters = async () => {
         try {
             const params = new URLSearchParams();
@@ -37,51 +37,78 @@ document.addEventListener('DOMContentLoaded', () => {
             
             allCenters = await response.json();
             
+            // 1. Actualizar los encabezados de la tabla
             centersTableHead.innerHTML = `
                 <tr>
                     <th>Nombre del Centro</th>
                     <th>Asesor Principal</th>
                     <th>Último Comentario</th>
+                    <th>Fecha Últ. Visita</th>
+                    <th>Días Transcurridos</th>
                     <th>Acciones</th>
                 </tr>
             `;
 
             centersTableBody.innerHTML = '';
             if (allCenters.length === 0) {
-                centersTableBody.innerHTML = '<tr><td colspan="4">No se encontraron centros con los filtros aplicados.</td></tr>';
+                centersTableBody.innerHTML = '<tr><td colspan="6">No se encontraron centros con los filtros aplicados.</td></tr>';
                 return;
             }
 
             allCenters.forEach(center => {
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${center.name}</td>
-                    <td>${center.advisorname || 'N/A'}</td>
-                    <td>${center.commenttext || 'Sin visitas'}</td>
-                    <td class="actions-cell">
-                        <button class="btn btn-edit" data-id="${center.id}">Editar</button>
-                        <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
-                    </td>
+                
+                const lastVisitDate = center.visitdate ? new Date(center.visitdate) : null;
+                let daysSinceLastVisit = 'N/A';
+                
+                if (lastVisitDate) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    // Importante: Crear una nueva fecha para no modificar la original
+                    const visitDateOnly = new Date(lastVisitDate); 
+                    visitDateOnly.setHours(0, 0, 0, 0);
+                    
+                    const diffTime = Math.abs(today - visitDateOnly);
+                    daysSinceLastVisit = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                }
+
+                // Lógica para marcar en rojo
+                let rowClass = '';
+                const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
+                if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
+                    rowClass = 'class="abandoned-row"';
+                }
+
+                // Se envuelve el contenido en un <tr> con la clase condicional
+                row.outerHTML = `
+                    <tr ${rowClass}>
+                        <td>${center.name}</td>
+                        <td>${center.advisorname || 'N/A'}</td>
+                        <td>${center.commenttext || 'Sin visitas'}</td>
+                        <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
+                        <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-edit" data-id="${center.id}">Editar</button>
+                            <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
+                        </td>
+                    </tr>
                 `;
                 centersTableBody.appendChild(row);
             });
 
         } catch (error) {
             console.error('Error al mostrar centros:', error);
-            centersTableBody.innerHTML = '<tr><td colspan="4">Error al cargar los centros.</td></tr>';
+            centersTableBody.innerHTML = '<tr><td colspan="6">Error al cargar los centros.</td></tr>';
         }
     };
 
     // --- FUNCIÓN PARA CARGAR LAS OPCIONES DE LOS FILTROS ---
     const populateFilters = async () => {
         try {
-            // Hacemos una sola llamada a /api/data que nos trae todo
             const response = await fetch('/api/data');
             if (!response.ok) throw new Error('No se pudieron cargar los datos para los filtros.');
-
             const data = await response.json();
-
-            // Cargar Asesores
+            
             const advisors = data.advisors || [];
             advisors.forEach(advisor => {
                 const option = document.createElement('option');
@@ -89,8 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 option.textContent = advisor.name;
                 filterAdvisor.appendChild(option);
             });
-
-            // Cargar Comentarios
+            
             const comments = data.comments || [];
             comments.forEach(comment => {
                 const option = document.createElement('option');
@@ -102,8 +128,16 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error al cargar opciones de filtros:", error);
         }
     };
-    // --- FUNCIÓN PARA ABRIR EL MODAL DE EDICIÓN ---
+    
+    // --- FUNCIONES DEL MODAL DE EDICIÓN ---
     const openEditModal = (center) => {
+        const editCenterId = document.getElementById('edit-center-id');
+        const editCenterName = document.getElementById('edit-center-name');
+        const editCenterAddress = document.getElementById('edit-center-address');
+        const editCenterSector = document.getElementById('edit-center-sector');
+        const editContactName = document.getElementById('edit-contact-name');
+        const editContactNumber = document.getElementById('edit-contact-number');
+        
         editCenterId.value = center.id;
         editCenterName.value = center.name;
         editCenterAddress.value = center.address || '';
@@ -113,19 +147,23 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'block';
     };
 
-    // --- FUNCIÓN PARA MANEJAR LA ELIMINACIÓN DE UN CENTRO ---
+    const closeEditModal = () => {
+        modal.style.display = 'none';
+    };
+
+    // --- FUNCIÓN PARA MANEJAR LA ELIMINACIÓN ---
     const handleDeleteCenter = async (centerId) => {
         if (!confirm('¿Estás seguro de que quieres eliminar este centro? Esta acción no se puede deshacer.')) return;
         try {
             const response = await fetch(`/api/centers/${centerId}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Error al eliminar el centro.');
-            await fetchAndDisplayCenters(); // Recargar la tabla
+            await fetchAndDisplayCenters();
         } catch (error) {
             console.error(error);
             alert('No se pudo eliminar el centro.');
         }
     };
-
+    
     // --- MANEJO DE EVENTOS ---
     filterAdvisor.addEventListener('change', fetchAndDisplayCenters);
     filterComment.addEventListener('change', fetchAndDisplayCenters);
@@ -148,13 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     editCenterForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const id = parseInt(editCenterId.value, 10);
+        const id = parseInt(document.getElementById('edit-center-id').value, 10);
         const updatedData = {
-            name: editCenterName.value,
-            address: editCenterAddress.value,
-            sector: editCenterSector.value,
-            contactname: editContactName.value,
-            contactnumber: editContactNumber.value
+            name: document.getElementById('edit-center-name').value,
+            address: document.getElementById('edit-center-address').value,
+            sector: document.getElementById('edit-center-sector').value,
+            contactname: document.getElementById('edit-contact-name').value,
+            contactnumber: document.getElementById('edit-contact-number').value
         };
         try {
             const response = await fetch(`/api/centers/${id}`, {
@@ -163,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(updatedData)
             });
             if (!response.ok) throw new Error('La respuesta del servidor no fue OK.');
-            modal.style.display = 'none';
+            closeEditModal();
             await fetchAndDisplayCenters();
         } catch (error) {
             console.error(error);
@@ -171,11 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    closeModalButton.addEventListener('click', () => modal.style.display = 'none');
+    closeModalButton.addEventListener('click', closeEditModal);
     window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (event.target === modal) closeEditModal();
     });
 
     // --- CARGA INICIAL DE LA PÁGINA ---
