@@ -23,80 +23,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FUNCIÓN PARA CARGAR Y MOSTRAR CENTROS (ACTUALIZADA) ---
     const fetchAndDisplayCenters = async () => {
-        try {
-            const params = new URLSearchParams();
-            if (filterAdvisor.value) {
-                params.append('advisor', filterAdvisor.value);
-            }
-            if (filterComment.value) {
-                params.append('comment', filterComment.value);
-            }
+    try {
+        const params = new URLSearchParams();
+        if (filterAdvisor.value) params.append('advisor', filterAdvisor.value);
+        if (filterComment.value) params.append('comment', filterComment.value);
+        
+        const response = await fetch(`/api/centers?${params.toString()}`);
+        if (!response.ok) throw new Error('Error al obtener centros.');
+        
+        allCenters = await response.json();
+        
+        // --- INICIO DE LA NUEVA LÓGICA DE ORDENAMIENTO ---
+        const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
+
+        allCenters.sort((a, b) => {
+            // Calcula los días para 'a' y 'b'
+            const dateA = a.visitdate ? new Date(a.visitdate) : null;
+            const daysA = dateA ? Math.ceil(Math.abs(new Date() - dateA) / (1000 * 60 * 60 * 24)) : -1;
             
-            const response = await fetch(`/api/centers?${params.toString()}`);
-            if (!response.ok) throw new Error('Error al obtener centros.');
-            
-            allCenters = await response.json();
-            
-            // 1. Actualizar los encabezados de la tabla
-            centersTableHead.innerHTML = `
-                <tr>
-                    <th>Nombre del Centro</th>
-                    <th>Asesor Principal</th>
-                    <th>Último Comentario</th>
-                    <th>Fecha Últ. Visita</th>
-                    <th>Días Transcurridos</th>
-                    <th>Acciones</th>
-                </tr>
-            `;
+            const dateB = b.visitdate ? new Date(b.visitdate) : null;
+            const daysB = dateB ? Math.ceil(Math.abs(new Date() - dateB) / (1000 * 60 * 60 * 24)) : -1;
 
-            centersTableBody.innerHTML = '';
-            if (allCenters.length === 0) {
-                centersTableBody.innerHTML = '<tr><td colspan="6">No se encontraron centros con los filtros aplicados.</td></tr>';
-                return;
-            }
+            // Determina si están abandonados
+            const isAbandonedA = daysA >= 15 && !exceptions.includes(a.commenttext);
+            const isAbandonedB = daysB >= 15 && !exceptions.includes(b.commenttext);
 
-            allCenters.forEach(center => {
-                const row = document.createElement('tr');
-                
-                const lastVisitDate = center.visitdate ? new Date(center.visitdate) : null;
-                let daysSinceLastVisit = 'N/A';
-                
-                if (lastVisitDate) {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const visitDateOnly = new Date(lastVisitDate); 
-                    visitDateOnly.setHours(0, 0, 0, 0);
-                    
-                    const diffTime = Math.abs(today - visitDateOnly);
-                    daysSinceLastVisit = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                }
+            // Regla de ordenamiento:
+            // 1. Si 'a' está abandonado y 'b' no, 'a' va primero.
+            if (isAbandonedA && !isAbandonedB) return -1;
+            // 2. Si 'b' está abandonado y 'a' no, 'b' va primero.
+            if (!isAbandonedA && isAbandonedB) return 1;
+            // 3. Si ambos están igual (abandonados o no), ordena por el que tenga más días.
+            return daysB - daysA;
+        });
+        // --- FIN DE LA NUEVA LÓGICA DE ORDENAMIENTO ---
 
-                // Lógica para marcar en rojo
-                const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
-                if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
-                    row.classList.add('abandoned-row'); // Añadimos la clase a la fila
-                }
+        centersTableHead.innerHTML = `
+            <tr>
+                <th>Nombre del Centro</th>
+                <th>Asesor Principal</th>
+                <th>Último Comentario</th>
+                <th>Fecha Últ. Visita</th>
+                <th>Días Transcurridos</th>
+                <th>Acciones</th>
+            </tr>
+        `;
 
-                // Llenamos el contenido de la fila con innerHTML
-                row.innerHTML = `
-                    <td>${center.name}</td>
-                    <td>${center.advisorname || 'N/A'}</td>
-                    <td>${center.commenttext || 'Sin visitas'}</td>
-                    <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
-                    <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
-                    <td class="actions-cell">
-                        <button class="btn btn-edit" data-id="${center.id}">Editar</button>
-                        <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
-                    </td>
-                `;
-                centersTableBody.appendChild(row); // Añadimos la fila ya completa
-            });
-
-        } catch (error) {
-            console.error('Error al mostrar centros:', error);
-            centersTableBody.innerHTML = '<tr><td colspan="6">Error al cargar los centros.</td></tr>';
+        centersTableBody.innerHTML = '';
+        if (allCenters.length === 0) {
+            centersTableBody.innerHTML = '<tr><td colspan="6">No se encontraron centros.</td></tr>';
+            return;
         }
-    };
+
+        allCenters.forEach(center => {
+            const row = document.createElement('tr');
+            const lastVisitDate = center.visitdate ? new Date(center.visitdate) : null;
+            let daysSinceLastVisit = 'N/A';
+            if (lastVisitDate) {
+                daysSinceLastVisit = Math.ceil(Math.abs(new Date() - lastVisitDate) / (1000 * 60 * 60 * 24));
+            }
+            if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
+                row.classList.add('abandoned-row');
+            }
+            row.innerHTML = `
+                <td>${center.name}</td>
+                <td>${center.advisorname || 'N/A'}</td>
+                <td>${center.commenttext || 'Sin visitas'}</td>
+                <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
+                <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
+                <td class="actions-cell">
+                    <button class="btn btn-edit" data-id="${center.id}">Editar</button>
+                    <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
+                </td>
+            `;
+            centersTableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error al mostrar centros:', error);
+        centersTableBody.innerHTML = '<tr><td colspan="6">Error al cargar los centros.</td></tr>';
+    }
+};
 
     // --- FUNCIÓN PARA CARGAR LAS OPCIONES DE LOS FILTROS ---
     const populateFilters = async () => {
