@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. Cargar los tres paneles de rankings
             loadAdvisorRanking();
             loadAdvisorVisitRanking();
-            loadAdvisorPerformance(); 
+            loadAdvisorPerformance();
+            loadFollowUpRanking();
 
         } else {
             // Si no hay usuario, redirigir al login
@@ -204,4 +205,46 @@ document.addEventListener('DOMContentLoaded', () => {
         performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración: ${error.message}</p>`;
     }
 }
+
+// --- NUEVA FUNCIÓN PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ---
+    async function loadFollowUpRanking() {
+        const container = document.getElementById('follow-up-ranking-container');
+        if (!container) return;
+
+        try {
+            const response = await fetch('/api/advisor-follow-up-ranking');
+            if (!response.ok) throw new Error('No se pudo cargar el ranking de seguimiento.');
+            
+            const rankingData = await response.json();
+
+            if (rankingData.length === 0) {
+                container.innerHTML = '<h3>Eficiencia de Seguimiento</h3><p>No hay datos suficientes para calcular.</p>';
+                return;
+            }
+
+            let rankingHTML = '<h3>Eficiencia de Seguimiento (Días Promedio)</h3>';
+            
+            rankingData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇';
+                if (index === 1) medal = '🥈';
+                if (index === 2) medal = '🥉';
+
+                const days = parseFloat(advisor.average_follow_up_days).toFixed(1);
+
+                rankingHTML += `
+                    <div class="performance-item">
+                        <span class="performance-advisor">${medal} ${advisor.advisorname}</span>
+                        <span class="performance-score score-low">${days} días</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = rankingHTML;
+
+        } catch (error) {
+            console.error("Error en Ranking de Seguimiento:", error);
+            container.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar el panel de seguimiento: ${error.message}</p>`;
+        }
+    }
+    
 });
