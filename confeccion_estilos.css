@@ -184,3 +184,8 @@ header h1 {
 .btn-secondary:hover {
     background-color: #5a6268;
 }
+/* --- Estilo para filas de centros abandonados --- */
+.abandoned-row {
+    background-color: #f8d7da !important; /* Un rojo suave */
+    color: #721c24; /* Texto oscuro para legibilidad */
+}
