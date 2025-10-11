@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (lastVisitDate) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    // Importante: Crear una nueva fecha para no modificar la original
                     const visitDateOnly = new Date(lastVisitDate); 
                     visitDateOnly.setHours(0, 0, 0, 0);
                     
@@ -73,27 +72,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Lógica para marcar en rojo
-                let rowClass = '';
                 const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
                 if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
-                    rowClass = 'class="abandoned-row"';
+                    row.classList.add('abandoned-row'); // Añadimos la clase a la fila
                 }
 
-                // Se envuelve el contenido en un <tr> con la clase condicional
-                row.outerHTML = `
-                    <tr ${rowClass}>
-                        <td>${center.name}</td>
-                        <td>${center.advisorname || 'N/A'}</td>
-                        <td>${center.commenttext || 'Sin visitas'}</td>
-                        <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
-                        <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
-                        <td class="actions-cell">
-                            <button class="btn btn-edit" data-id="${center.id}">Editar</button>
-                            <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
-                        </td>
-                    </tr>
+                // Llenamos el contenido de la fila con innerHTML
+                row.innerHTML = `
+                    <td>${center.name}</td>
+                    <td>${center.advisorname || 'N/A'}</td>
+                    <td>${center.commenttext || 'Sin visitas'}</td>
+                    <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
+                    <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
+                    <td class="actions-cell">
+                        <button class="btn btn-edit" data-id="${center.id}">Editar</button>
+                        <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
+                    </td>
                 `;
-                centersTableBody.appendChild(row);
+                centersTableBody.appendChild(row); // Añadimos la fila ya completa
             });
 
         } catch (error) {
