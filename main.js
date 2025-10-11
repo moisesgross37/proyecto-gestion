@@ -219,7 +219,7 @@ async function loadAdvisorPerformance() {
         // 4. Mostramos los resultados
         let performanceHTML = `
             <h3>Valoración de Desempeño</h3>
-            <p class="performance-note">40% Visitas, 20% Formalizaciones, 40% Seguimiento</p>`;
+            <p class="performance-note">Relacion entre Visitas, Formalizaciones  y Seguimiento</p>`;
         
         performanceData.forEach((advisor, index) => {
             let medal = '';
