@@ -75,12 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FUNCIÓN PARA CARGAR LAS OPCIONES DE LOS FILTROS ---
     const populateFilters = async () => {
         try {
-            const [advisorsRes, commentsRes] = await Promise.all([
-                fetch('/api/advisors'),
-                fetch('/api/comments')
-            ]);
+            // Hacemos una sola llamada a /api/data que nos trae todo
+            const response = await fetch('/api/data');
+            if (!response.ok) throw new Error('No se pudieron cargar los datos para los filtros.');
 
-            const advisors = await advisorsRes.json();
+            const data = await response.json();
+
+            // Cargar Asesores
+            const advisors = data.advisors || [];
             advisors.forEach(advisor => {
                 const option = document.createElement('option');
                 option.value = advisor.name;
@@ -88,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterAdvisor.appendChild(option);
             });
 
-            const comments = await commentsRes.json();
+            // Cargar Comentarios
+            const comments = data.comments || [];
             comments.forEach(comment => {
                 const option = document.createElement('option');
                 option.value = comment.text;
@@ -99,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error al cargar opciones de filtros:", error);
         }
     };
-    
     // --- FUNCIÓN PARA ABRIR EL MODAL DE EDICIÓN ---
     const openEditModal = (center) => {
         editCenterId.value = center.id;
