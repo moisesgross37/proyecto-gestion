@@ -166,24 +166,25 @@ const requireAdmin = checkRole(['Administrador']);
 
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
-    try {
-        // Esta consulta une 'quotes' y 'centers' para asegurar
-        // que solo se devuelvan centros que realmente existen.
-        const query = `
-            SELECT DISTINCT q.clientname AS name
-            FROM quotes q
-            INNER JOIN centers c ON q.clientname = c.name
-            WHERE q.status = 'formalizada'
-            ORDER BY q.clientname ASC;
-        `;
-        
-        const result = await pool.query(query);
-        res.json(result.rows);
+    try {
+        const query = `
+            SELECT DISTINCT v.centername AS name
+            FROM visits v
+            INNER JOIN centers c ON TRIM(v.centername) = TRIM(c.name) 
+            WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
+            ORDER BY name ASC;
+        `;
+        const result = await pool.query(query);
+        
+        if (result.rows.length === 0) {
+            return res.status(204).send();
+        }
+        res.json(result.rows);
 
-    } catch (err) {
-        console.error('Error al obtener centros formalizados y existentes:', err);
-        res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
-    }
+    } catch (err) {
+        console.error('Error al obtener centros formalizados por visita:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar los centros.' });
+    }
 });
 app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
     try {
