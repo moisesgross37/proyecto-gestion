@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             menuContainer.innerHTML = buttonsHTML;
 
-            // 2. Cargar los tres paneles de rankings
+            // 2. Cargar los cuatro paneles de rankings
             loadAdvisorRanking();
             loadAdvisorVisitRanking();
+            loadFollowUpRanking(); 
             loadAdvisorPerformance();
-            loadFollowUpRanking();
 
         } else {
             // Si no hay usuario, redirigir al login
@@ -126,116 +126,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (LÓGICA EN CLIENTE) ---
-    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO (FÓRMULA 40/20/40) ---
-async function loadAdvisorPerformance() {
-    const performanceContainer = document.getElementById('performance-container');
-    if (!performanceContainer) return;
-
-    const getScoreClass = (score) => {
-        if (score >= 75) return 'score-high';
-        if (score >= 40) return 'score-medium';
-        return 'score-low';
-    };
-
-    try {
-        // 1. Pedimos los datos a las TRES fuentes
-        const [formalizationRes, visitRes, followUpRes] = await Promise.all([
-            fetch('/api/advisor-ranking'),
-            fetch('/api/advisor-visit-ranking'),
-            fetch('/api/advisor-follow-up-ranking')
-        ]);
-
-        if (!formalizationRes.ok || !visitRes.ok || !followUpRes.ok) throw new Error('Datos base no disponibles.');
-
-        const formalizationData = await formalizationRes.json();
-        const visitData = await visitRes.json();
-        const followUpData = await followUpRes.json();
-
-        if (visitData.length === 0) {
-            performanceContainer.innerHTML = '<h3>Valoración de Desempeño</h3><p>No hay datos para calcular.</p>';
-            return;
+    // --- FUNCIÓN PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ---
+    async function loadFollowUpRanking() {
+        const container = document.getElementById('follow-up-ranking-container');
+        if (!container) return;
+        try {
+            const response = await fetch('/api/advisor-follow-up-ranking');
+            if (!response.ok) throw new Error('No se pudo cargar el ranking de seguimiento.');
+            const rankingData = await response.json();
+            if (rankingData.length === 0) {
+                container.innerHTML = '<h3>Ranking de Seguimiento (Días Promedio)</h3><p>No hay datos suficientes para calcular.</p>';
+                return;
+            }
+            let rankingHTML = '<h3>Ranking de Seguimiento (Días Promedio)</h3>';
+            rankingData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇';
+                if (index === 1) medal = '🥈';
+                if (index === 2) medal = '🥉';
+                const days = parseFloat(advisor.average_follow_up_days).toFixed(1);
+                rankingHTML += `<div class="performance-item"><span class="performance-advisor">${medal} ${advisor.advisorname}</span><span class="performance-score score-low">${days} días</span></div>`;
+            });
+            container.innerHTML = rankingHTML;
+        } catch (error) {
+            console.error("Error en Ranking de Seguimiento:", error);
+            container.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar el panel de seguimiento: ${error.message}</p>`;
         }
-
-        // 2. Unificamos todos los datos
-        const advisors = {};
-        visitData.forEach(item => {
-            advisors[item.advisorname] = {
-                advisorname: item.advisorname,
-                visit_count: parseInt(item.visit_count, 10),
-                formalization_count: 0,
-                average_follow_up_days: null // Valor inicial
-            };
-        });
-        formalizationData.forEach(item => {
-            if (advisors[item.advisorname]) {
-                advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10);
-            }
-        });
-        followUpData.forEach(item => {
-            if (advisors[item.advisorname]) {
-                advisors[item.advisorname].average_follow_up_days = parseFloat(item.average_follow_up_days);
-            }
-        });
-
-        const combinedData = Object.values(advisors);
-
-        // 3. Calculamos la nueva fórmula 40/20/40
-        const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
-        const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
-        
-        // Para el seguimiento, necesitamos el mejor (min) y el peor (max) para invertir la escala
-        const followUpDays = combinedData.filter(a => a.average_follow_up_days !== null).map(a => a.average_follow_up_days);
-        const minFollowUpDays = Math.min(...followUpDays);
-        const maxFollowUpDays = Math.max(...followUpDays);
-
-        const performanceData = combinedData.map(advisor => {
-            // Puntuación de Visitas (40%)
-            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 40 : 0;
-            
-            // Puntuación de Formalizaciones (20%)
-            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 20 : 0;
-
-            // Puntuación de Seguimiento (40%) - El que tiene menos días (mejor) saca más puntos.
-            let followUpScore = 0;
-            if (advisor.average_follow_up_days !== null) {
-                if (maxFollowUpDays === minFollowUpDays) { // Si solo hay un asesor o todos tienen el mismo tiempo
-                    followUpScore = 40;
-                } else {
-                    // Invertimos la escala: (peor - actual) / (peor - mejor)
-                    followUpScore = ((maxFollowUpDays - advisor.average_follow_up_days) / (maxFollowUpDays - minFollowUpDays)) * 40;
-                }
-            }
-
-            const totalScore = visitScore + formalizationScore + followUpScore;
-            return {
-                advisorname: advisor.advisorname,
-                performance_score: parseFloat(totalScore.toFixed(1))
-            };
-        });
-
-        performanceData.sort((a, b) => b.performance_score - a.performance_score);
-
-        // 4. Mostramos los resultados
-        let performanceHTML = `
-            <h3>Valoración de Desempeño</h3>
-            <p class="performance-note">Relacion entre Visitas, Formalizaciones  y Seguimiento</p>`;
-        
-        performanceData.forEach((advisor, index) => {
-            let medal = '';
-            if (index === 0) medal = '🥇';
-            if (index === 1) medal = '🥈';
-            if (index === 2) medal = '🥉';
-            const scoreClass = getScoreClass(advisor.performance_score);
-            performanceHTML += `
-                <div class="performance-item"><span class="performance-advisor">${medal} ${advisor.advisorname}</span><span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span></div>`;
-        });
-        performanceContainer.innerHTML = performanceHTML;
-
-    } catch (error) {
-        console.error("Error en Valoración de Desempeño:", error);
-        performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración: ${error.message}</p>`;
     }
-}
-    
+
+    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO ---
+    async function loadAdvisorPerformance() {
+        const performanceContainer = document.getElementById('performance-container');
+        if (!performanceContainer) return;
+        const getScoreClass = (score) => {
+            if (score >= 75) return 'score-high';
+            if (score >= 40) return 'score-medium';
+            return 'score-low';
+        };
+        try {
+            const [formalizationRes, visitRes, followUpRes] = await Promise.all([
+                fetch('/api/advisor-ranking'),
+                fetch('/api/advisor-visit-ranking'),
+                fetch('/api/advisor-follow-up-ranking')
+            ]);
+            if (!formalizationRes.ok || !visitRes.ok || !followUpRes.ok) throw new Error('Datos base no disponibles.');
+            const formalizationData = await formalizationRes.json();
+            const visitData = await visitRes.json();
+            const followUpData = await followUpRes.json();
+            if (visitData.length === 0) {
+                performanceContainer.innerHTML = '<h3>Valoración de Desempeño</h3><p>No hay datos para calcular.</p>';
+                return;
+            }
+            const advisors = {};
+            visitData.forEach(item => {
+                advisors[item.advisorname] = { advisorname: item.advisorname, visit_count: parseInt(item.visit_count, 10), formalization_count: 0, average_follow_up_days: null };
+            });
+            formalizationData.forEach(item => { if (advisors[item.advisorname]) { advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10); } });
+            followUpData.forEach(item => { if (advisors[item.advisorname]) { advisors[item.advisorname].average_follow_up_days = parseFloat(item.average_follow_up_days); } });
+            const combinedData = Object.values(advisors);
+            const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
+            const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
+            const followUpDays = combinedData.filter(a => a.average_follow_up_days !== null).map(a => a.average_follow_up_days);
+            const minFollowUpDays = Math.min(...followUpDays);
+            const maxFollowUpDays = Math.max(...followUpDays);
+            const performanceData = combinedData.map(advisor => {
+                const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 40 : 0;
+                const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 20 : 0;
+                let followUpScore = 0;
+                if (advisor.average_follow_up_days !== null) {
+                    if (maxFollowUpDays === minFollowUpDays) {
+                        followUpScore = 40;
+                    } else {
+                        followUpScore = ((maxFollowUpDays - advisor.average_follow_up_days) / (maxFollowUpDays - minFollowUpDays)) * 40;
+                    }
+                }
+                const totalScore = visitScore + formalizationScore + followUpScore;
+                return { advisorname: advisor.advisorname, performance_score: parseFloat(totalScore.toFixed(1)) };
+            });
+            performanceData.sort((a, b) => b.performance_score - a.performance_score);
+            let performanceHTML = `<h3>Valoración de Desempeño</h3><p class="performance-note">40% Visitas, 20% Formalizaciones, 40% Seguimiento</p>`;
+            performanceData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇'; if (index === 1) medal = '🥈'; if (index === 2) medal = '🥉';
+                const scoreClass = getScoreClass(advisor.performance_score);
+                performanceHTML += `<div class="performance-item"><span class="performance-advisor">${medal} ${advisor.advisorname}</span><span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span></div>`;
+            });
+            performanceContainer.innerHTML = performanceHTML;
+        } catch (error) {
+            console.error("Error en Valoración de Desempeño:", error);
+            performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración: ${error.message}</p>`;
+        }
+    }
 });
