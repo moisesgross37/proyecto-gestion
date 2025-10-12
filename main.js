@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return { advisorname: advisor.advisorname, performance_score: parseFloat(totalScore.toFixed(1)) };
             });
             performanceData.sort((a, b) => b.performance_score - a.performance_score);
-            let performanceHTML = `<h3>Valoración de Desempeño</h3><p class="performance-note">40% Visitas, 20% Formalizaciones, 40% Seguimiento</p>`;
+            let performanceHTML = `<h3>Valoración de Desempeño</h3><p class="performance-note">Relacion entre Visitas, Formalizaciones y Seguimiento</p>`;
             performanceData.forEach((advisor, index) => {
                 let medal = '';
                 if (index === 0) medal = '🥇'; if (index === 1) medal = '🥈'; if (index === 2) medal = '🥉';
