@@ -167,6 +167,7 @@ const requireAdmin = checkRole(['Administrador']);
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     try {
+        // ESTA ES LA CONSULTA HÍBRIDA Y DEFINITIVA
         const query = `
             SELECT 
                 q.clientname AS name, 
