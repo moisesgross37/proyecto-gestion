@@ -255,6 +255,9 @@ app.get('/api/visits', requireLogin, async (req, res) => { try { const result = 
 // ==================================================================
 // ============== INICIO DE LA SECCIÓN MODIFICADA (VISITAS) ==============
 // ==================================================================
+// ==================================================================
+// ============== INICIO DE LA SECCIÓN MODIFICADA (VISITAS) ==============
+// ==================================================================
 app.post('/api/visits', requireLogin, async (req, res) => {
     // Leemos el nuevo campo 'formalizedQuoteId' que viene del formulario
     const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber, formalizedQuoteId } = req.body;
@@ -278,9 +281,9 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             const centerId = centerResult.rows[0].id;
             if (contactName || contactNumber) {
                  await client.query(
-                    'UPDATE centers SET contactname = $1, contactnumber = $2 WHERE id = $3',
-                    [contactName || '', contactNumber || '', centerId]
-                );
+                     'UPDATE centers SET contactname = $1, contactnumber = $2 WHERE id = $3',
+                     [contactName || '', contactNumber || '', centerId]
+                 );
             }
         }
 
@@ -289,11 +292,11 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             [centerName, advisorName, visitDate, commentText]
         );
         
-        // --- NUEVA LÓGICA ---
-        // Si la visita es de formalización y se envió un ID de cotización, la actualizamos.
+        // --- LÓGICA CORREGIDA ---
+        // Si la visita es de formalización, actualizamos la cotización sin importar si estaba 'aprobada' o 'archivada'.
         if (commentText === 'Formalizar Acuerdo' && formalizedQuoteId) {
             await client.query(
-                "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND status = 'aprobada'",
+                "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND (status = 'aprobada' OR status = 'archivada')",
                 [formalizedQuoteId]
             );
         }
