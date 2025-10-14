@@ -496,12 +496,16 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
         let query;
         let queryParams = [];
 
+        // --- INICIO DE LA MODIFICACIÓN DE PRUEBA ---
         if (userRole === 'Administrador') {
             query = `${baseQuery} ORDER BY createdat DESC`;
         } else {
-            query = `${baseQuery} WHERE advisorname = $1 ORDER BY createdat DESC`;
-            queryParams.push(userName);
+            // TEMPORALMENTE, hacemos que los Asesores vean TODO, igual que el Admin,
+            // para diagnosticar el problema del filtro de nombre.
+            console.log(`PRUEBA ACTIVADA: Mostrando todas las cotizaciones para el asesor ${userName}`);
+            query = `${baseQuery} ORDER BY createdat DESC`;
         }
+        // --- FIN DE LA MODIFICACIÓN DE PRUEBA ---
 
         const result = await pool.query(query, queryParams);
         res.status(200).json(result.rows);
@@ -511,7 +515,6 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
         res.status(500).json({ message: 'Error interno del servidor.' });
     }
 });
-
 app.get('/api/quotes/approved', requireLogin, async (req, res) => {
     const { clientName } = req.query;
     if (!clientName) {
