@@ -153,6 +153,25 @@ const requireAdmin = checkRole(['Administrador']);
 // =======================================================
 // --- RUTAS DE API ---
 
+// ======================================================================
+// ========= !! TEMPORAL !! RUTA PARA LIMPIAR NOMBRES DE CLIENTES ========
+// ======================================================================
+app.get('/api/admin/clean-client-names', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const client = await pool.connect();
+        // Comandos para eliminar espacios extra en las tablas clave
+        await client.query("UPDATE centers SET name = TRIM(name);");
+        await client.query("UPDATE quotes SET clientname = TRIM(clientname);");
+        await client.query("UPDATE visits SET centername = TRIM(centername);");
+        client.release();
+        res.send('<h1>¡Éxito! Todos los nombres de centros/clientes han sido limpiados en la base de datos. Ya puedes borrar este código.</h1>');
+    } catch (error) {
+        console.error("Error al limpiar los nombres de clientes:", error);
+        res.status(500).send(`<h1>Error al limpiar:</h1><pre>${error.message}</pre>`);
+    }
+});
+
+
 // Nueva ruta para obtener los datos del usuario actual en sesión
 ('/api/user-session', requireLogin, (req, res) => {
     res.json(req.session.user);
