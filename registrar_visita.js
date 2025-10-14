@@ -11,8 +11,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const zoneSelect = document.getElementById('zone');
     const centerAddressInput = document.getElementById('centerAddress');
     const centerSectorInput = document.getElementById('centerSector');
-    
-    // --- NUEVOS ELEMENTOS PARA FORMALIZACIÓN ---
     const formalizeQuoteSection = document.getElementById('formalize-quote-section');
     const quoteListContainer = document.getElementById('quote-list-container');
 
@@ -47,22 +45,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('No se pudieron cargar los datos iniciales.');
             const data = await response.json();
 
-            data.advisors?.forEach(advisor => {
-                advisorSelect.add(new Option(advisor.name, advisor.name));
-            });
-            data.comments?.forEach(comment => {
-                commentsSelect.add(new Option(comment.text, comment.text));
-            });
-            data.zones?.forEach(zone => {
-                zoneSelect.add(new Option(zone.name, zone.name));
-            });
+            data.advisors?.forEach(advisor => advisorSelect.add(new Option(advisor.name, advisor.name)));
+            data.comments?.forEach(comment => commentsSelect.add(new Option(comment.text, comment.text)));
+            data.zones?.forEach(zone => zoneSelect.add(new Option(zone.name, zone.name)));
         } catch (error) {
             console.error(error);
             alert('No se pudieron cargar los datos necesarios. Revise la consola.');
         }
     };
 
-    // --- Lógica de Autocompletado (sin cambios) ---
+    // --- Lógica de Autocompletado ---
     centerNameInput.addEventListener('input', async () => {
         const searchTerm = centerNameInput.value;
         if (isExistingCenterSelected) {
@@ -89,6 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         setAddressFieldsReadOnly(true);
                         isExistingCenterSelected = true;
                         suggestionsContainer.style.display = 'none';
+                        // Disparamos la verificación al seleccionar un centro
+                        handleCommentChange(); 
                     });
                     suggestionsContainer.appendChild(item);
                 });
@@ -107,40 +101,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // =======================================================
-    // ============== INICIO DE LA NUEVA LÓGICA DE FORMALIZACIÓN ==============
-    // =======================================================
+    // --- LÓGICA DE FORMALIZACIÓN (CORREGIDA) ---
     const loadApprovedQuotes = async (clientName) => {
         quoteListContainer.innerHTML = '<p>Buscando cotizaciones aprobadas...</p>';
         try {
+            // La URL ahora se construye correctamente para incluir el nombre del cliente
             const response = await fetch(`/api/quotes/approved?clientName=${encodeURIComponent(clientName)}`);
+            if (!response.ok) {
+                 const errorData = await response.json().catch(() => ({ message: 'Error desconocido del servidor.' }));
+                 throw new Error(errorData.message);
+            }
             const quotes = await response.json();
 
             if (quotes.length === 0) {
-                quoteListContainer.innerHTML = '<p style="color: red;"><strong>No se encontraron cotizaciones aprobadas para este centro.</strong> No se puede formalizar el acuerdo.</p>';
+                quoteListContainer.innerHTML = '<p style="color: red; font-weight: bold;">No se encontraron cotizaciones aprobadas para este centro. No se puede formalizar el acuerdo.</p>';
                 return;
             }
 
-            quoteListContainer.innerHTML = ''; // Limpiar el contenedor
+            quoteListContainer.innerHTML = ''; // Limpiar
             quotes.forEach(quote => {
                 const label = document.createElement('label');
-                const checkbox = document.createElement('input');
-                checkbox.type = 'radio'; // Usamos radio button para que solo se pueda elegir una
-                checkbox.name = 'formalizedQuoteId';
-                checkbox.value = quote.id;
+                label.style.display = 'block';
+                label.style.marginBottom = '10px';
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'formalizedQuoteId';
+                radio.value = quote.id;
                 
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(` #${quote.quotenumber} - ${quote.studentcount} estudiantes - $${quote.preciofinalporestudiante} p/est`));
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(` #${quote.quotenumber} (${quote.studentcount} est.) - $${parseFloat(quote.preciofinalporestudiante).toFixed(2)}`));
                 quoteListContainer.appendChild(label);
             });
 
         } catch (error) {
             console.error('Error al cargar cotizaciones:', error);
-            quoteListContainer.innerHTML = '<p style="color: red;">Error al cargar las cotizaciones.</p>';
+            quoteListContainer.innerHTML = `<p style="color: red;">Error al cargar las cotizaciones: ${error.message}</p>`;
         }
     };
 
-    commentsSelect.addEventListener('change', () => {
+    const handleCommentChange = () => {
         const selectedComment = commentsSelect.value;
         const clientName = centerNameInput.value;
 
@@ -148,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!clientName.trim()) {
                 alert('Por favor, primero ingrese o seleccione el nombre del centro educativo.');
                 commentsSelect.value = ''; // Resetear la selección
+                formalizeQuoteSection.style.display = 'none';
                 return;
             }
             formalizeQuoteSection.style.display = 'block';
@@ -156,21 +156,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             formalizeQuoteSection.style.display = 'none';
             quoteListContainer.innerHTML = '';
         }
-    });
-    // =======================================================
-    // ============== FIN DE LA NUEVA LÓGICA DE FORMALIZACIÓN ==============
-    // =======================================================
+    };
 
-    // --- Lógica de Envío del Formulario (ACTUALIZADA) ---
+    commentsSelect.addEventListener('change', handleCommentChange);
+
+    // --- Lógica de Envío del Formulario ---
     visitForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        // --- NUEVA VALIDACIÓN ---
         if (commentsSelect.value === 'Formalizar Acuerdo') {
             const selectedQuote = document.querySelector('input[name="formalizedQuoteId"]:checked');
             if (!selectedQuote) {
                 alert('Debe seleccionar una cotización para formalizar el acuerdo.');
-                return; // Detiene el envío del formulario
+                return;
             }
         }
 
@@ -194,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             setCurrentDate();
             setAddressFieldsReadOnly(false);
             isExistingCenterSelected = false;
-            formalizeQuoteSection.style.display = 'none'; // Ocultar sección al resetear
+            formalizeQuoteSection.style.display = 'none';
             quoteListContainer.innerHTML = '';
 
         } catch (error) {
