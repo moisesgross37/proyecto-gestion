@@ -476,7 +476,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor.' }); 
     } 
 });
-app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor' ,'Coordinador']), async (req, res) => {
+app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor', 'Coordinador']), async (req, res) => {
     const userRole = req.session.user.rol;
     const userName = req.session.user.nombre;
 
@@ -496,16 +496,15 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
         let query;
         let queryParams = [];
 
-        // --- INICIO DE LA MODIFICACIÓN DE PRUEBA ---
+        // Esta es la lógica correcta y final
         if (userRole === 'Administrador') {
+            // El administrador ve todo
             query = `${baseQuery} ORDER BY createdat DESC`;
         } else {
-            // TEMPORALMENTE, hacemos que los Asesores vean TODO, igual que el Admin,
-            // para diagnosticar el problema del filtro de nombre.
-            console.log(`PRUEBA ACTIVADA: Mostrando todas las cotizaciones para el asesor ${userName}`);
-            query = `${baseQuery} ORDER BY createdat DESC`;
+            // Un asesor o coordinador solo ve lo suyo
+            query = `${baseQuery} WHERE advisorname = $1 ORDER BY createdat DESC`;
+            queryParams.push(userName);
         }
-        // --- FIN DE LA MODIFICACIÓN DE PRUEBA ---
 
         const result = await pool.query(query, queryParams);
         res.status(200).json(result.rows);
