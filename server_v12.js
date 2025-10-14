@@ -521,16 +521,15 @@ app.get('/api/quotes/approved', requireLogin, async (req, res) => {
     }
     try {
         const result = await pool.query(
-            "SELECT id, quotenumber, studentcount, preciofinalporestudiante FROM quotes WHERE clientname = $1 AND status = 'aprobada' ORDER BY createdat DESC",
+            "SELECT id, quotenumber, studentcount, preciofinalporestudiante FROM quotes WHERE clientname = $1 AND (status = 'aprobada' OR status = 'archivada') ORDER BY createdat DESC",
             [clientName]
         );
         res.json(result.rows);
     } catch (err) {
-        console.error('Error al obtener cotizaciones aprobadas:', err);
+        console.error('Error al obtener cotizaciones aprobadas/archivadas:', err);
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-
 app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query(`SELECT * FROM quotes WHERE status = 'pendiente' ORDER BY createdat DESC`);
