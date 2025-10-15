@@ -6,7 +6,6 @@ const session = require('express-session');
 const bcrypt = require('bcrypt');
 const csv = require('csv-parser');
 const PDFDocument = require('pdfkit');
-const { Pool } = require('pg');
 const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 
@@ -376,7 +375,7 @@ app.get('/api/centers', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
-app.get('/api/centers/search', requireLogin, async (req, res) => {
+app.get('/api/centers/search', allowUserOrApiKey, async (req, res) => {
     const searchTerm = (req.query.q || '').toLowerCase();
     try {
         const result = await pool.query(
