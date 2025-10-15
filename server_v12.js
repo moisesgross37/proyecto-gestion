@@ -20,7 +20,7 @@ app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 // --- INICIO: CONFIGURACIÓN DE SEGURIDAD PARA API ---
-const API_KEY = 'MI_LLAVE_SECRETA_12345';
+const API_KEY = process.env.GESTION_API_KEY;
 const apiKeyAuth = (req, res, next) => {
     const providedKey = req.header('X-API-Key');
     if (providedKey && providedKey === API_KEY) {
