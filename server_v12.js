@@ -1144,54 +1144,6 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
     }
 });
 
-// ======================================================================
-// ========= HERRAMIENTA TEMPORAL PARA MIGRACIÓN TOTAL DE DATOS =========
-// ======================================================================
-app.get('/api/migrate-all-data', requireLogin, checkRole(['Administrador']), async (req, res) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-
-        // 1. Buscamos todas las cotizaciones con CUALQUIERA de los dos estados
-        const quotesToMigrate = await client.query(
-            "SELECT id, quotenumber, clientname, advisorname, createdat FROM quotes WHERE status = 'formalizada' OR status = 'activa'"
-        );
-
-        if (quotesToMigrate.rows.length === 0) {
-            return res.send("No se encontraron cotizaciones antiguas para migrar.");
-        }
-
-        let migratedCount = 0;
-
-        // 2. Por cada cotización, creamos un registro en la nueva tabla
-        for (const quote of quotesToMigrate.rows) {
-            const centerResult = await client.query('SELECT id FROM centers WHERE name = $1', [quote.clientname]);
-            
-            if (centerResult.rows.length > 0) {
-                const centerId = centerResult.rows[0].id;
-                const insertResult = await client.query(
-                    `INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number, formalization_date)
-                     VALUES ($1, $2, $3, $4, $5, $6)
-                     ON CONFLICT (center_id) DO NOTHING`,
-                    [centerId, quote.clientname, quote.advisorname, quote.id, quote.quotenumber, quote.createdat]
-                );
-                if (insertResult.rowCount > 0) {
-                    migratedCount++;
-                }
-            }
-        }
-
-        await client.query('COMMIT');
-        res.status(200).json({ message: `¡Migración total completada! Se procesaron y sincronizaron ${migratedCount} registros.` });
-
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error durante la migración total de datos:', err);
-        res.status(500).json({ message: 'Error en el servidor durante la migración total.' });
-    } finally {
-        client.release();
-    }
-});
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
