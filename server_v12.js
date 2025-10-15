@@ -72,6 +72,16 @@ const initializeDatabase = async () => {
                 UNIQUE(name, address)
             );
 
+            CREATE TABLE IF NOT EXISTS formalized_centers (
+    id SERIAL PRIMARY KEY,
+    center_id INTEGER REFERENCES centers(id) ON DELETE CASCADE,
+    center_name VARCHAR(255) NOT NULL,
+    advisor_name VARCHAR(255),
+    quote_id INTEGER REFERENCES quotes(id) ON DELETE SET NULL,
+    quote_number VARCHAR(50),
+    formalization_date TIMESTAMPTZ DEFAULT NOW()
+);
+
             CREATE TABLE IF NOT EXISTS quotes (
                 id SERIAL PRIMARY KEY,
                 quotenumber VARCHAR(50),
@@ -1096,6 +1106,40 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 // ========= FIN: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) =============
 // ======================================================================
+
+// ======================================================================
+// ========= API PARA LISTA DE CENTROS FORMALIZADOS (USO EXTERNO) =======
+// ======================================================================
+app.get('/api/formalized-centers-list', apiKeyAuth, async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                id,
+                center_name, 
+                advisor_name, 
+                quote_id,
+                quote_number, 
+                formalization_date
+            FROM formalized_centers
+            ORDER BY formalization_date DESC;
+        `;
+        const result = await pool.query(query);
+
+        // Construimos la respuesta final, añadiendo la URL completa al PDF
+        const responseData = result.rows.map(row => ({
+            "centro_nombre": row.center_name,
+            "asesor_nombre": row.advisor_name,
+            "cotizacion_numero": row.quote_number,
+            "cotizacion_pdf_url": `https://be-gestion.onrender.com/api/quote-requests/${row.quote_id}/pdf`,
+            "fecha_formalizacion": new Date(row.formalization_date).toISOString().split('T')[0] // Formato YYYY-MM-DD
+        }));
+
+        res.json(responseData);
+    } catch (err) {
+        console.error('Error al obtener la lista de centros formalizados:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
