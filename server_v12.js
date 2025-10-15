@@ -9,6 +9,9 @@ const PDFDocument = require('pdfkit');
 const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 
+const { Pool } = require('pg');
+
+
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
 
