@@ -379,9 +379,10 @@ app.get('/api/centers', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
-app.get('/api/centers/search', allowUserOrApiKey, async (req, res) => {
-    const searchTerm = (req.query.q || '').toLowerCase();
-    try {
+app.get('/api/centers/search', async (req, res) => {
+    console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!"); // <-- AÑADE ESTO
+    const searchTerm = (req.query.q || '').toLowerCase();
+    try {
         const result = await pool.query(
             "SELECT id, name, address, sector, contactname, contactnumber FROM centers WHERE LOWER(name) LIKE $1", 
             [`%${searchTerm}%`]
