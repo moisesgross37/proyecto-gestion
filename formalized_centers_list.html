@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centros Formalizados - Panel de Administración</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet"> <style>
+        .container {
+            margin-top: 20px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Centros Formalizados</h2>
+        <a href="admin_menu.html" class="btn btn-secondary mb-3">Volver al Panel de Administración</a>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Centro</th>
+                        <th>Asesor</th>
+                        <th>No. Cotización</th>
+                        <th>Fecha Formalización</th>
+                        <th>Cotización PDF</th>
+                    </tr>
+                </thead>
+                <tbody id="formalizedCentersTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tableBody = document.getElementById('formalizedCentersTableBody');
+
+            try {
+                // Obtenemos el API Key del localStorage (asumiendo que lo guardas allí al iniciar sesión)
+                const apiKey = localStorage.getItem('apiKey'); 
+                
+                if (!apiKey) {
+                    alert('API Key no encontrada. Por favor, inicia sesión de nuevo.');
+                    window.location.href = '/'; // Redirige al login si no hay API Key
+                    return;
+                }
+
+                const response = await fetch('/api/formalized-centers-list', {
+                    headers: {
+                        'X-API-Key': apiKey // Enviamos el API Key en los headers
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Error al cargar los centros formalizados.');
+                }
+
+                const centers = await response.json();
+
+                if (centers.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No hay centros formalizados aún.</td></tr>';
+                    return;
+                }
+
+                centers.forEach(center => {
+                    const row = `
+                        <tr>
+                            <td>${center.centro_nombre}</td>
+                            <td>${center.asesor_nombre}</td>
+                            <td>${center.cotizacion_numero}</td>
+                            <td>${center.fecha_formalizacion}</td>
+                            <td><a href="${center.cotizacion_pdf_url}" target="_blank" class="btn btn-info btn-sm">Ver PDF</a></td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+
+            } catch (error) {
+                console.error('Error al cargar centros formalizados:', error);
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error al cargar los datos: ${error.message}</td></tr>`;
+            }
+        });
+    </script>
+</body>
+</html>
