@@ -55,6 +55,9 @@ const allowUserOrApiKey = (req, res, next) => {
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
+        // ¡NUEVO! Añadimos esta línea para eliminar la tabla incorrecta antes de volver a crearla.
+        await client.query('DROP TABLE IF EXISTS formalized_centers;');
+        
         await client.query(`
             CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, nombre VARCHAR(255) NOT NULL, username VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, rol VARCHAR(50) NOT NULL, estado VARCHAR(50) DEFAULT 'activo' );
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL );
@@ -71,16 +74,6 @@ const initializeDatabase = async () => {
                 contactnumber VARCHAR(255),
                 UNIQUE(name, address)
             );
-
-            CREATE TABLE IF NOT EXISTS formalized_centers (
-    id SERIAL PRIMARY KEY,
-    center_id INTEGER REFERENCES centers(id) ON DELETE CASCADE,
-    center_name VARCHAR(255) NOT NULL,
-    advisor_name VARCHAR(255),
-    quote_id INTEGER REFERENCES quotes(id) ON DELETE SET NULL,
-    quote_number VARCHAR(50),
-    formalization_date TIMESTAMPTZ DEFAULT NOW()
-);
 
             CREATE TABLE IF NOT EXISTS quotes (
                 id SERIAL PRIMARY KEY,
@@ -102,6 +95,17 @@ const initializeDatabase = async () => {
 
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
             CREATE TABLE IF NOT EXISTS payments ( id SERIAL PRIMARY KEY, quote_id INTEGER REFERENCES quotes(id), payment_date DATE NOT NULL, amount NUMERIC NOT NULL, students_covered INTEGER, comment TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
+
+            -- TABLA CORREGIDA: Se añade la restricción UNIQUE a center_id
+            CREATE TABLE IF NOT EXISTS formalized_centers (
+                id SERIAL PRIMARY KEY,
+                center_id INTEGER REFERENCES centers(id) ON DELETE CASCADE UNIQUE,
+                center_name VARCHAR(255) NOT NULL,
+                advisor_name VARCHAR(255),
+                quote_id INTEGER REFERENCES quotes(id) ON DELETE SET NULL,
+                quote_number VARCHAR(50),
+                formalization_date TIMESTAMPTZ DEFAULT NOW()
+            );
         `);
     } catch (err) {
        console.error('Error al inicializar las tablas de la aplicación:', err);
@@ -109,7 +113,6 @@ const initializeDatabase = async () => {
         client.release();
     }
 };
-
 let products = [];
 const loadProducts = () => {
     const csvPath = path.join(__dirname, 'Productos.csv');
