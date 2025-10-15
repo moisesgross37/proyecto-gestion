@@ -1,4 +1,5 @@
 // ============== SERVIDOR DE ASESORES Y VENTAS (v17.4 - API de Asesores) ==============
+const { Pool } = require('pg');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -9,7 +10,7 @@ const PDFDocument = require('pdfkit');
 const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 
-const { Pool } = require('pg');
+
 
 
 const { assembleQuote } = require('./pricingEngine.js');
