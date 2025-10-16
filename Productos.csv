@@ -5,6 +5,7 @@ PRENDAS PROMOCIONALES,Thirt,Thisrt Prepromo o Depor,,225,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Sublimados,,500,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Sublimados con Bordados,,610,por_estudiante
 PRENDAS PROMOCIONALES,Polos,Polos Algodon Combinando,,700,por_estudiante
+PRENDAS PROMOCIONALES,Polos,Polos para ninos,”Polo en algodón a un solo color con logo bordado”,385,por_estudiante
 PRENDAS PROMOCIONALES,Polo para Maestros,Sublimado + Logo Bordado,,500,por_estudiante
 PRENDAS PROMOCIONALES,Polo para Maestros,Ojo de Angel un color + Logo Bordado,,350,por_estudiante
 PRENDAS PROMOCIONALES,Polo para Maestros,Algondo Combinado + Logo Bordado,,600,por_estudiante
@@ -64,7 +65,10 @@ AMENIDADES EXTRAS LANZAMIENTOS,Fuegos Artificiales,Fuegos Artificiales,,3500,esc
 AMENIDADES EXTRAS LANZAMIENTOS,Coreografo,Coreografo,,25000,escalonado
 AMENIDADES EXTRAS LANZAMIENTOS,Fotografo,Fotografo,,1000,escalonado
 AMENIDADES EXTRAS LANZAMIENTOS,Sonido,Sonido Basico,,15000,escalonado
-AMENIDADES EXTRAS LANZAMIENTOS,DJ,DJ Basico,,8500,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,DJ,DJ Basico,"Dj Emergente",8500,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Artistas,DJ Destacado,”Dj de renombre local”,35000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Artistas,Artista Inicial,”Artista conforme listado enviado a la empresa”,150000,escalonado
+AMENIDADES EXTRAS LANZAMIENTOS,Artistas,Artista Destacado,”Artista conforme listado enviado a la empresa”,300000,escalonado
 AMENIDADES EXTRAS LANZAMIENTOS,Pantalla Led,Pantalla Led 3x2 Metros,"Incluye: Pantalla, Tecnico, Truss",60000,escalonado
 INVESTIDURA,Sesion de fotos en Estudio o en Exterior,Sesion de fotos en Estudio o en Exterior,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,2 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",580,por_estudiante
 INVESTIDURA,Sesion de fotos de Pre Graduacion,Sesion de fotos de Pre Graduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2,Fotografías cargadas a la web",930,por_estudiante
@@ -96,6 +100,6 @@ AMENIDADES EXTRAS EN INVESTIDURA,Porta Diploma Portada Blanda Personalizado,Port
 AMENIDADES EXTRAS EN INVESTIDURA,Picadera Graduando + Padrino,Picadera Graduando + Padrino,,250,por_estudiante
 AMENIDADES EXTRAS EN INVESTIDURA,Picadera Graduando + Invitado,Picadera Graduando + Invitado,,650,por_estudiante
 AMENIDADES EXTRAS EN INVESTIDURA,Mesa de Dulces,Mesa de Dulces,,15000,escalonado
-AMENIDADES EXTRAS EN INVESTIDURA,After Partty,After Partty,,75000,escalonado
+AMENIDADES EXTRAS EN INVESTIDURA,After Partty,After Partty,"Este presupuesto se crea en base al requerimiento del cliente",75000,escalonado
 AMENIDADES EXTRAS EN INVESTIDURA,Sesion en Estudio o Exterior sin combo,Sesion en Estudio o Exterior sin combo,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,4 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",1000,por_estudiante
 AMENIDADES EXTRAS EN INVESTIDURA,Sesion de Pregraduacion sin combo,Solo Sesion de Pregraduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2, Fotografías cargadas a la web",1700,por_estudiante
