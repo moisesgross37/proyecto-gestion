@@ -582,8 +582,8 @@ app.post('/api/quote-requests/:id/archive', requireLogin, checkRole(['Administra
     }
 });
 
-// --- INICIO DEL NUEVO CÓDIGO PARA ELIMINAR COTIZACIÓN ---
-app.delete('/api/quote-requests/:id', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+// REEMPLAZA ESTE BLOQUE COMPLETO EN TU server.js
+app.delete('/api/quote-requests/:id', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     const quoteId = req.params.id;
     const user = req.session.user;
 
@@ -603,17 +603,15 @@ app.delete('/api/quote-requests/:id', requireLogin, checkRole(['Administrador', 
         }
 
         // REGLA 2: Verificar permisos
-        // Un Administrador puede borrar todo (excepto lo formalizado).
+        // Un Administrador o Coordinador puede borrar todo (excepto lo formalizado).
         // Un Asesor solo puede borrar lo suyo.
-        if (user.rol !== 'Administrador' && quote.advisorname !== user.nombre) {
+        if (user.rol === 'Asesor' && quote.advisorname !== user.nombre) {
             return res.status(403).json({ message: 'No tienes permiso para eliminar esta cotización.' });
         }
 
-        // Si pasamos las validaciones, procedemos a eliminar usando una transacción
+        // Si pasamos las validaciones, procedemos a eliminar
         await client.query('BEGIN');
-        // Primero eliminamos los pagos asociados para evitar errores de restricción de clave foránea
         await client.query('DELETE FROM payments WHERE quote_id = $1', [quoteId]);
-        // Luego, eliminamos la cotización
         await client.query('DELETE FROM quotes WHERE id = $1', [quoteId]);
         await client.query('COMMIT');
         
