@@ -1064,6 +1064,77 @@ app.get('/api/debug/raw-table', requireLogin, requireAdmin, async (req, res) => 
 // ======================================================================
 // ========= FIN: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ===========
 // ======================================================================
+
+// ======================================================================
+// ========= INICIO: HERRAMIENTA DE AUDITORÍA DE RANKING DE SEGUIMIENTO ==
+// ======================================================================
+app.get('/api/debug/audit-advisor-follow-up', requireLogin, requireAdmin, async (req, res) => {
+    const { advisor } = req.query;
+
+    if (!advisor) {
+        return res.status(400).send('<h1>Error</h1><p>Debes especificar un asesor en la URL. Ejemplo: ...?advisor=Isolina%20Pacheco</p>');
+    }
+
+    try {
+        // Consulta para obtener la última visita de CADA centro asociado al asesor
+        const query = `
+            WITH ActiveCentersLastVisit AS (
+                SELECT
+                    c.name AS center_name,
+                    latest_visit.visitdate,
+                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
+                FROM
+                    centers c
+                JOIN LATERAL (
+                    SELECT v.advisorname, v.commenttext, v.visitdate
+                    FROM visits v
+                    WHERE v.centername = c.name AND v.advisorname = $1
+                    ORDER BY v.visitdate DESC, v.createdat DESC
+                    LIMIT 1
+                ) AS latest_visit ON true
+                WHERE
+                    latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
+            )
+            SELECT * FROM ActiveCentersLastVisit ORDER BY days_since_last_visit DESC;
+        `;
+        
+        const { rows: centers } = await pool.query(query, [advisor]);
+
+        if (centers.length === 0) {
+            return res.send(`<h1>Auditoría para ${advisor}</h1><p>No se encontraron centros de seguimiento activo para este asesor.</p>`);
+        }
+
+        // Construir la respuesta HTML
+        let htmlResponse = `<h1>Auditoría de Seguimiento para: ${advisor}</h1>`;
+        htmlResponse += `<p>Se encontraron ${centers.length} centros en seguimiento activo.</p>`;
+        htmlResponse += '<table border="1" cellpadding="5" cellspacing="0"><tr><th>Centro</th><th>Días Transcurridos</th></tr>';
+        
+        let totalDays = 0;
+        centers.forEach(center => {
+            totalDays += center.days_since_last_visit;
+            htmlResponse += `<tr><td>${center.center_name}</td><td>${center.days_since_last_visit}</td></tr>`;
+        });
+
+        const average = totalDays / centers.length;
+
+        htmlResponse += '</table>';
+        htmlResponse += `<hr>`;
+        htmlResponse += `<h2>Cálculo Final</h2>`;
+        htmlResponse += `<p><strong>Suma Total de Días:</strong> ${totalDays}</p>`;
+        htmlResponse += `<p><strong>Cantidad de Centros:</strong> ${centers.length}</p>`;
+        htmlResponse += `<p><strong>Promedio (Total Días / Cantidad Centros):</strong> ${average.toFixed(1)} días</p>`;
+
+        res.status(200).send(htmlResponse);
+
+    } catch (err) {
+        console.error('Error en la herramienta de auditoría:', err);
+        res.status(500).send('Error en el servidor al realizar la auditoría.');
+    }
+});
+// ======================================================================
+// ========= FIN: HERRAMIENTA DE AUDITORÍA ==============================
+// ======================================================================
+
 // ======================================================================
 // ========= INICIO: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO =====
 // ======================================================================
