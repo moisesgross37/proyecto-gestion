@@ -1,98 +1,77 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Comentarios - Admin</title>
-    <link rel="stylesheet" href="/estilos.css">
-    <link rel="stylesheet" href="/admin-estilos.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
-            <h1>Gestión de Comentarios Predeterminados</h1>
-        </header>
-        <main>
-            <div class="card">
-                <h2>Añadir Comentario</h2>
-                <form id="add-comment-form" class="form-group">
-                    <label for="new-comment-name">Texto del Comentario:</label>
-                    <input type="text" id="new-comment-name" name="name" required placeholder="Escribe el comentario">
-                    <button type="submit" class="btn">Añadir Comentario</button>
-                </form>
-                <hr>
-                <h3>Comentarios Actuales</h3>
-                <ul id="comment-list" class="resource-list"></ul>
-            </div>
-        </main>
-    </div>
-
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', () => {
+            // IDs correctos que coinciden con tu HTML
             const form = document.getElementById('add-comment-form');
             const input = document.getElementById('new-comment-name');
             const list = document.getElementById('comment-list');
-            const API_URL = '/api/comments'; // <-- CORRECCIÓN #1: URL correcta
-            const entityDisplayName = 'Comentario';
-
-            const fetchAndDisplayItems = async () => {
+            
+            // Función para cargar y mostrar los comentarios
+            const fetchAndDisplayComments = async () => {
                 try {
-                    const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error(`Error al obtener comentarios.`);
-                    const items = await response.json();
-                    list.innerHTML = '';
-                    items.forEach(item => {
+                    const response = await fetch('/api/comments');
+                    if (!response.ok) throw new Error('Error al obtener comentarios.');
+                    const comments = await response.json();
+                    
+                    list.innerHTML = ''; // Limpiar la lista
+                    if (comments.length === 0) {
+                        list.innerHTML = '<li>No hay comentarios predeterminados.</li>';
+                        return;
+                    }
+                    
+                    comments.forEach(comment => {
                         const li = document.createElement('li');
-                        li.textContent = item.text; // <-- CORRECCIÓN #2: Propiedad correcta
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.textContent = 'Eliminar';
-                        deleteBtn.className = 'btn-delete';
-                        deleteBtn.onclick = () => deleteItem(item.id);
-                        li.appendChild(deleteBtn);
+                        li.className = 'resource-list-item'; // Usando una clase genérica para el estilo
+                        li.innerHTML = `
+                            <span>${comment.text}</span>
+                            <button data-id="${comment.id}" class="btn-delete">Eliminar</button>
+                        `;
                         list.appendChild(li);
                     });
                 } catch (error) {
-                    console.error('Error:', error);
-                    list.innerHTML = `<li>${error.message}</li>`;
+                    list.innerHTML = '<li style="color: red;">Error al obtener comentarios.</li>';
+                    console.error(error);
                 }
             };
 
-            const addItem = async (name) => {
+            // Evento para añadir un nuevo comentario
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const text = input.value.trim(); // Usamos .trim() para limpiar espacios
+                if (!text) return;
+
                 try {
-                    const response = await fetch(API_URL, {
+                    await fetch('/api/comments', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name }),
+                        // El servidor espera la propiedad "text", no "name"
+                        body: JSON.stringify({ text }) 
                     });
-                    if (!response.ok) throw new Error(`Error al añadir ${entityDisplayName}.`);
                     input.value = '';
-                    await fetchAndDisplayItems();
+                    fetchAndDisplayComments(); // Recargar la lista
                 } catch (error) {
-                    console.error('Error:', error);
-                    alert(`No se pudo añadir el ${entityDisplayName}.`);
+                    console.error("Error al añadir:", error);
+                    alert("No se pudo añadir el comentario.");
                 }
-            };
-
-            const deleteItem = async (id) => {
-                if (!confirm(`¿Estás seguro de que quieres eliminar este ${entityDisplayName.toLowerCase()}?`)) return;
-                try {
-                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                    if (!response.ok) throw new Error(`Error al eliminar ${entityDisplayName}.`);
-                    await fetchAndDisplayItems();
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert(`No se pudo eliminar el ${entityDisplayName}.`);
-                }
-            };
-
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                const name = input.value.trim();
-                if (name) addItem(name);
             });
 
-            fetchAndDisplayItems();
+            // Evento para eliminar un comentario (usando delegación de eventos)
+            list.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('btn-delete')) {
+                    const id = e.target.dataset.id;
+                    if (confirm('¿Estás seguro de que quieres eliminar este comentario?')) {
+                        try {
+                            await fetch(`/api/comments/${id}`, { method: 'DELETE' });
+                            fetchAndDisplayComments(); // Recargar la lista
+                        } catch (error) {
+                            console.error("Error al eliminar:", error);
+                            alert("No se pudo eliminar el comentario.");
+                        }
+                    }
+                }
+            });
+            
+            // Carga inicial de los comentarios al entrar en la página
+            fetchAndDisplayComments();
         });
     </script>
 </body>
