@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userNameSpan.textContent = user.nombre;
             
-            // 1. Cargar botones del menú
+            // 1. Cargar botones del menú (LÓGICA ORIGINAL INTACTA)
             let buttonsHTML = '';
             if (user.rol === 'Administrador') {
                 buttonsHTML += '<a href="/admin_menu.html" class="nav-button">Panel de Administración</a>';
@@ -64,11 +64,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             menuContainer.innerHTML = buttonsHTML;
 
-            // 2. Cargar los cuatro paneles de rankings
+            // 2. Cargar los cuatro paneles de rankings (LÓGICA ORIGINAL INTACTA)
             loadAdvisorRanking();
             loadAdvisorVisitRanking();
             loadFollowUpRanking(); 
             loadAdvisorPerformance();
+
+            // ==========================================================
+            // ========= INICIO DE LA MODIFICACIÓN (PASO 3) =============
+            // ==========================================================
+
+            // 3. Cargar el panel de coordinadora si el rol es el adecuado
+            if (user.rol === 'Coordinador' || user.rol === 'Administrador') {
+                const panel = document.getElementById('coordinator-panel');
+                if (panel) {
+                    panel.style.display = 'block'; // Hacemos visible el panel
+                    loadCoordinatorPanel(); // Llamamos a la nueva función para llenarlo
+                }
+            }
+            
+            // ==========================================================
+            // ========= FIN DE LA MODIFICACIÓN (PASO 3) ================
+            // ==========================================================
 
         } else {
             // Si no hay usuario, redirigir al login
@@ -76,7 +93,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR RANKING DE FORMALIZACIONES ---
+    // ==========================================================
+    // ========= INICIO: NUEVA FUNCIÓN AÑADIDA ==================
+    // ==========================================================
+
+    // --- FUNCIÓN PARA CARGAR EL PANEL DE COORDINADORA ---
+    async function loadCoordinatorPanel() {
+        const coordinatorPanel = document.getElementById('coordinator-panel');
+        if (!coordinatorPanel) return;
+        try {
+            const response = await fetch('/api/coordinator/team-performance');
+            if (!response.ok) {
+                throw new Error('No se pudo cargar la data de coordinación.');
+            }
+            const data = await response.json();
+
+            // Llenar los datos en el HTML del panel
+            document.getElementById('team-closing-rate').textContent = `${data.teamClosingRate}%`;
+            document.getElementById('team-follow-up-average').textContent = `${data.teamAverageFollowUpDays} días`;
+            
+            document.getElementById('top-performer-name').textContent = data.topPerformer.name;
+            document.getElementById('top-performer-days').textContent = `${data.topPerformer.days} días`;
+            
+            document.getElementById('improvement-opportunity-name').textContent = data.improvementOpportunity.name;
+            document.getElementById('improvement-opportunity-days').textContent = `${data.improvementOpportunity.days} días`;
+
+        } catch (error) {
+            console.error('Error en el panel de coordinadora:', error);
+            coordinatorPanel.innerHTML = '<p style="color: red; text-align: center;">Error al cargar el panel del equipo.</p>';
+        }
+    }
+
+    // ==========================================================
+    // ========= FIN: NUEVA FUNCIÓN AÑADIDA =====================
+    // ==========================================================
+
+
+    // --- FUNCIÓN PARA CARGAR RANKING DE FORMALIZACIONES --- (CÓDIGO ORIGINAL INTACTO)
     async function loadAdvisorRanking() {
         const rankingContainer = document.getElementById('ranking-container');
         if (!rankingContainer) return;
@@ -101,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES ---
+    // --- FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES --- (CÓDIGO ORIGINAL INTACTO)
     async function loadAdvisorVisitRanking() {
         const visitRankingContainer = document.getElementById('visit-ranking-container');
         if (!visitRankingContainer) return;
@@ -126,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ---
+    // --- FUNCIÓN PARA RANKING DE EFICIENCIA DE SEGUIMIENTO --- (CÓDIGO ORIGINAL INTACTO)
     async function loadFollowUpRanking() {
         const container = document.getElementById('follow-up-ranking-container');
         if (!container) return;
@@ -154,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO ---
+    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO --- (CÓDIGO ORIGINAL INTACTO)
     async function loadAdvisorPerformance() {
         const performanceContainer = document.getElementById('performance-container');
         if (!performanceContainer) return;
