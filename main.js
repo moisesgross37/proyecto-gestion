@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- LÓGICA DE LOGIN Y LOGOUT (SIN CAMBIOS) ---
+    // --- LÓGICA PARA EL FORMULARIO DE INICIO DE SESIÓN ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -20,143 +20,143 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     errorMessage.textContent = data.message || 'Error al iniciar sesión.';
                 }
-            } catch (error) { errorMessage.textContent = 'No se pudo conectar con el servidor.'; }
+            } catch (error) {
+                errorMessage.textContent = 'No se pudo conectar con el servidor.';
+            }
         });
     }
 
+    // --- LÓGICA PARA EL BOTÓN DE CERRAR SESIÓN ---
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            localStorage.removeItem('currentUser');
-            await fetch('/api/logout', { method: 'POST' });
-            window.location.href = '/login.html';
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                if (response.ok) {
+                    localStorage.removeItem('currentUser');
+                    alert('Sesión cerrada exitosamente.');
+                    window.location.href = '/login.html';
+                } else {
+                    alert('Error al intentar cerrar sesión.');
+                }
+            } catch (error) { console.error('Error de red al cerrar sesión:', error); }
         });
     }
 
-    // --- LÓGICA DEL MENÚ PRINCIPAL ---
+    // --- LÓGICA PARA EL MENÚ PRINCIPAL DINÁMICO ---
     const menuContainer = document.getElementById('menu-buttons-container');
-    if (menuContainer) {
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        if (!user) {
-            window.location.href = '/login.html';
-            return;
-        }
-        
-        document.getElementById('user-name').textContent = user.nombre;
-        
-        let buttonsHTML = '';
-        if (user.rol === 'Administrador') buttonsHTML += '<a href="/admin_menu.html" class="nav-button">Panel de Administración</a>';
-        if (['Administrador', 'Coordinador', 'Asesor'].includes(user.rol)) buttonsHTML += '<a href="/asesores-menu.html" class="nav-button">Módulo de Asesores</a>';
-        menuContainer.innerHTML = buttonsHTML;
-
-        // Decidir qué paneles mostrar
-        if (user.rol === 'Administrador' || user.rol === 'Coordinador') {
-            document.getElementById('team-pulse-panel').style.display = 'block';
-            loadTeamPulsePanel();
-        }
-
-        // Cargar todos los rankings para todos los roles
-        loadStrategicPerformanceIndex();
-        loadPipelineRanking();
-        loadReachRanking();
-        loadConversionRanking();
-        loadFollowUpRanking();
-    }
-
-    // --- NUEVAS FUNCIONES DE RANKING ---
-
-    async function loadTeamPulsePanel() {
-        const container = document.getElementById('team-pulse-panel');
-        try {
-            const response = await fetch('/api/team-pulse');
-            const data = await response.json();
-            container.innerHTML = `
-                <h3>❤️ Pulso del Equipo</h3>
-                <div class="team-pulse-grid">
-                    <div><strong>Prospectos Activos:</strong> <span>${data.activeProspects}</span></div>
-                    <div><strong>Tasa de Conversión:</strong> <span>${data.overallConversionRate}%</span></div>
-                    <div><strong>Ciclo de Venta Promedio:</strong> <span>${data.averageSalesCycle} días</span></div>
-                    <div><strong>Principal Cuello de Botella:</strong> <span>${data.mainBottleneck}</span></div>
-                </div>
-            `;
-        } catch (error) { container.innerHTML = '<h3>❤️ Pulso del Equipo</h3><p>Error al cargar.</p>'; }
-    }
-
-    async function loadStrategicPerformanceIndex() {
-        const container = document.getElementById('strategic-performance-container');
-        const getScoreClass = (score) => {
-            if (score >= 75) return 'score-high';
-            if (score >= 50) return 'score-medium';
-            return 'score-low';
-        };
-        try {
-            const response = await fetch('/api/strategic-performance-index');
-            const data = await response.json();
-            let content = '<h3>🏆 Índice de Desempeño Estratégico (IDE)</h3>';
-            data.forEach((item, index) => {
-                let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-                const score = parseFloat(item.performance_score).toFixed(1);
-                content += `<div class="performance-item"><span class="performance-advisor">${medal} ${item.advisorname}</span><span class="performance-score ${getScoreClass(score)}">${score} / 100</span></div>`;
-            });
-            container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>🏆 IDE</h3><p>Error al cargar.</p>'; }
-    }
+    const userNameSpan = document.getElementById('user-name');
     
-    // --- FUNCIONES DE RANKING ANTERIORES (SIN CAMBIOS, SOLO TÍTULOS) ---
+    if (menuContainer) { // Si estamos en el menú principal
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (user) {
+            userNameSpan.textContent = user.nombre;
+            
+            let buttonsHTML = '';
+            if (user.rol === 'Administrador') {
+                buttonsHTML += '<a href="/admin_menu.html" class="nav-button">Panel de Administración</a>';
+            }
+            if (['Administrador', 'Coordinador', 'Asesor'].includes(user.rol)) {
+                buttonsHTML += '<a href="/asesores-menu.html" class="nav-button">Módulo de Asesores</a>';
+            }
+            menuContainer.innerHTML = buttonsHTML;
 
+            // Llamamos a las nuevas funciones para cargar los rankings
+            loadPipelineRanking();
+            loadReachRanking();
+            loadConversionRanking();
+            loadFollowUpRanking(); // Este se mantiene
+
+        } else {
+            window.location.href = '/login.html';
+        }
+    }
+
+    // --- FUNCIÓN PARA EL PIPELINE DE VENTAS ---
     async function loadPipelineRanking() {
         const container = document.getElementById('pipeline-container');
+        if (!container) return;
         try {
             const response = await fetch('/api/pipeline-ranking');
             const data = await response.json();
             let content = '<h3>📈 Pipeline de Ventas</h3>';
+            content += '<div class="pipeline">';
             data.forEach(stage => {
-                content += `<div class="performance-item"><span>${stage.etapa_venta}</span><span>${stage.count}</span></div>`;
+                content += `<div class="pipeline-stage"><span>${stage.etapa_venta}</span><span class="pipeline-count">${stage.count}</span></div>`;
             });
+            content += '</div>';
             container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>📈 Pipeline</h3><p>Error.</p>'; }
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<h3>📈 Pipeline de Ventas</h3><p>Error al cargar datos.</p>';
+        }
     }
 
+    // --- FUNCIÓN PARA EL RANKING DE ALCANCE ---
     async function loadReachRanking() {
         const container = document.getElementById('reach-ranking-container');
+        if (!container) return;
         try {
             const response = await fetch('/api/reach-ranking');
             const data = await response.json();
             let content = '<h3>🗺️ Ranking de Alcance (Centros Únicos)</h3>';
-            data.forEach((item, index) => {
-                content += `<div class="performance-item"><span>${index + 1}. ${item.advisorname}</span><span>${item.unique_centers_count}</span></div>`;
+            content += '<ol>';
+            data.forEach(item => {
+                content += `<li>${item.advisorname}: <strong>${item.unique_centers_count} centros</strong></li>`;
             });
+            content += '</ol>';
             container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>🗺️ Alcance</h3><p>Error.</p>'; }
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<h3>🗺️ Ranking de Alcance</h3><p>Error al cargar datos.</p>';
+        }
     }
 
+    // --- FUNCIÓN PARA EL RANKING DE TASA DE CONVERSIÓN ---
     async function loadConversionRanking() {
         const container = document.getElementById('conversion-ranking-container');
+        if (!container) return;
         try {
             const response = await fetch('/api/conversion-ranking');
             const data = await response.json();
-            let content = '<h3>🚀 Tasa de Conversión</h3>';
-            data.forEach((item, index) => {
-                const rate = parseFloat(item.conversion_rate).toFixed(1);
-                content += `<div class="performance-item"><span>${index + 1}. ${item.advisorname}</span><span>${rate}%</span></div>`;
+            let content = '<h3>🚀 Ranking de Eficiencia (Tasa de Conversión)</h3>';
+            content += '<ol>';
+            data.forEach(item => {
+                content += `<li>${item.advisorname}: <strong>${parseFloat(item.conversion_rate).toFixed(1)}%</strong></li>`;
             });
+            content += '</ol>';
             container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>🚀 Conversión</h3><p>Error.</p>'; }
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<h3>🚀 Ranking de Eficiencia</h3><p>Error al cargar datos.</p>';
+        }
     }
 
+    // --- FUNCIÓN PARA RANKING DE SEGUIMIENTO (SE MANTIENE IGUAL) ---
     async function loadFollowUpRanking() {
         const container = document.getElementById('follow-up-ranking-container');
+        if (!container) return;
         try {
             const response = await fetch('/api/advisor-follow-up-ranking');
-            const data = await response.json();
-            let content = '<h3>⏱️ Ranking de Seguimiento (Días Promedio)</h3>';
-            data.forEach((item, index) => {
-                let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-                const days = parseFloat(item.average_follow_up_days).toFixed(1);
-                content += `<div class="performance-item"><span class="performance-advisor">${medal} ${item.advisorname}</span><span class="performance-score score-low">${days} días</span></div>`;
+            const rankingData = await response.json();
+            if (rankingData.length === 0) {
+                container.innerHTML = '<h3>⏱️ Ranking de Seguimiento (Días Promedio)</h3><p>No hay datos.</p>';
+                return;
+            }
+            let rankingHTML = '<h3>⏱️ Ranking de Seguimiento (Días Promedio)</h3>';
+            rankingData.forEach((advisor, index) => {
+                let medal = '';
+                if (index === 0) medal = '🥇';
+                if (index === 1) medal = '🥈';
+                if (index === 2) medal = '🥉';
+                const days = parseFloat(advisor.average_follow_up_days).toFixed(1);
+                rankingHTML += `<div class="performance-item"><span class="performance-advisor">${medal} ${advisor.advisorname}</span><span class="performance-score score-low">${days} días</span></div>`;
             });
-            container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>⏱️ Seguimiento</h3><p>Error.</p>'; }
+            container.innerHTML = rankingHTML;
+        } catch (error) {
+            console.error("Error en Ranking de Seguimiento:", error);
+            container.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar el panel de seguimiento.</p>`;
+        }
     }
 });
