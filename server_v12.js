@@ -1151,68 +1151,6 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-// ======================================================================
-// ========= INICIO: SCRIPT CORREGIDO PARA SINCRONIZAR DATOS ANTIGUOS ====
-// ======================================================================
-app.get('/api/admin/backfill-formalized-centers', requireLogin, requireAdmin, async (req, res) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-
-        // Esta consulta mejorada identifica la visita de formalización más reciente
-        // para cada centro y evita intentar insertar duplicados.
-        const query = `
-            WITH LatestFormalization AS (
-                SELECT
-                    v.centername,
-                    v.advisorname,
-                    v.createdat,
-                    ROW_NUMBER() OVER(PARTITION BY v.centername ORDER BY v.createdat DESC) as rn
-                FROM
-                    visits v
-                WHERE
-                    LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
-            )
-            INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number, formalization_date)
-            SELECT
-                c.id AS center_id,
-                lf.centername AS center_name,
-                lf.advisorname AS advisor_name,
-                q.id AS quote_id,
-                q.quotenumber AS quote_number,
-                lf.createdat AS formalization_date
-            FROM
-                LatestFormalization lf
-            JOIN
-                centers c ON lf.centername = c.name
-            LEFT JOIN
-                formalized_centers fc ON c.id = fc.center_id
-            LEFT JOIN
-                (SELECT id, quotenumber, clientname, createdat, ROW_NUMBER() OVER(PARTITION BY clientname ORDER BY createdat DESC) as rn FROM quotes WHERE status = 'formalizada' OR status = 'aprobada') q
-                ON lf.centername = q.clientname AND q.rn = 1
-            WHERE
-                lf.rn = 1 AND fc.id IS NULL;
-        `;
-
-        const result = await client.query(query);
-        await client.query('COMMIT');
-
-        res.status(200).send(`
-            <h1>Sincronización completada con éxito.</h1>
-            <p>Se han insertado ${result.rowCount} nuevos registros en la tabla de centros formalizados.</p>
-            <p><a href="/formalized_centers_list.html">¡Ver el listado ahora!</a></p>
-        `);
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error en el script de sincronización (versión corregida):', err);
-        res.status(500).send('Error en el servidor durante la sincronización.');
-    } finally {
-        client.release();
-    }
-});
-// ======================================================================
-// ========= FIN: SCRIPT CORREGIDO ======================================
-// ======================================================================
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
