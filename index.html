@@ -29,6 +29,56 @@
         <a href="#" id="logout-btn" class="back-link" style="margin-top: 20px;">Cerrar Sesión</a>
     </div>
     
+    //CODIGO NUEVO AGREGADO
+    <div id="coordinator-panel" class="container mt-5" style="display: none;">
+    <h2 class="text-center mb-4">Panel de Desempeño del Equipo</h2>
+    <div class="row text-center">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">🎯 Tasa de Cierre del Equipo</h5>
+                    <p class="display-4 fw-bold" id="team-closing-rate">--%</p>
+                    <small class="text-muted">(Formalizaciones / Total de Visitas)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">⏱️ Promedio de Seguimiento del Equipo</h5>
+                    <p class="display-4 fw-bold" id="team-follow-up-average">-- días</p>
+                    <small class="text-muted">(Promedio de tiempo sin visitar a un prospecto activo)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    📈 Ranking Interno del Equipo (Basado en Días de Seguimiento)
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                        <div>
+                            <strong class="text-success">🏆 Asesor Destacado (Menor tiempo)</strong>
+                            <p class="mb-0" id="top-performer-name">Cargando...</p>
+                        </div>
+                        <span class="badge bg-success rounded-pill fs-6" id="top-performer-days">--</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                        <div>
+                            <strong class="text-warning">🛠️ Asesor con Oportunidad (Mayor tiempo)</strong>
+                            <p class="mb-0" id="improvement-opportunity-name">Cargando...</p>
+                        </div>
+                        <span class="badge bg-warning rounded-pill fs-6" id="improvement-opportunity-days">--</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+    
     <script src="/main.js"></script>
 </body>
 </html>
