@@ -1473,6 +1473,96 @@ app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Co
 // ======================================================================
 // ========= FIN: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS ============
 // ======================================================================
+// ======================================================================
+// ========= INICIO: APIS PARA IDE Y PULSO DE EQUIPO ====================
+// ======================================================================
+
+// 1. API PARA EL ÍNDICE DE DESEMPEÑO ESTRATÉGICO (IDE)
+app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
+    try {
+        // Obtenemos los datos base de los otros rankings
+        const reachQuery = `SELECT advisorname, COUNT(DISTINCT centername) as value FROM visits GROUP BY advisorname`;
+        const followUpQuery = `WITH LastVisits AS (SELECT v.advisorname, (CURRENT_DATE - v.visitdate) AS days FROM visits v JOIN centers c ON v.centername = c.name WHERE c.etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')) SELECT advisorname, AVG(days) as value FROM LastVisits GROUP BY advisorname`;
+        const conversionQuery = `WITH M AS (SELECT advisorname, COUNT(DISTINCT centername) AS total FROM visits GROUP BY advisorname), F AS (SELECT advisor_name, COUNT(*) AS total FROM formalized_centers GROUP BY advisor_name) SELECT M.advisorname, (COALESCE(F.total, 0) * 100.0 / M.total) AS value FROM M LEFT JOIN F ON M.advisorname = F.advisor_name`;
+
+        const [reachRes, followUpRes, conversionRes] = await Promise.all([
+            pool.query(reachQuery),
+            pool.query(followUpQuery),
+            pool.query(conversionQuery)
+        ]);
+
+        const advisors = {};
+        const initAdvisor = (name) => {
+            if (!advisors[name]) {
+                advisors[name] = { advisorname: name, reach: 0, followUp: 0, conversion: 0 };
+            }
+        };
+
+        reachRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].reach = parseFloat(r.value); });
+        followUpRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].followUp = parseFloat(r.value); });
+        conversionRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].conversion = parseFloat(r.value); });
+
+        const advisorList = Object.values(advisors);
+        const maxReach = Math.max(...advisorList.map(a => a.reach));
+        const followUpDays = advisorList.filter(a => a.followUp > 0).map(a => a.followUp);
+        const minFollowUp = Math.min(...followUpDays);
+        const maxFollowUp = Math.max(...followUpDays);
+        const maxConversion = Math.max(...advisorList.map(a => a.conversion));
+
+        const performanceData = advisorList.map(advisor => {
+            const reachScore = (maxReach > 0) ? (advisor.reach / maxReach) : 0;
+            let followUpScore = 0;
+            if (advisor.followUp > 0) {
+                if (maxFollowUp === minFollowUp) {
+                    followUpScore = 1;
+                } else {
+                    followUpScore = 1 - ((advisor.followUp - minFollowUp) / (maxFollowUp - minFollowUp));
+                }
+            }
+            const conversionScore = (maxConversion > 0) ? (advisor.conversion / maxConversion) : 0;
+
+            const totalScore = (reachScore * 40) + (followUpScore * 40) + (conversionScore * 20);
+            return { advisorname: advisor.advisorname, performance_score: totalScore };
+        });
+
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+        res.json(performanceData);
+    } catch (err) {
+        console.error("Error al calcular el IDE:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// 2. API PARA EL PANEL "PULSO DEL EQUIPO"
+app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const activeProspectsQuery = `SELECT COUNT(*) as value FROM centers WHERE etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')`;
+        const conversionRateQuery = `SELECT (SELECT COUNT(*) FROM formalized_centers) * 100.0 / NULLIF((SELECT COUNT(DISTINCT centername) FROM visits), 0) as value`;
+        const salesCycleQuery = `WITH FirstVisits AS (SELECT centername, MIN(visitdate) as first_visit_date FROM visits GROUP BY centername) SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value FROM formalized_centers fc JOIN FirstVisits fv ON fc.center_name = fv.centername`;
+        const bottleneckQuery = `SELECT etapa_venta as value, COUNT(*) as count FROM centers WHERE etapa_venta NOT IN ('Prospecto', 'Acuerdo Formalizado', 'No Logrado') GROUP BY etapa_venta ORDER BY count DESC LIMIT 1`;
+
+        const [activeProspectsRes, conversionRateRes, salesCycleRes, bottleneckRes] = await Promise.all([
+            pool.query(activeProspectsQuery),
+            pool.query(conversionRateQuery),
+            pool.query(salesCycleQuery),
+            pool.query(bottleneckQuery)
+        ]);
+
+        res.json({
+            activeProspects: activeProspectsRes.rows[0]?.value || 0,
+            overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
+            averageSalesCycle: parseFloat(salesCycleRes.rows[0]?.value || 0).toFixed(0),
+            mainBottleneck: bottleneckRes.rows[0]?.value || 'N/A'
+        });
+    } catch (err) {
+        console.error("Error al calcular el Pulso del Equipo:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// ======================================================================
+// ========= FIN: APIS PARA IDE Y PULSO DE EQUIPO =======================
+// ======================================================================
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
