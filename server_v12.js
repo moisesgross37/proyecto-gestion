@@ -267,15 +267,8 @@ app.get('/api/advisors', requireLogin, async (req, res) => { try { const result 
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
-// ==================================================================
-// ============== INICIO DE LA SECCIÓN MODIFICADA (VISITAS) ==============
-// ==================================================================
-// ==================================================================
-// ============== INICIO DE LA SECCIÓN MODIFICADA (VISITAS) ==============
-// ==================================================================
+// REEMPLAZA ESTE BLOQUE COMPLETO EN TU server.js de be-gestion
 app.post('/api/visits', requireLogin, async (req, res) => {
-    // Leemos el nuevo campo 'formalizedQuoteId' que viene del formulario
     const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber, formalizedQuoteId } = req.body;
     
     if (!centerName || !centerAddress) {
@@ -286,15 +279,17 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     try {
         await client.query('BEGIN');
         
+        // Lógica para crear o actualizar el centro (sin cambios)
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1 AND address = $2', [centerName, centerAddress]);
-        
+        let centerId;
         if (centerResult.rows.length === 0) {
-            await client.query(
-                'INSERT INTO centers (name, address, sector, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5)',
+            const newCenterResult = await client.query(
+                'INSERT INTO centers (name, address, sector, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5) RETURNING id',
                 [centerName, centerAddress, centerSector || '', contactName || '', contactNumber || '']
             );
+            centerId = newCenterResult.rows[0].id;
         } else {
-            const centerId = centerResult.rows[0].id;
+            centerId = centerResult.rows[0].id;
             if (contactName || contactNumber) {
                  await client.query(
                      'UPDATE centers SET contactname = $1, contactnumber = $2 WHERE id = $3',
@@ -303,37 +298,48 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             }
         }
 
+        // Registrar la visita (sin cambios)
         await client.query(
             'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
         
-        // --- LÓGICA CORREGIDA ---
-        // Si la visita es de formalización, actualizamos la cotización sin importar si estaba 'aprobada' o 'archivada'.
+        // --- INICIO DE LA LÓGICA CORREGIDA Y COMPLETADA ---
         if (commentText === 'Formalizar Acuerdo' && formalizedQuoteId) {
-            await client.query(
-                "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND (status = 'aprobada' OR status = 'archivada')",
+            // 1. Actualizamos la cotización a 'formalizada'
+            const quoteUpdateResult = await client.query(
+                "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND (status = 'aprobada' OR status = 'archivada') RETURNING quotenumber",
                 [formalizedQuoteId]
             );
+
+            // Verificamos que se haya actualizado una cotización antes de continuar
+            if (quoteUpdateResult.rowCount > 0) {
+                const quoteNumber = quoteUpdateResult.rows[0].quotenumber;
+                // 2. Insertamos el registro en la tabla de centros formalizados
+                // Usamos ON CONFLICT para evitar errores si ya existe y simplemente lo actualizamos.
+                await client.query(`
+                    INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number)
+                    VALUES ($1, $2, $3, $4, $5)
+                    ON CONFLICT (center_id) DO UPDATE SET
+                        advisor_name = EXCLUDED.advisor_name,
+                        quote_id = EXCLUDED.quote_id,
+                        quote_number = EXCLUDED.quote_number,
+                        formalization_date = NOW();
+                `, [centerId, centerName, advisorName, formalizedQuoteId, quoteNumber]);
+            }
         }
+        // --- FIN DE LA LÓGICA CORREGIDA ---
         
         await client.query('COMMIT');
         res.status(201).json({ message: "Visita registrada y centro de estudios gestionado correctamente." });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error("Error al registrar visita:", err);
-        if (err.code === '23505') {
-            return res.status(409).json({ message: 'Ya existe un centro con este nombre y dirección.' });
-        }
         res.status(500).json({ message: 'Error en el servidor al registrar la visita.' });
     } finally {
         client.release();
     }
 });
-// ==================================================================
-// ============== FIN DE LA SECCIÓN MODIFICADA (VISITAS) ==============
-// ==================================================================
-
 app.get('/api/centers', requireLogin, async (req, res) => {
     try {
         const { advisor, comment } = req.query;
