@@ -239,3 +239,42 @@
     text-decoration: none;
     cursor: pointer;
 }
+
+/* ============================================= */
+/* ========= ESTILOS PARA LISTAS DE ADMIN ======== */
+/* ============================================= */
+
+.resource-list {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.resource-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    background-color: #f9f9f9;
+}
+
+.resource-list-item span {
+    font-weight: 500;
+}
+
+.btn-delete {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-delete:hover {
+    background-color: #c0392b;
+}
