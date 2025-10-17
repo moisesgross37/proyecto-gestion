@@ -1151,7 +1151,57 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
+// ======================================================================
+// ========= INICIO: SCRIPT TEMPORAL PARA SINCRONIZAR DATOS ANTIGUOS ====
+// ======================================================================
+app.get('/api/admin/backfill-formalized-centers', requireLogin, requireAdmin, async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
+        // Esta consulta busca todas las visitas de formalización
+        // que aún no están en la tabla de centros formalizados.
+        const query = `
+            INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number, formalization_date)
+            SELECT
+                c.id AS center_id,
+                v.centername AS center_name,
+                v.advisorname AS advisor_name,
+                q.id AS quote_id,
+                q.quotenumber AS quote_number,
+                v.createdat AS formalization_date
+            FROM
+                visits v
+            JOIN
+                centers c ON v.centername = c.name
+            LEFT JOIN
+                formalized_centers fc ON c.id = fc.center_id
+            LEFT JOIN
+                (SELECT id, quotenumber, clientname, createdat, ROW_NUMBER() OVER(PARTITION BY clientname ORDER BY createdat DESC) as rn FROM quotes WHERE status = 'formalizada' OR status = 'aprobada') q
+                ON v.centername = q.clientname AND q.rn = 1
+            WHERE
+                LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo' AND fc.id IS NULL;
+        `;
+
+        const result = await client.query(query);
+        await client.query('COMMIT');
+
+        res.status(200).send(`
+            <h1>Sincronización completada.</h1>
+            <p>Se han insertado ${result.rowCount} nuevos registros en la tabla de centros formalizados.</p>
+            <p><a href="/formalized_centers_list.html">Volver al listado</a></p>
+        `);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error en el script de sincronización:', err);
+        res.status(500).send('Error en el servidor durante la sincronización.');
+    } finally {
+        client.release();
+    }
+});
+// ======================================================================
+// ========= FIN: SCRIPT TEMPORAL =======================================
+// ======================================================================
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
