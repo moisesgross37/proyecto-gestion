@@ -1121,7 +1121,7 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 // ========= API PARA LISTA DE CENTROS FORMALIZADOS (USO EXTERNO) =======
 // ======================================================================
-app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador']), async (req, res) => {
+app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const query = `
             SELECT 
