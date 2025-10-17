@@ -1044,7 +1044,7 @@ app.get('/api/debug/raw-table', requireLogin, requireAdmin, async (req, res) => 
         const { tableName } = req.query;
 
         // Lista de tablas permitidas para evitar riesgos de seguridad
-        const allowedTables = ['centers', 'visits', 'quotes', 'users', 'advisors'];
+        const allowedTables = ['centers', 'visits', 'quotes', 'users', 'advisors', 'formalized_centers'];
 
         if (!tableName || !allowedTables.includes(tableName)) {
             return res.status(400).json({ message: 'Nombre de tabla no válido o no permitido.' });
