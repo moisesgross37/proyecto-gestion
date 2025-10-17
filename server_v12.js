@@ -1225,6 +1225,48 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
+
+// ======================================================================
+// ========= INICIO: RUTAS DE API PARA GESTIÓN DE COMENTARIOS ===========
+// ======================================================================
+app.get('/api/comments', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM comments ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener comentarios:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+app.post('/api/comments', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { text } = req.body;
+    if (!text || text.trim() === '') {
+        return res.status(400).json({ message: 'El texto del comentario no puede estar vacío.' });
+    }
+    try {
+        const result = await pool.query('INSERT INTO comments (text) VALUES ($1) RETURNING *', [text.trim()]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al añadir comentario:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+app.delete('/api/comments/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM comments WHERE id = $1', [id]);
+        res.status(200).json({ message: 'Comentario eliminado con éxito.' });
+    } catch (err) {
+        console.error('Error al eliminar comentario:', err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+// ======================================================================
+// ========= FIN: RUTAS DE API PARA GESTIÓN DE COMENTARIOS ==============
+// ======================================================================
+
 // ======================================================================
 // ========= INICIO: RUTA DE API PARA PANEL DE COORDINADORA =============
 // ======================================================================
