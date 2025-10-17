@@ -1379,6 +1379,101 @@ app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinad
 // ======================================================================
 // ========= FIN: RUTA DE API PARA PANEL DE COORDINADORA ================
 // ======================================================================
+
+// ======================================================================
+// ========= INICIO: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS =========
+// ======================================================================
+
+// 1. API PARA EL PIPELINE DE VENTAS (EMBUDO)
+app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const query = `
+            SELECT etapa_venta, COUNT(*) as count
+            FROM centers
+            WHERE etapa_venta IS NOT NULL
+            GROUP BY etapa_venta
+            ORDER BY
+                CASE etapa_venta
+                    WHEN 'Prospecto' THEN 1
+                    WHEN 'Cotización Presentada' THEN 2
+                    WHEN 'Negociación' THEN 3
+                    WHEN 'Acuerdo Formalizado' THEN 4
+                    WHEN 'No Logrado' THEN 5
+                    ELSE 6
+                END;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener datos del pipeline:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// 2. API PARA EL RANKING DE ALCANCE (CENTROS ÚNICOS)
+app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const query = `
+            SELECT advisorname, COUNT(DISTINCT centername) as unique_centers_count
+            FROM visits
+            GROUP BY advisorname
+            ORDER BY unique_centers_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener ranking de alcance:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// 3. API PARA EL RANKING DE TASA DE CONVERSIÓN
+app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const managedQuery = `SELECT advisorname, COUNT(DISTINCT centername) as total_managed FROM visits GROUP BY advisorname`;
+        const formalizedQuery = `SELECT advisor_name, COUNT(*) as total_formalized FROM formalized_centers GROUP BY advisor_name`;
+
+        const [managedResults, formalizedResults] = await Promise.all([
+            pool.query(managedQuery),
+            pool.query(formalizedQuery)
+        ]);
+
+        const advisorData = {};
+        managedResults.rows.forEach(row => {
+            advisorData[row.advisorname] = {
+                name: row.advisorname,
+                managed: parseInt(row.total_managed, 10),
+                formalized: 0
+            };
+        });
+
+        formalizedResults.rows.forEach(row => {
+            if (advisorData[row.advisor_name]) {
+                advisorData[row.advisor_name].formalized = parseInt(row.total_formalized, 10);
+            }
+        });
+
+        const conversionRates = Object.values(advisorData).map(advisor => {
+            const rate = (advisor.managed > 0) ? (advisor.formalized / advisor.managed) * 100 : 0;
+            return {
+                advisorname: advisor.name,
+                conversion_rate: rate
+            };
+        });
+
+        conversionRates.sort((a, b) => b.conversion_rate - a.conversion_rate);
+
+        res.json(conversionRates);
+    } catch (err) {
+        console.error("Error al obtener ranking de conversión:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
+});
+
+// ======================================================================
+// ========= FIN: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS ============
+// ======================================================================
+
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
