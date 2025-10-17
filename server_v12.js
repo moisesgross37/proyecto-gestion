@@ -1152,46 +1152,24 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
     }
 });
 
-// ======================================================================
-// ========= INICIO: SERVIDOR DE ARCHIVOS ESTÁTICOS Y HTML (CORREGIDO) ==
-// ======================================================================
-
-// 1. Sirve todos los archivos estáticos (CSS, JS, imágenes) desde la carpeta raíz.
-// Esta es la forma correcta y no necesita autenticación.
+// --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
-
-// 2. Ruta para la página de login (pública).
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
-
-// 3. Ruta de protección para TODAS las demás páginas .html.
-// Esta regla es más precisa y solo se activa para rutas como '/index.html',
-// '/admin_panel.html', etc., evitando conflictos con CSS y JS.
-app.get('/*.html', requireLogin, (req, res, next) => {
-    // Lista de páginas con roles específicos
-    const restrictedPages = {
-        '/reporte_visitas.html': checkRole(['Administrador', 'Coordinador']),
-        '/admin_panel.html': checkRole(['Administrador']),
-        '/admin_usuario.html': checkRole(['Administrador'])
-        // Puedes añadir más páginas y sus roles aquí
-    };
-
-    const pageHandler = restrictedPages[req.path];
-
-    if (pageHandler) {
-        // Si la página está en nuestra lista de restricciones, aplica el chequeo de rol.
-        pageHandler(req, res, () => {
-            res.sendFile(path.join(__dirname, req.path));
-        });
+// --- INICIO DEL CÓDIGO AÑADIDO ---
+// Regla de seguridad específica para el reporte de visitas, ANTES de la regla general.
+app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => {
+    const requestedPath = path.join(__dirname, req.path);
+    if (fs.existsSync(requestedPath)) {
+        res.sendFile(requestedPath);
     } else {
-        // Si no está en la lista, simplemente sirve el archivo (ya está protegido por requireLogin).
-        const requestedPath = path.join(__dirname, req.path);
-        if (fs.existsSync(requestedPath)) {
-            res.sendFile(requestedPath);
-        } else {
-            res.status(404).send('Página no encontrada');
-        }
+        res.status(404).send('Página no encontrada');
     }
 });
-// ======================================================================
-// ========= FIN: SERVIDOR DE ARCHIVOS ESTÁTICOS Y HTML (CORREGIDO) =====
-// ======================================================================
+// --- FIN DEL CÓDIGO AÑADIDO ---
+app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
+
+app.listen(PORT, async () => {
+    loadProducts();
+    await initializeDatabase();
+    console.log(`✅ Servidor de Asesores (v17.1 - CORS Habilitado) corriendo en el puerto ${PORT}`);
+});
