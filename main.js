@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-
     // --- LÓGICA PARA EL FORMULARIO DE INICIO DE SESIÓN ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
@@ -54,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userNameSpan.textContent = user.nombre;
             
-            // 1. Cargar botones del menú (LÓGICA ORIGINAL INTACTA)
             let buttonsHTML = '';
             if (user.rol === 'Administrador') {
                 buttonsHTML += '<a href="/admin_menu.html" class="nav-button">Panel de Administración</a>';
@@ -64,134 +62,89 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             menuContainer.innerHTML = buttonsHTML;
 
-            // 2. Cargar los cuatro paneles de rankings (LÓGICA ORIGINAL INTACTA)
-            loadAdvisorRanking();
-            loadAdvisorVisitRanking();
-            loadFollowUpRanking(); 
-            loadAdvisorPerformance();
-
-            // ==========================================================
-            // ========= INICIO DE LA MODIFICACIÓN (PASO 3) =============
-            // ==========================================================
-
-            // 3. Cargar el panel de coordinadora si el rol es el adecuado
-            if (user.rol === 'Coordinador' || user.rol === 'Administrador') {
-                const panel = document.getElementById('coordinator-panel');
-                if (panel) {
-                    panel.style.display = 'block'; // Hacemos visible el panel
-                    loadCoordinatorPanel(); // Llamamos a la nueva función para llenarlo
-                }
-            }
-            
-            // ==========================================================
-            // ========= FIN DE LA MODIFICACIÓN (PASO 3) ================
-            // ==========================================================
+            // Llamamos a las nuevas funciones para cargar los rankings
+            loadPipelineRanking();
+            loadReachRanking();
+            loadConversionRanking();
+            loadFollowUpRanking(); // Este se mantiene
 
         } else {
-            // Si no hay usuario, redirigir al login
             window.location.href = '/login.html';
         }
     }
 
-    // ==========================================================
-    // ========= INICIO: NUEVA FUNCIÓN AÑADIDA ==================
-    // ==========================================================
-
-    // --- FUNCIÓN PARA CARGAR EL PANEL DE COORDINADORA ---
-    async function loadCoordinatorPanel() {
-        const coordinatorPanel = document.getElementById('coordinator-panel');
-        if (!coordinatorPanel) return;
+    // --- FUNCIÓN PARA EL PIPELINE DE VENTAS ---
+    async function loadPipelineRanking() {
+        const container = document.getElementById('pipeline-container');
+        if (!container) return;
         try {
-            const response = await fetch('/api/coordinator/team-performance');
-            if (!response.ok) {
-                throw new Error('No se pudo cargar la data de coordinación.');
-            }
+            const response = await fetch('/api/pipeline-ranking');
             const data = await response.json();
-
-            // Llenar los datos en el HTML del panel
-            document.getElementById('team-closing-rate').textContent = `${data.teamClosingRate}%`;
-            document.getElementById('team-follow-up-average').textContent = `${data.teamAverageFollowUpDays} días`;
-            
-            document.getElementById('top-performer-name').textContent = data.topPerformer.name;
-            document.getElementById('top-performer-days').textContent = `${data.topPerformer.days} días`;
-            
-            document.getElementById('improvement-opportunity-name').textContent = data.improvementOpportunity.name;
-            document.getElementById('improvement-opportunity-days').textContent = `${data.improvementOpportunity.days} días`;
-
-        } catch (error) {
-            console.error('Error en el panel de coordinadora:', error);
-            coordinatorPanel.innerHTML = '<p style="color: red; text-align: center;">Error al cargar el panel del equipo.</p>';
-        }
-    }
-
-    // ==========================================================
-    // ========= FIN: NUEVA FUNCIÓN AÑADIDA =====================
-    // ==========================================================
-
-
-    // --- FUNCIÓN PARA CARGAR RANKING DE FORMALIZACIONES --- (CÓDIGO ORIGINAL INTACTO)
-    async function loadAdvisorRanking() {
-        const rankingContainer = document.getElementById('ranking-container');
-        if (!rankingContainer) return;
-        try {
-            const response = await fetch('/api/advisor-ranking');
-            if (!response.ok) throw new Error('No se pudo cargar el ranking.');
-            const rankingData = await response.json();
-            if (rankingData.length === 0) {
-                rankingContainer.innerHTML = '<h3>Líderes de Formalización</h3><p>Aún no hay datos.</p>';
-                return;
-            }
-            let rankingHTML = '<h3>Líderes de Formalización</h3>';
-            const maxCount = rankingData[0].formalized_count;
-            rankingData.forEach(advisor => {
-                const percentage = maxCount > 0 ? (advisor.formalized_count / maxCount) * 100 : 0;
-                rankingHTML += `<div class="advisor-ranking-item"><div class="advisor-info"><span class="advisor-name">${advisor.advisorname}</span><span class="advisor-count">${advisor.formalized_count}</span></div><div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%;"></div></div></div>`;
+            let content = '<h3>📈 Pipeline de Ventas</h3>';
+            content += '<div class="pipeline">';
+            data.forEach(stage => {
+                content += `<div class="pipeline-stage"><span>${stage.etapa_venta}</span><span class="pipeline-count">${stage.count}</span></div>`;
             });
-            rankingContainer.innerHTML = rankingHTML;
+            content += '</div>';
+            container.innerHTML = content;
         } catch (error) {
             console.error(error);
-            rankingContainer.innerHTML = `<p style="color: #e74c3c;">Error al cargar panel de formalizaciones.</p>`;
+            container.innerHTML = '<h3>📈 Pipeline de Ventas</h3><p>Error al cargar datos.</p>';
         }
     }
 
-    // --- FUNCIÓN PARA CARGAR RANKING DE VISITAS TOTALES --- (CÓDIGO ORIGINAL INTACTO)
-    async function loadAdvisorVisitRanking() {
-        const visitRankingContainer = document.getElementById('visit-ranking-container');
-        if (!visitRankingContainer) return;
+    // --- FUNCIÓN PARA EL RANKING DE ALCANCE ---
+    async function loadReachRanking() {
+        const container = document.getElementById('reach-ranking-container');
+        if (!container) return;
         try {
-            const response = await fetch('/api/advisor-visit-ranking');
-            if (!response.ok) throw new Error('No se pudo cargar el ranking.');
-            const rankingData = await response.json();
-            if (rankingData.length === 0) {
-                visitRankingContainer.innerHTML = '<h3>Líderes de Visitas</h3><p>Aún no hay visitas.</p>';
-                return;
-            }
-            let rankingHTML = '<h3>Líderes de Visitas</h3>';
-            const maxCount = rankingData[0].visit_count;
-            rankingData.forEach(advisor => {
-                const percentage = maxCount > 0 ? (advisor.visit_count / maxCount) * 100 : 0;
-                rankingHTML += `<div class="advisor-ranking-item"><div class="advisor-info"><span class="advisor-name">${advisor.advisorname}</span><span class="advisor-count">${advisor.visit_count}</span></div><div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%;"></div></div></div>`;
+            const response = await fetch('/api/reach-ranking');
+            const data = await response.json();
+            let content = '<h3>🗺️ Ranking de Alcance (Centros Únicos)</h3>';
+            content += '<ol>';
+            data.forEach(item => {
+                content += `<li>${item.advisorname}: <strong>${item.unique_centers_count} centros</strong></li>`;
             });
-            visitRankingContainer.innerHTML = rankingHTML;
+            content += '</ol>';
+            container.innerHTML = content;
         } catch (error) {
             console.error(error);
-            visitRankingContainer.innerHTML = `<p style="color: #e74c3c;">Error al cargar panel de visitas.</p>`;
+            container.innerHTML = '<h3>🗺️ Ranking de Alcance</h3><p>Error al cargar datos.</p>';
         }
     }
 
-    // --- FUNCIÓN PARA RANKING DE EFICIENCIA DE SEGUIMIENTO --- (CÓDIGO ORIGINAL INTACTO)
+    // --- FUNCIÓN PARA EL RANKING DE TASA DE CONVERSIÓN ---
+    async function loadConversionRanking() {
+        const container = document.getElementById('conversion-ranking-container');
+        if (!container) return;
+        try {
+            const response = await fetch('/api/conversion-ranking');
+            const data = await response.json();
+            let content = '<h3>🚀 Ranking de Eficiencia (Tasa de Conversión)</h3>';
+            content += '<ol>';
+            data.forEach(item => {
+                content += `<li>${item.advisorname}: <strong>${parseFloat(item.conversion_rate).toFixed(1)}%</strong></li>`;
+            });
+            content += '</ol>';
+            container.innerHTML = content;
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = '<h3>🚀 Ranking de Eficiencia</h3><p>Error al cargar datos.</p>';
+        }
+    }
+
+    // --- FUNCIÓN PARA RANKING DE SEGUIMIENTO (SE MANTIENE IGUAL) ---
     async function loadFollowUpRanking() {
         const container = document.getElementById('follow-up-ranking-container');
         if (!container) return;
         try {
             const response = await fetch('/api/advisor-follow-up-ranking');
-            if (!response.ok) throw new Error('No se pudo cargar el ranking de seguimiento.');
             const rankingData = await response.json();
             if (rankingData.length === 0) {
-                container.innerHTML = '<h3>Ranking de Seguimiento (Días Promedio)</h3><p>No hay datos suficientes para calcular.</p>';
+                container.innerHTML = '<h3>⏱️ Ranking de Seguimiento (Días Promedio)</h3><p>No hay datos.</p>';
                 return;
             }
-            let rankingHTML = '<h3>Ranking de Seguimiento (Días Promedio)</h3>';
+            let rankingHTML = '<h3>⏱️ Ranking de Seguimiento (Días Promedio)</h3>';
             rankingData.forEach((advisor, index) => {
                 let medal = '';
                 if (index === 0) medal = '🥇';
@@ -203,71 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = rankingHTML;
         } catch (error) {
             console.error("Error en Ranking de Seguimiento:", error);
-            container.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar el panel de seguimiento: ${error.message}</p>`;
-        }
-    }
-
-    // --- FUNCIÓN PARA CARGAR VALORACIÓN DE DESEMPEÑO --- (CÓDIGO ORIGINAL INTACTO)
-    async function loadAdvisorPerformance() {
-        const performanceContainer = document.getElementById('performance-container');
-        if (!performanceContainer) return;
-        const getScoreClass = (score) => {
-            if (score >= 75) return 'score-high';
-            if (score >= 40) return 'score-medium';
-            return 'score-low';
-        };
-        try {
-            const [formalizationRes, visitRes, followUpRes] = await Promise.all([
-                fetch('/api/advisor-ranking'),
-                fetch('/api/advisor-visit-ranking'),
-                fetch('/api/advisor-follow-up-ranking')
-            ]);
-            if (!formalizationRes.ok || !visitRes.ok || !followUpRes.ok) throw new Error('Datos base no disponibles.');
-            const formalizationData = await formalizationRes.json();
-            const visitData = await visitRes.json();
-            const followUpData = await followUpRes.json();
-            if (visitData.length === 0) {
-                performanceContainer.innerHTML = '<h3>Valoración de Desempeño</h3><p>No hay datos para calcular.</p>';
-                return;
-            }
-            const advisors = {};
-            visitData.forEach(item => {
-                advisors[item.advisorname] = { advisorname: item.advisorname, visit_count: parseInt(item.visit_count, 10), formalization_count: 0, average_follow_up_days: null };
-            });
-            formalizationData.forEach(item => { if (advisors[item.advisorname]) { advisors[item.advisorname].formalization_count = parseInt(item.formalized_count, 10); } });
-            followUpData.forEach(item => { if (advisors[item.advisorname]) { advisors[item.advisorname].average_follow_up_days = parseFloat(item.average_follow_up_days); } });
-            const combinedData = Object.values(advisors);
-            const maxVisits = Math.max(...combinedData.map(a => a.visit_count));
-            const maxFormalizations = Math.max(...combinedData.map(a => a.formalization_count));
-            const followUpDays = combinedData.filter(a => a.average_follow_up_days !== null).map(a => a.average_follow_up_days);
-            const minFollowUpDays = Math.min(...followUpDays);
-            const maxFollowUpDays = Math.max(...followUpDays);
-            const performanceData = combinedData.map(advisor => {
-                const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 40 : 0;
-                const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 20 : 0;
-                let followUpScore = 0;
-                if (advisor.average_follow_up_days !== null) {
-                    if (maxFollowUpDays === minFollowUpDays) {
-                        followUpScore = 40;
-                    } else {
-                        followUpScore = ((maxFollowUpDays - advisor.average_follow_up_days) / (maxFollowUpDays - minFollowUpDays)) * 40;
-                    }
-                }
-                const totalScore = visitScore + formalizationScore + followUpScore;
-                return { advisorname: advisor.advisorname, performance_score: parseFloat(totalScore.toFixed(1)) };
-            });
-            performanceData.sort((a, b) => b.performance_score - a.performance_score);
-            let performanceHTML = `<h3>Valoración de Desempeño</h3><p class="performance-note">Relacion entre Visitas, Formalizaciones y Seguimiento</p>`;
-            performanceData.forEach((advisor, index) => {
-                let medal = '';
-                if (index === 0) medal = '🥇'; if (index === 1) medal = '🥈'; if (index === 2) medal = '🥉';
-                const scoreClass = getScoreClass(advisor.performance_score);
-                performanceHTML += `<div class="performance-item"><span class="performance-advisor">${medal} ${advisor.advisorname}</span><span class="performance-score ${scoreClass}">${advisor.performance_score} / 100</span></div>`;
-            });
-            performanceContainer.innerHTML = performanceHTML;
-        } catch (error) {
-            console.error("Error en Valoración de Desempeño:", error);
-            performanceContainer.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar la valoración: ${error.message}</p>`;
+            container.innerHTML = `<p style="color: #e74c3c;">No se pudo cargar el panel de seguimiento.</p>`;
         }
     }
 });
