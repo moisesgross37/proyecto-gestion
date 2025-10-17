@@ -267,7 +267,9 @@ app.get('/api/advisors', requireLogin, async (req, res) => { try { const result 
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-// REEMPLAZA ESTE BLOQUE COMPLETO EN TU server.js de be-gestion
+
+// REEMPLAZA TU RUTA 'app.post('/api/visits', ...)' EXISTENTE CON ESTA VERSIÓN COMPLETA
+
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber, formalizedQuoteId } = req.body;
     
@@ -279,13 +281,13 @@ app.post('/api/visits', requireLogin, async (req, res) => {
     try {
         await client.query('BEGIN');
         
-        // Lógica para crear o actualizar el centro (sin cambios)
+        // Lógica para crear o actualizar el centro (SIN CAMBIOS)
         let centerResult = await client.query('SELECT id FROM centers WHERE name = $1 AND address = $2', [centerName, centerAddress]);
         let centerId;
         if (centerResult.rows.length === 0) {
             const newCenterResult = await client.query(
-                'INSERT INTO centers (name, address, sector, contactname, contactnumber) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-                [centerName, centerAddress, centerSector || '', contactName || '', contactNumber || '']
+                'INSERT INTO centers (name, address, sector, contactname, contactnumber, etapa_venta) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+                [centerName, centerAddress, centerSector || '', contactName || '', contactNumber || '', 'Prospecto']
             );
             centerId = newCenterResult.rows[0].id;
         } else {
@@ -298,25 +300,55 @@ app.post('/api/visits', requireLogin, async (req, res) => {
             }
         }
 
-        // Registrar la visita (sin cambios)
+        // Registrar la visita (SIN CAMBIOS)
         await client.query(
             'INSERT INTO visits (centername, advisorname, visitdate, commenttext) VALUES ($1, $2, $3, $4)',
             [centerName, advisorName, visitDate, commentText]
         );
         
-        // --- INICIO DE LA LÓGICA CORREGIDA Y COMPLETADA ---
+        // ==========================================================
+        // ========= INICIO DE LA NUEVA LÓGICA DE ETAPAS ============
+        // ==========================================================
+        
+        // 1. Determinamos la nueva etapa de venta basándonos en el comentario.
+        let newStage = null;
+        switch (commentText) {
+            case 'Presentacion de Propuesta a Direccion':
+            case 'Presentacion de Propuesta a Estudiantes':
+                newStage = 'Cotización Presentada';
+                break;
+            case 'Visita de Seguimiento':
+                newStage = 'Negociación';
+                break;
+            case 'Formalizar Acuerdo':
+                newStage = 'Acuerdo Formalizado';
+                break;
+            case 'No Logrado':
+                newStage = 'No Logrado';
+                break;
+        }
+
+        // 2. Si el comentario indica un cambio de etapa, actualizamos el centro.
+        if (newStage) {
+            await client.query(
+                'UPDATE centers SET etapa_venta = $1 WHERE id = $2',
+                [newStage, centerId]
+            );
+        }
+
+        // ==========================================================
+        // ========= FIN DE LA NUEVA LÓGICA DE ETAPAS ===============
+        // ==========================================================
+        
+        // Lógica de formalización (SIN CAMBIOS)
         if (commentText === 'Formalizar Acuerdo' && formalizedQuoteId) {
-            // 1. Actualizamos la cotización a 'formalizada'
             const quoteUpdateResult = await client.query(
                 "UPDATE quotes SET status = 'formalizada' WHERE id = $1 AND (status = 'aprobada' OR status = 'archivada') RETURNING quotenumber",
                 [formalizedQuoteId]
             );
 
-            // Verificamos que se haya actualizado una cotización antes de continuar
             if (quoteUpdateResult.rowCount > 0) {
                 const quoteNumber = quoteUpdateResult.rows[0].quotenumber;
-                // 2. Insertamos el registro en la tabla de centros formalizados
-                // Usamos ON CONFLICT para evitar errores si ya existe y simplemente lo actualizamos.
                 await client.query(`
                     INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number)
                     VALUES ($1, $2, $3, $4, $5)
@@ -328,7 +360,6 @@ app.post('/api/visits', requireLogin, async (req, res) => {
                 `, [centerId, centerName, advisorName, formalizedQuoteId, quoteNumber]);
             }
         }
-        // --- FIN DE LA LÓGICA CORREGIDA ---
         
         await client.query('COMMIT');
         res.status(201).json({ message: "Visita registrada y centro de estudios gestionado correctamente." });
