@@ -1151,47 +1151,6 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-// ======================================================================
-// ========= INICIO: SCRIPT FINAL Y DIRECTO PARA SINCRONIZAR DATOS =======
-// ======================================================================
-app.get('/api/admin/backfill-formalized-centers', requireLogin, requireAdmin, async (req, res) => {
-    try {
-        // Primero, borramos la tabla para asegurar un inicio limpio y evitar duplicados.
-        await pool.query('DELETE FROM formalized_centers;');
-
-        // Segundo, insertamos los datos con una consulta más simple y directa.
-        const query = `
-            INSERT INTO formalized_centers (center_id, center_name, advisor_name, quote_id, quote_number, formalization_date)
-            SELECT DISTINCT ON (c.id)
-                c.id,
-                v.centername,
-                v.advisorname,
-                (SELECT q.id FROM quotes q WHERE q.clientname = v.centername AND (q.status = 'formalizada' OR q.status = 'aprobada') ORDER BY q.createdat DESC LIMIT 1),
-                (SELECT q.quotenumber FROM quotes q WHERE q.clientname = v.centername AND (q.status = 'formalizada' OR q.status = 'aprobada') ORDER BY q.createdat DESC LIMIT 1),
-                v.createdat
-            FROM
-                visits v
-            JOIN
-                centers c ON v.centername = c.name
-            WHERE
-                LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo';
-        `;
-
-        const result = await pool.query(query);
-
-        res.status(200).send(`
-            <h1>¡Sincronización Definitiva Completada!</h1>
-            <p>Se han insertado ${result.rowCount} registros únicos en la tabla.</p>
-            <p><a href="/formalized_centers_list.html">Ver el listado ahora</a></p>
-        `);
-    } catch (err) {
-        console.error('Error en el script de sincronización (versión final):', err);
-        res.status(500).send(`Error en el servidor durante la sincronización: ${err.message}`);
-    }
-});
-// ======================================================================
-// ========= FIN: SCRIPT FINAL ==========================================
-// ======================================================================
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
