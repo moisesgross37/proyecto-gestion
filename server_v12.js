@@ -1385,7 +1385,7 @@ app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinad
 // ======================================================================
 
 // 1. API PARA EL PIPELINE DE VENTAS (EMBUDO)
-app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const query = `
             SELECT etapa_venta, COUNT(*) as count
@@ -1411,7 +1411,7 @@ app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coor
 });
 
 // 2. API PARA EL RANKING DE ALCANCE (CENTROS ÚNICOS)
-app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const query = `
             SELECT advisorname, COUNT(DISTINCT centername) as unique_centers_count
@@ -1428,7 +1428,7 @@ app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordin
 });
 
 // 3. API PARA EL RANKING DE TASA DE CONVERSIÓN
-app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const managedQuery = `SELECT advisorname, COUNT(DISTINCT centername) as total_managed FROM visits GROUP BY advisorname`;
         const formalizedQuery = `SELECT advisor_name, COUNT(*) as total_formalized FROM formalized_centers GROUP BY advisor_name`;
