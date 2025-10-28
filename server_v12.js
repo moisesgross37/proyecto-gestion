@@ -794,10 +794,20 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         doc.pipe(res);
 
         // 1. DIBUJAR EL MEMBRETE (SOLO EN LA PRIMERA PÁGINA)
-        const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
-        if (fs.existsSync(backgroundImagePath)) {
-            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
-        }
+        let backgroundImagePath;
+
+        // --- LÓGICA DE SELECCIÓN DE MEMBRETE ---
+        if (quote.membrete_tipo === 'Peque Planner') {
+            backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete_peque_planner.jpg');
+        } else {
+            // Si es 'Be Eventos' o cualquier otro caso, usa el membrete normal
+            backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
+        }
+        // --- FIN DE LA LÓGICA ---
+        
+        if (fs.existsSync(backgroundImagePath)) {
+            doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        }
         
         const pageMargin = 60;
         const contentWidth = doc.page.width - (pageMargin * 2);
@@ -818,14 +828,23 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         doc.moveDown(1.5);
 
         // Partes
-        doc.font('Helvetica-Bold', 12).text('Be Eventos SRL ("El Organizador")', { continued: true })
-           .font('Helvetica', 11).text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
-        doc.moveDown(1);
-        doc.font('Helvetica', 11).text('y');
-        doc.moveDown(1);
-        doc.font('Helvetica-Bold', 12).text(`${quote.clientname} ("El Centro")`, { continued: true })
-           .font('Helvetica', 11).text(', con quien nos complace colaborar.');
-        doc.moveDown(3);
+        if (quote.membrete_tipo === 'Peque Planner') {
+            // ---- USA LOS DATOS DE PEQUE PLANNER ----
+            doc.font('Helvetica-Bold', 12).text('Peque Planner SRL ("El Organizador")', { continued: true }) // <-- ¡CÁMBIALO POR EL NOMBRE LEGAL DE PEQUE PLANNER!
+               .font('Helvetica', 11).text(', [RNC Y DIRECCIÓN DE PEQUE PLANNER]'); // <-- ¡COMPLETA ESTO!
+
+        } else {
+            // ---- USA LOS DATOS DE BE EVENTOS (COMO ESTABA ANTES) ----
+            doc.font('Helvetica-Bold', 12).text('Be Eventos SRL ("El Organizador")', { continued: true })
+               .font('Helvetica', 11).text(', una empresa dedicada a la creación de momentos inolvidables, con RNC 1326794412 y domicilio en Calle Acacias No. 15B, Jardines del Ozama, Santo Domingo Este.');
+        }
+
+        doc.moveDown(1);
+        doc.font('Helvetica', 11).text('y');
+        doc.moveDown(1);
+        doc.font('Helvetica-Bold', 12).text(`${quote.clientname} ("El Centro")`, { continued: true })
+           .font('Helvetica', 11).text(', con quien nos complace colaborar.');
+        doc.moveDown(3);
 
         // 3. SECCIONES DEL ACUERDO
         const drawSection = (title, content) => {
