@@ -165,20 +165,20 @@ const requireLogin = (req, res, next) => { if (!req.session.user) { return res.s
 const requireAdmin = checkRole(['Administrador']);
 
 // =======================================================
-//     FIN: BLOQUE CORREGIDO PARA CONEXIÓN Y SESIONES
+// 	   FIN: BLOQUE CORREGIDO PARA CONEXIÓN Y SESIONES
 // =======================================================
 // --- RUTAS DE API ---
 
-// Nueva ruta para obtener los datos del usuario actual en sesión
-('/api/user-session', requireLogin, (req, res) => {
-    res.json(req.session.user);
+// ======================================================================
+// ========= RUTA CORREGIDA PARA OBTENER SESIÓN DE USUARIO ==============
+// ======================================================================
+// Esta es la ruta que te faltaba (app.get) y que te sacaba al login.
+app.get('/api/user-session', requireLogin, (req, res) => {
+	// Esta ruta es usada por el frontend para verificar quién está logueado
+	// y adaptar la interfaz (ej. ocultar botones de 'Acciones')
+	res.json(req.session.user);
 });
-
-// Nueva ruta para obtener los datos del usuario actual en sesión
-
-('/api/user-session', requireLogin, (req, res) => {
-    res.json(req.session.user);
-});
+// ======================================================================
 
 // PEGAR ESTE NUEVO BLOQUE EN SU LUGAR
 app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
