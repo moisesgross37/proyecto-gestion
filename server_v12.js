@@ -371,13 +371,21 @@ app.post('/api/visits', requireLogin, async (req, res) => {
         client.release();
     }
 });
+// ======================================================================
+// ========= INICIO: RUTA MEJORADA DE GESTIÓN DE CENTROS (CON ROLES) =====
+// ======================================================================
 app.get('/api/centers', requireLogin, async (req, res) => {
+    // 1. OBTENEMOS EL ROL Y NOMBRE DEL USUARIO EN SESIÓN
+    const { rol, nombre: userAdvisorName } = req.session.user;
+    
+    // 2. OBTENEMOS LOS FILTROS OPCIONALES DEL DROPDOWN
+    const { advisor, comment } = req.query;
+
     try {
-        const { advisor, comment } = req.query;
         let queryParams = [];
         let whereClauses = [];
 
-        // CORRECCIÓN: Ahora también seleccionamos la fecha de la última visita (visitdate)
+        // La consulta base no cambia
         let query = `
             SELECT
                 c.id, c.name, c.address, c.sector, c.contactname, c.contactnumber,
@@ -395,14 +403,26 @@ app.get('/api/centers', requireLogin, async (req, res) => {
             ) AS latest_visit ON true
         `;
 
-        if (advisor) {
+        // 3. AQUÍ ESTÁ LA NUEVA LÓGICA DE FILTRADO POR ROL
+        if (rol === 'Asesor') {
+            // Si es Asesor, forzamos el filtro a su nombre.
+            // Ignoramos lo que venga en el filtro `advisor` del dropdown.
+            queryParams.push(userAdvisorName);
+            whereClauses.push(`latest_visit.advisorname = $${queryParams.length}`);
+            
+        } else if (advisor) {
+            // Si es Admin o Coordinador Y ADEMÁS usa el filtro del dropdown, lo aplicamos.
             queryParams.push(advisor);
             whereClauses.push(`latest_visit.advisorname = $${queryParams.length}`);
         }
+
+        // El filtro de comentario se aplica para todos los roles
         if (comment) {
             queryParams.push(comment);
             whereClauses.push(`latest_visit.commenttext = $${queryParams.length}`);
         }
+        // ========= FIN DE LA LÓGICA DE FILTRADO POR ROL =========
+
         if (whereClauses.length > 0) {
             query += ` WHERE ${whereClauses.join(' AND ')}`;
         }
@@ -416,6 +436,9 @@ app.get('/api/centers', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
+// ======================================================================
+// ========= FIN: RUTA MEJORADA DE GESTIÓN DE CENTROS (CON ROLES) ========
+// ======================================================================
 app.get('/api/centers/search', async (req, res) => {
     console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!"); // <-- AÑADE ESTO
     const searchTerm = (req.query.q || '').toLowerCase();
