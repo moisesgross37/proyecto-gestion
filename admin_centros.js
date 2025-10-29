@@ -7,12 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('edit-center-modal');
     const closeModalButton = modal.querySelector('.close-button');
     const editCenterForm = document.getElementById('edit-center-form');
-    const editCenterId = document.getElementById('edit-center-id');
-    const editCenterName = document.getElementById('edit-center-name');
-    const editCenterAddress = document.getElementById('edit-center-address');
-    const editCenterSector = document.getElementById('edit-center-sector');
-    const editContactName = document.getElementById('edit-contact-name');
-    const editContactNumber = document.getElementById('edit-contact-number');
+    // (No es necesario listar todos los elementos del formulario aquí si ya están en el HTML)
 
     // --- ELEMENTOS DE FILTROS ---
     const filterAdvisor = document.getElementById('filter-advisor');
@@ -21,90 +16,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allCenters = []; // Caché para guardar los centros
 
-    // --- FUNCIÓN PARA CARGAR Y MOSTRAR CENTROS (ACTUALIZADA) ---
+    // --- NUEVO: VARIABLE GLOBAL PARA GUARDAR EL USUARIO ---
+    let currentUser;
+
+    // --- FUNCIÓN PARA CARGAR Y MOSTRAR CENTROS (ACTUALIZADA CON ROLES) ---
     const fetchAndDisplayCenters = async () => {
-    try {
-        const params = new URLSearchParams();
-        if (filterAdvisor.value) params.append('advisor', filterAdvisor.value);
-        if (filterComment.value) params.append('comment', filterComment.value);
-        
-        const response = await fetch(`/api/centers?${params.toString()}`);
-        if (!response.ok) throw new Error('Error al obtener centros.');
-        
-        allCenters = await response.json();
-        
-        // --- INICIO DE LA NUEVA LÓGICA DE ORDENAMIENTO ---
-        const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
-
-        allCenters.sort((a, b) => {
-            // Calcula los días para 'a' y 'b'
-            const dateA = a.visitdate ? new Date(a.visitdate) : null;
-            const daysA = dateA ? Math.ceil(Math.abs(new Date() - dateA) / (1000 * 60 * 60 * 24)) : -1;
+        try {
+            const params = new URLSearchParams();
+            if (filterAdvisor.value) params.append('advisor', filterAdvisor.value);
+            if (filterComment.value) params.append('comment', filterComment.value);
             
-            const dateB = b.visitdate ? new Date(b.visitdate) : null;
-            const daysB = dateB ? Math.ceil(Math.abs(new Date() - dateB) / (1000 * 60 * 60 * 24)) : -1;
+            const response = await fetch(`/api/centers?${params.toString()}`);
+            if (!response.ok) throw new Error('Error al obtener centros.');
+            
+            allCenters = await response.json();
+            
+            // --- LÓGICA DE ORDENAMIENTO (SIN CAMBIOS) ---
+            const exceptions = ['Formalizar Acuerdo', 'No Logrado'];
+            allCenters.sort((a, b) => {
+                const dateA = a.visitdate ? new Date(a.visitdate) : null;
+                const daysA = dateA ? Math.ceil(Math.abs(new Date() - dateA) / (1000 * 60 * 60 * 24)) : -1;
+                const dateB = b.visitdate ? new Date(b.visitdate) : null;
+                const daysB = dateB ? Math.ceil(Math.abs(new Date() - dateB) / (1000 * 60 * 60 * 24)) : -1;
+                const isAbandonedA = daysA >= 15 && !exceptions.includes(a.commenttext);
+                const isAbandonedB = daysB >= 15 && !exceptions.includes(b.commenttext);
+                if (isAbandonedA && !isAbandonedB) return -1;
+                if (!isAbandonedA && isAbandonedB) return 1;
+                return daysB - daysA;
+            });
+            // --- FIN DE LA LÓGICA DE ORDENAMIENTO ---
 
-            // Determina si están abandonados
-            const isAbandonedA = daysA >= 15 && !exceptions.includes(a.commenttext);
-            const isAbandonedB = daysB >= 15 && !exceptions.includes(b.commenttext);
+            // --- NUEVO: Lógica de Rol para Acciones ---
+            const isAdmin = currentUser && currentUser.rol === 'Administrador';
 
-            // Regla de ordenamiento:
-            // 1. Si 'a' está abandonado y 'b' no, 'a' va primero.
-            if (isAbandonedA && !isAbandonedB) return -1;
-            // 2. Si 'b' está abandonado y 'a' no, 'b' va primero.
-            if (!isAbandonedA && isAbandonedB) return 1;
-            // 3. Si ambos están igual (abandonados o no), ordena por el que tenga más días.
-            return daysB - daysA;
-        });
-        // --- FIN DE LA NUEVA LÓGICA DE ORDENAMIENTO ---
-
-        centersTableHead.innerHTML = `
-            <tr>
-                <th>Nombre del Centro</th>
-                <th>Asesor Principal</th>
-                <th>Último Comentario</th>
-                <th>Fecha Últ. Visita</th>
-                <th>Días Transcurridos</th>
-                <th>Acciones</th>
-            </tr>
-        `;
-
-        centersTableBody.innerHTML = '';
-        if (allCenters.length === 0) {
-            centersTableBody.innerHTML = '<tr><td colspan="6">No se encontraron centros.</td></tr>';
-            return;
-        }
-
-        allCenters.forEach(center => {
-            const row = document.createElement('tr');
-            const lastVisitDate = center.visitdate ? new Date(center.visitdate) : null;
-            let daysSinceLastVisit = 'N/A';
-            if (lastVisitDate) {
-                daysSinceLastVisit = Math.ceil(Math.abs(new Date() - lastVisitDate) / (1000 * 60 * 60 * 24));
-            }
-            if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
-                row.classList.add('abandoned-row');
-            }
-            row.innerHTML = `
-                <td>${center.name}</td>
-                <td>${center.advisorname || 'N/A'}</td>
-                <td>${center.commenttext || 'Sin visitas'}</td>
-                <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
-                <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
-                <td class="actions-cell">
-                    <button class="btn btn-edit" data-id="${center.id}">Editar</button>
-                    <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
-                </td>
+            // --- NUEVO: Cabecera de acciones condicional ---
+            const actionsHeader = isAdmin ? '<th>Acciones</th>' : '';
+            centersTableHead.innerHTML = `
+                <tr>
+                    <th>Nombre del Centro</th>
+                    <th>Asesor Principal</th>
+                    <th>Último Comentario</th>
+                    <th>Fecha Últ. Visita</th>
+                    <th>Días Transcurridos</th>
+                    ${actionsHeader}
+                </tr>
             `;
-            centersTableBody.appendChild(row);
-        });
-    } catch (error) {
-        console.error('Error al mostrar centros:', error);
-        centersTableBody.innerHTML = '<tr><td colspan="6">Error al cargar los centros.</td></tr>';
-    }
-};
 
-    // --- FUNCIÓN PARA CARGAR LAS OPCIONES DE LOS FILTROS ---
+            // --- NUEVO: Colspan condicional ---
+            const colCount = isAdmin ? 6 : 5;
+            centersTableBody.innerHTML = '';
+            if (allCenters.length === 0) {
+                centersTableBody.innerHTML = `<tr><td colspan="${colCount}">No se encontraron centros.</td></tr>`;
+                return;
+            }
+
+            allCenters.forEach(center => {
+                const row = document.createElement('tr');
+                const lastVisitDate = center.visitdate ? new Date(center.visitdate) : null;
+                let daysSinceLastVisit = 'N/A';
+                if (lastVisitDate) {
+                    daysSinceLastVisit = Math.ceil(Math.abs(new Date() - lastVisitDate) / (1000 * 60 * 60 * 24));
+                }
+                if (daysSinceLastVisit !== 'N/A' && daysSinceLastVisit >= 15 && !exceptions.includes(center.commenttext)) {
+                    row.classList.add('abandoned-row');
+                }
+                
+                // --- NUEVO: Celda de acciones condicional ---
+                let actionsCell = '';
+                if (isAdmin) {
+                    actionsCell = `
+                        <td class="actions-cell">
+                            <button class="btn btn-edit" data-id="${center.id}">Editar</button>
+                            <button class="btn btn-delete" data-id="${center.id}">Eliminar</button>
+                        </td>
+                    `;
+                }
+
+                row.innerHTML = `
+                    <td>${center.name}</td>
+                    <td>${center.advisorname || 'N/A'}</td>
+                    <td>${center.commenttext || 'Sin visitas'}</td>
+                    <td>${lastVisitDate ? lastVisitDate.toLocaleDateString('es-DO') : 'N/A'}</td>
+                    <td style="font-weight: bold; text-align: center;">${daysSinceLastVisit}</td>
+                    ${actionsCell}
+                `;
+                centersTableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error al mostrar centros:', error);
+            // --- NUEVO: Colspan condicional en error ---
+            const isAdmin = currentUser && currentUser.rol === 'Administrador';
+            const colCount = isAdmin ? 6 : 5;
+            centersTableBody.innerHTML = `<tr><td colspan="${colCount}">Error al cargar los centros.</td></tr>`;
+        }
+    };
+
+    // --- FUNCIÓN PARA CARGAR LAS OPCIONES DE LOS FILTROS (ACTUALIZADA CON ROLES) ---
     const populateFilters = async () => {
         try {
             const response = await fetch('/api/data');
@@ -118,6 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 option.textContent = advisor.name;
                 filterAdvisor.appendChild(option);
             });
+
+            // --- NUEVO: Ocultar filtro si es Asesor ---
+            if (currentUser && currentUser.rol === 'Asesor') {
+                const advisorLabel = document.querySelector('label[for="filter-advisor"]');
+                if(advisorLabel) advisorLabel.style.display = 'none';
+                filterAdvisor.style.display = 'none';
+            }
+            // --- FIN NUEVO ---
             
             const comments = data.comments || [];
             comments.forEach(comment => {
@@ -133,19 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- FUNCIONES DEL MODAL DE EDICIÓN ---
     const openEditModal = (center) => {
-        const editCenterId = document.getElementById('edit-center-id');
-        const editCenterName = document.getElementById('edit-center-name');
-        const editCenterAddress = document.getElementById('edit-center-address');
-        const editCenterSector = document.getElementById('edit-center-sector');
-        const editContactName = document.getElementById('edit-contact-name');
-        const editContactNumber = document.getElementById('edit-contact-number');
-        
-        editCenterId.value = center.id;
-        editCenterName.value = center.name;
-        editCenterAddress.value = center.address || '';
-        editCenterSector.value = center.sector || '';
-        editContactName.value = center.contactname || '';
-        editContactNumber.value = center.contactnumber || '';
+        // (Tu código original aquí... solo asegúrate de que los IDs coincidan)
+        document.getElementById('edit-center-id').value = center.id;
+        document.getElementById('edit-center-name').value = center.name;
+        document.getElementById('edit-center-address').value = center.address || '';
+        document.getElementById('edit-center-sector').value = center.sector || '';
+        document.getElementById('edit-contact-name').value = center.contactname || '';
+        document.getElementById('edit-contact-number').value = center.contactnumber || '';
         modal.style.display = 'block';
     };
 
@@ -170,7 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
     filterAdvisor.addEventListener('change', fetchAndDisplayCenters);
     filterComment.addEventListener('change', fetchAndDisplayCenters);
     clearFiltersBtn.addEventListener('click', () => {
-        filterAdvisor.value = '';
+        // Si es asesor, su filtro no se puede limpiar (está oculto)
+        if (currentUser.rol !== 'Asesor') {
+            filterAdvisor.value = '';
+        }
         filterComment.value = '';
         fetchAndDisplayCenters();
     });
@@ -216,7 +228,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target === modal) closeEditModal();
     });
 
-    // --- CARGA INICIAL DE LA PÁGINA ---
-    populateFilters();
-    fetchAndDisplayCenters();
+    // --- CARGA INICIAL DE LA PÁGINA (ACTUALIZADA) ---
+    // --- NUEVO: Función principal para inicializar la página ---
+    const initializePage = async () => {
+        try {
+            // 1. Obtener los datos del usuario primero
+            const response = await fetch('/api/user-session');
+            if (!response.ok) {
+                // Si falla (sesión expirada), redirigir al login
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = await response.json();
+            
+            // 2. Ahora que tenemos el usuario, poblamos los filtros
+            await populateFilters();
+            
+            // 3. Y después cargamos los centros (que dependen de los filtros y el rol)
+            await fetchAndDisplayCenters();
+            
+        } catch (error) {
+            console.error('Error al inicializar la página:', error);
+            centersTableBody.innerHTML = `<tr><td colspan="6">Error fatal al cargar datos de usuario.</td></tr>`;
+        }
+    };
+
+    // Ejecutar la función de inicialización
+    initializePage();
 });
