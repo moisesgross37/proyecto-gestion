@@ -870,48 +870,71 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         doc.moveDown(3);
 
         // 3. SECCIONES DEL ACUERDO
-        const drawSection = (title, content) => {
-            if (doc.y > 650) doc.addPage(); // <-- Agrega página en blanco si no hay espacio
-            doc.font('Helvetica-Bold').fontSize(11).text(title);
-            doc.moveDown(0.5);
-            doc.font('Helvetica').fontSize(10).text(content, { align: 'justify', width: contentWidth });
-            doc.moveDown(1.5);
-        };
+        const drawSection = (title, content) => {
+            if (doc.y > 650) doc.addPage(); // <-- Agrega página en blanco si no hay espacio
+            doc.font('Helvetica-Bold').fontSize(11).text(title);
+            doc.moveDown(0.5);
+            doc.font('Helvetica').fontSize(10).text(content, { align: 'justify', width: contentWidth });
+            doc.moveDown(1.5);
+        };
 
-        drawSection('1. Nuestro Propósito Común', 'Ambas partes unimos esfuerzos para la colaboración creativa, montaje o ejecución de un evento, asegurando una experiencia de la más alta calidad para todos los involucrados. Los servicios específicos, productos y detalles de esta colaboración se encuentran desglosados en la propuesta adjunta, que forma parte integral de este acuerdo.');
-        
-        if (doc.y > 650) doc.addPage();
-        doc.font('Helvetica-Bold').fontSize(11).text('2. Detalle de la Experiencia (Servicios Contratados)');
-        doc.moveDown(0.5);
-        doc.font('Helvetica').fontSize(10).text(`Nos emociona crear la siguiente experiencia, cuyos detalles se describen en la Propuesta de Servicios No. ${quote.quotenumber}, la cual se adjunta y forma parte integral de este acuerdo:`);
-        doc.moveDown(1);
+        drawSection('1. Nuestro Propósito Común', 'Ambas partes unimos esfuerzos para la colaboración creativa, montaje o ejecución de un evento, asegurando una experiencia de la más alta calidad para todos los involucrados. Los servicios específicos, productos y detalles de esta colaboración se encuentran desglosados en la propuesta adjunta, que forma parte integral de este acuerdo.');
+        
+        if (doc.y > 650) doc.addPage();
+        doc.font('Helvetica-Bold').fontSize(11).text('2. Detalle de la Experiencia (Servicios Contratados)');
+        doc.moveDown(0.5);
+        doc.font('Helvetica').fontSize(10).text(`Nos emociona crear la siguiente experiencia, cuyos detalles se describen en la Propuesta de Servicios No. ${quote.quotenumber}, la cual se adjunta y forma parte integral de este acuerdo:`);
+        doc.moveDown(1);
 
-        const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
-        if (selectedProducts.length > 0) {
-            selectedProducts.forEach(product => {
-                if (doc.y > 680) doc.addPage(); // <-- Agrega página en blanco
-                doc.font('Helvetica-Bold').fontSize(10).text(product['PRODUCTO / SERVICIO'].trim(), { indent: 15 });
-                const detail = product['DETALLE / INCLUYE'];
-                if (detail && detail.trim() !== '') {
-                    const detailItems = detail.split(',').map(item => `${item.trim()}`);
-                    doc.font('Helvetica').fontSize(9).list(detailItems, { bulletIndent: 30, textIndent: 30, lineGap: 2, width: contentWidth - 30 });
-                }
-                doc.moveDown(0.8);
-            });
-        }
-        doc.moveDown(1);
-        
-        if (doc.y > 500) doc.addPage();
-        
-        drawSection('3. Fechas Clave para Recordar', 'Las fechas principales del evento o actividades relacionadas serán coordinadas y confirmadas entre ambas partes a través de los canales de comunicación habituales.');
-        
-        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.preciofinalporestudiante).toFixed(2)} por estudiante.\n\nLa forma y el calendario de pagos serán coordinados y acordados directamente entre ambas partes para asegurar la comodidad y viabilidad del proyecto.\n\nSe acuerda que el Centro no asumirá el costo de los estudiantes que decidan no participar. Si el número final de participantes es inferior a ${quote.estudiantesparafacturar}, se revisará el acuerdo para un ajuste justo y transparente.`);
+        const selectedProducts = (quote.productids || []).map(id => products.find(p => p.id == id)).filter(p => p);
+        if (selectedProducts.length > 0) {
+            selectedProducts.forEach(product => {
+                if (doc.y > 680) doc.addPage(); // <-- Agrega página en blanco
+                doc.font('Helvetica-Bold').fontSize(10).text(product['PRODUCTO / SERVICIO'].trim(), { indent: 15 });
+                const detail = product['DETALLE / INCLUYE'];
+                if (detail && detail.trim() !== '') {
+                    const detailItems = detail.split(',').map(item => `${item.trim()}`);
+                    doc.font('Helvetica').fontSize(9).list(detailItems, { bulletIndent: 30, textIndent: 30, lineGap: 2, width: contentWidth - 30 });
+                }
+                doc.moveDown(0.8);
+            });
+        }
+        doc.moveDown(1);
+        
+        if (doc.y > 500) doc.addPage();
+        
+        drawSection('3. Fechas Clave para Recordar', 'Las fechas principales del evento o actividades relacionadas serán coordinadas y confirmadas entre ambas partes a través de los canales de comunicación habituales.');
+        
+        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.preciofinalporestudiante).toFixed(2)} por estudiante.\n\nLa forma y el calendario de pagos serán coordinados y acordados directamente entre ambas partes para asegurar la comodidad y viabilidad del proyecto.\n\nSe acuerda que el Centro no asumirá el costo de los estudiantes que decidan no participar. Si el número final de participantes es inferior a ${quote.estudiantesparafacturar}, se revisará el acuerdo para un ajuste justo y transparente.`);
 
-        drawSection('5. Nuestro Compromiso Mutuo', 'Calidad y Confianza: Be Eventos se compromete a entregar cada servicio con la máxima calidad. Si se sustituye un servicio, será por otro de valor y calidad equivalentes.\nColaboración: El Centro se compromete a facilitar la comunicación y coordinación necesarias.\nUso de Imagen: El Centro autoriza la realización de fotografías y grabaciones del evento para el disfrute y recuerdo de la comunidad educativa.');
-        drawSection('6. Marco Legal', 'Este acuerdo se rige por las leyes de la República Dominicana. Cualquier modificación será formalizada por escrito entre ambas partes.');
+// ==================================================
+// ========= INICIO: SECCIONES NUEVAS 4b y 4c ========
+// ==================================================
 
-        if (doc.y > doc.page.height - 200) doc.addPage();
-        
+        // Definimos el nombre de la empresa basado en el membrete (para que funcione con ambos)
+        const nombreEmpresa = quote.membrete_tipo === 'Peque Planner' ? 'Peque Planner SRL' : 'Be Eventos SRL';
+
+        // Definimos el contenido de la nueva sección 4b
+        const contenido4b = `Los pagos o abonos correspondientes a este acuerdo deberán realizarse únicamente mediante transferencia bancaria o en efectivo a través de una persona previamente autorizada por ${nombreEmpresa}.\n\nPor motivos de seguridad, el asesor comercial que le atiende no está autorizado a recibir pagos en efectivo ni por ningún otro medio de cobro directo. En caso de optar por el pago en efectivo, el Centro deberá solicitar la presencia o confirmación de una persona autorizada por la empresa para garantizar la correcta recepción y registro del mismo.`;
+        
+        // Dibujamos la sección 4b
+        drawSection('4b. Medios de Pago y Autorizaciones', contenido4b);
+
+        // Definimos el contenido de la nueva sección 4c
+        const contenido4c = `Este acuerdo refleja de manera completa los servicios, precios y condiciones convenidos entre las partes.\n\nCualquier cambio, ajuste o mejora en el servicio o en el valor económico deberá ser solicitado y confirmado por escrito para que tenga validez, asegurando así que ${nombreEmpresa} tenga conocimiento y aprobación formal de dicha variación.`;
+        
+        // Dibujamos la sección 4c
+        drawSection('4c. Modificaciones o Variaciones', contenido4c);
+
+// ==================================================
+// ========= FIN: SECCIONES NUEVAS 4b y 4c ==========
+// ==================================================
+
+        drawSection('5. Nuestro Compromiso Mutuo', `Calidad y Confianza: ${nombreEmpresa} se compromete a entregar cada servicio con la máxima calidad. Si se sustituye un servicio, será por otro de valor y calidad equivalentes.\nColaboración: El Centro se compromete a facilitar la comunicación y coordinación necesarias.\nUso de Imagen: El Centro autoriza la realización de fotografías y grabaciones del evento para el disfrute y recuerdo de la comunidad educativa.`);
+        drawSection('6. Marco Legal', 'Este acuerdo se rige por las leyes de la República Dominicana. Cualquier modificación será formalizada por escrito entre ambas partes.');
+
+        if (doc.y > doc.page.height - 200) doc.addPage();
+		
         // 6. FIRMAS
         const signatureY = doc.page.height - 180;
         const signatureLineY = signatureY + 35;
