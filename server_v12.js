@@ -915,7 +915,7 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         const nombreEmpresa = quote.membrete_tipo === 'Peque Planner' ? 'Peque Planner SRL' : 'Be Eventos SRL';
 
         // Definimos el contenido de la nueva sección 4b
-        const contenido4b = `Los pagos o abonos correspondientes a este acuerdo deberán realizarse únicamente mediante transferencia bancaria o en efectivo a través de una persona previamente autorizada por ${nombreEmpresa}.\n\nPor motivos de seguridad, el asesor comercial que le atiende no está autorizado a recibir pagos en efectivo ni por ningún otro medio de cobro directo. En caso de optar por el pago en efectivo, el Centro deberá solicitar la presencia o confirmación de una persona autorizada por la empresa para garantizar la correcta recepción y registro del mismo.`;
+        const contenido4b = `Los pagos o abonos correspondientes a este acuerdo deberán realizarse únicamente mediante transferencia bancaria a la cuenta corriente No. 9605348068 del Banco de Reservas, a nombre de ${nombreEmpresa}, o en efectivo a través de una persona previamente enviada y autorizada por escrito por la empresa.\n\nPor seguridad, se deja expresamente establecido que los asesores comerciales no están autorizados a recibir pagos en efectivo ni por ningún otro medio directo.`;
         
         // Dibujamos la sección 4b
         drawSection('4b. Medios de Pago y Autorizaciones', contenido4b);
