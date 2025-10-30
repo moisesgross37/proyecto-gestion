@@ -1653,6 +1653,13 @@ app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coor
         res.status(404).send('Página no encontrada');
     }
 });
+
+// --- NUEVA RUTA PARA EXPONER PRODUCTOS ---
+app.get('/api/productos', (req, res) => {
+  // Esta es la variable 'products' que encontramos antes
+  res.json(products);
+});
+
 // --- FIN DEL CÓDIGO AÑADIDO ---
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
