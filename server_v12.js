@@ -1316,61 +1316,62 @@ app.get('/api/debug/audit-advisor-follow-up', requireLogin, requireAdmin, async 
 // ========= INICIO: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO =====
 // ======================================================================
 app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
-    try {
-        // Esta consulta calcula el promedio de días desde la última visita
-        // para todos los centros que no están en un estado final.
-        const query = `WITH ActiveCentersLastVisit AS (
-		SELECT
-		latest_visit.advisorname,
-                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
-                FROM
-                    centers c
-                -- --- INICIO: CORRECCIÓN LÓGICA ---
-                -- Unimos con LATERAL para encontrar la última visita
-                -- de un ASESOR ACTIVO.
-                JOIN LATERAL (
-                    SELECT 
-                    	v.advisorname, 
-                    	v.commenttext, 
-                    	v.visitdate
-                    FROM 
-                    	visits v
-                    JOIN 
-                    	advisors a ON v.advisorname = a.name
-                    WHERE 
-                    	v.centername = c.name 
-                    	AND a.estado = 'activo'
-                    ORDER BY 
-                    	v.visitdate DESC, v.createdat DESC
-                    LIMIT 1
-                ) AS latest_visit ON true
-                -- --- FIN: CORRECCIÓN LÓGICA ---
-                
-                -- Ahora filtramos por el comentario de esa última visita de asesor activo
-                WHERE 
-                	latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
-            )
-            SELECT
-                alv.advisorname,
-                -- Añadimos ROUND para redondear a 1 decimal
-            	ROUND(AVG(alv.days_since_last_visit), 1) AS average_follow_up_days
-            FROM
-                ActiveCentersLastVisit alv
-            -- El JOIN y el WHERE para 'advisors' y 'a.estado' ya no se necesitan aquí
-            WHERE
-                alv.advisorname IS NOT NULL
-            GROUP BY
-                alv.advisorname
-            ORDER BY
-                average_follow_up_days ASC;`;
-        
-        const result = await pool.query(query);
-      	res.json(result.rows);
+    try {
+        // Esta consulta calcula el promedio de días desde la última visita
+        // para todos los centros que no están en un estado final.
+        // Re-escrita para eliminar caracteres invisibles.
+        const query = `WITH ActiveCentersLastVisit AS (
+            SELECT
+                latest_visit.advisorname,
+                (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
+            FROM
+                centers c
+            -- --- INICIO: CORRECCIÓN LÓGICA ---
+            -- Unimos con LATERAL para encontrar la última visita
+            -- de un ASESOR ACTIVO.
+            JOIN LATERAL (
+                SELECT 
+                    v.advisorname, 
+                    v.commenttext, 
+                    v.visitdate
+                FROM 
+                    visits v
+                JOIN 
+                    advisors a ON v.advisorname = a.name
+                WHERE 
+                    v.centername = c.name 
+                    AND a.estado = 'activo'
+                ORDER BY 
+                    v.visitdate DESC, v.createdat DESC
+                LIMIT 1
+            ) AS latest_visit ON true
+            -- --- FIN: CORRECCIÓN LÓGICA ---
 
-  	} catch (err) {
-      	console.error('Error al obtener el ranking de seguimiento:', err);
-        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
-  	}
+            -- Ahora filtramos por el comentario de esa última visita de asesor activo
+            WHERE 
+                latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
+        )
+        SELECT
+            alv.advisorname,
+            -- Añadimos ROUND para redondear a 1 decimal
+            ROUND(AVG(alv.days_since_last_visit), 1) AS average_follow_up_days
+        FROM
+            ActiveCentersLastVisit alv
+        -- El JOIN y el WHERE para 'advisors' y 'a.estado' ya no se necesitan aquí
+        WHERE
+            alv.advisorname IS NOT NULL
+        GROUP BY
+            alv.advisorname
+        ORDER BY
+            average_follow_up_days ASC;`;
+
+        const result = await pool.query(query);
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error('Error al obtener el ranking de seguimiento:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
+    }
 });
 // ======================================================================
 // ========= FIN: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ========
