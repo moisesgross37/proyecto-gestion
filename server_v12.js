@@ -1319,8 +1319,7 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
     try {
         // Esta consulta calcula el promedio de días desde la última visita
         // para todos los centros que no están en un estado final.
-        const query = `
-            WITH ActiveCentersLastVisit AS (
+        const query = `WITH ActiveCentersLastVisit AS (
                 SELECT
                     latest_visit.advisorname,
                     (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
@@ -1363,8 +1362,7 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
             GROUP BY
                 alv.advisorname
             ORDER BY
-                average_follow_up_days ASC;
-				`;
+                average_follow_up_days ASC;`;
         
         const result = await pool.query(query);
       	res.json(result.rows);
@@ -1377,7 +1375,6 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 // ========= FIN: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ========
 // ======================================================================
-
 
 
 // ======================================================================
