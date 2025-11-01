@@ -1364,7 +1364,7 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
                 alv.advisorname
             ORDER BY
                 average_follow_up_days ASC;
-*       `;
+				`;
         
         const result = await pool.query(query);
       	res.json(result.rows);
