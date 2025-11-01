@@ -205,15 +205,15 @@ app.get('/api/formalized-centers', apiKeyAuth, async (req, res) => {
     }
 });
 app.get('/api/advisors-list', apiKeyAuth, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT name FROM advisors ORDER BY name ASC');
-        res.json(result.rows);
-    } catch (err) {
-        console.error('Error al obtener lista de asesores:', err);
-        res.status(500).json({ message: 'Error en el servidor al consultar asesores.' });
-    }
+    try {
+        // --- MODIFICADO --- Se añade "WHERE estado = 'activo'"
+        const result = await pool.query("SELECT name FROM advisors WHERE estado = 'activo' ORDER BY name ASC");
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error al obtener lista de asesores:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar asesores.' });
+    }
 });
-
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -263,9 +263,45 @@ app.post('/api/users', requireLogin, requireAdmin, async (req, res) => {
 
 app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/advisors', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+app.get('/api/advisors', requireLogin, async (req, res) => { 
+    try { 
+        // --- MODIFICADO --- Ahora seleccionamos el 'estado' también
+        const result = await pool.query('SELECT id, name, estado FROM advisors ORDER BY name ASC'); 
+        res.json(result.rows); 
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).json({ message: 'Error en el servidor' }); 
+    } 
+});
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => { try { await pool.query('DELETE FROM advisors WHERE id = $1', [req.params.id]); res.status(200).json({ message: 'Asesor eliminado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
+// ======================================================================
+// ========= INICIO: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ========
+// ======================================================================
+// (Esto REEMPLAZA tu app.delete('/api/advisors/:id', ...))
+app.post('/api/advisors/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { 
+    const { id } = req.params; 
+    try { 
+        // 1. Averiguamos el estado actual
+        const result = await pool.query('SELECT estado FROM advisors WHERE id = $1', [id]); 
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Asesor no encontrado.' });
+        }
+
+        // 2. Calculamos el nuevo estado
+        const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; 
+
+        // 3. Actualizamos la base de datos
+        await pool.query('UPDATE advisors SET estado = $1 WHERE id = $2', [newStatus, id]); 
+        
+        res.status(200).json({ message: 'Estado actualizado con éxito', newStatus }); 
+    } catch (err) { 
+        console.error(err); 
+        res.status(500).json({ message: 'Error en el servidor' }); 
+    } 
+});
+// ======================================================================
+// ========= FIN: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ===========
+// ======================================================================
 app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 
 // REEMPLAZA TU RUTA 'app.post('/api/visits', ...)' EXISTENTE CON ESTA VERSIÓN COMPLETA
