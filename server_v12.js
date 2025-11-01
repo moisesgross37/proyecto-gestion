@@ -1041,147 +1041,157 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-
-
-
 // ======================================================================
 // ========= RUTA ACTUALIZADA PARA EL RANKING DE ASESORES (LÓGICA ESTRICTA) =====
 // ======================================================================
 app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
-    try {
-        // CORRECCIÓN: Esta consulta ahora solo cuenta si 'Formalizar Acuerdo'
-        // es la ÚLTIMA visita registrada para un centro existente.
-        const query = `
-            WITH LatestVisits AS (
-                SELECT
-                    v.advisorname,
-                    v.commenttext,
-                    ROW_NUMBER() OVER(PARTITION BY v.centername ORDER BY v.visitdate DESC, v.createdat DESC) as rn
-                FROM
-                    visits v
-                INNER JOIN
-                    centers c ON v.centername = c.name
-            )
-            SELECT
-                advisorname,
-                COUNT(*) AS formalized_count
-            FROM
-                LatestVisits
-            WHERE
-                rn = 1 AND LOWER(TRIM(commenttext)) = 'formalizar acuerdo'
-            GROUP BY
-                advisorname
-            ORDER BY
-                formalized_count DESC;
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error al obtener el ranking de asesores:', error);
-        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
-    }
+    try {
+        const query = `
+            WITH LatestVisits AS (
+                SELECT
+                    v.advisorname,
+                    v.commenttext,
+                    ROW_NUMBER() OVER(PARTITION BY v.centername ORDER BY v.visitdate DESC, v.createdat DESC) as rn
+                FROM
+                    visits v
+                INNER JOIN
+                    centers c ON v.centername = c.name
+                -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
+                INNER JOIN
+                    advisors a ON v.advisorname = a.name
+                WHERE
+                    a.estado = 'activo'
+                -- --- FIN: MODIFICACIÓN ---
+            )
+            SELECT
+                advisorname,
+                COUNT(*) AS formalized_count
+            FROM
+                LatestVisits
+            WHERE
+                rn = 1 AND LOWER(TRIM(commenttext)) = 'formalizar acuerdo'
+            GROUP BY
+                advisorname
+            ORDER BY
+                formalized_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener el ranking de asesores:', error);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
+    }
 });
 // ======================================================================
 // ========= FIN: RUTA ACTUALIZADA PARA EL RANKING DE ASESORES =========
 // ======================================================================
-
-
 // ======================================================================
 // ========= INICIO: NUEVA RUTA PARA RANKING DE VISITAS TOTALES =========
 // ======================================================================
 app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
-    try {
-        // Esta consulta cuenta TODAS las visitas de asesores a centros existentes.
-        const query = `
-            SELECT 
-                v.advisorname, 
-                COUNT(*) AS visit_count
-            FROM 
-                visits v
-            INNER JOIN 
-                centers c ON v.centername = c.name
-            GROUP BY 
-                v.advisorname
-            ORDER BY 
-                visit_count DESC;
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error al obtener el ranking de visitas:', error);
-        res.status(500).json({ message: 'Error en el servidor al consultar el ranking de visitas.' });
-    }
+    try {
+        // Esta consulta cuenta TODAS las visitas de asesores a centros existentes.
+        const query = `
+            SELECT 
+                v.advisorname, 
+                COUNT(*) AS visit_count
+            FROM 
+                visits v
+            INNER JOIN 
+                centers c ON v.centername = c.name
+            -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
+            INNER JOIN 
+                advisors a ON v.advisorname = a.name
+            WHERE 
+                a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN ---
+            GROUP BY 
+                v.advisorname
+            ORDER BY 
+                visit_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener el ranking de visitas:', error);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking de visitas.' });
+    }
 });
 // ======================================================================
 // ========= FIN: NUEVA RUTA PARA RANKING DE VISITAS TOTALES ==========
 // ======================================================================
-
 // ======================================================================
 // ========= INICIO: RUTA PARA EL CÁLCULO DE DESEMPEÑO (70/30) ==========
 // ======================================================================
 app.get('/api/advisor-performance', requireLogin, async (req, res) => {
-    try {
-        console.log("Iniciando cálculo de /api/advisor-performance...");
+    try {
+        console.log("Iniciando cálculo de /api/advisor-performance...");
 
-        const query = `
-            WITH VisitCounts AS (
-                SELECT v.advisorname, COUNT(*) AS visit_count
-                FROM visits v
-                JOIN centers c ON v.centername = c.name
-                GROUP BY v.advisorname
-            ),
-            FormalizationCounts AS (
-                SELECT v.advisorname, COUNT(*) AS formalization_count
-                FROM visits v
-                JOIN centers c ON v.centername = c.name
-                WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo'
-                GROUP BY v.advisorname
-            )
-            SELECT
-                vc.advisorname,
-                vc.visit_count,
-                COALESCE(fc.formalization_count, 0) AS formalization_count
-            FROM VisitCounts vc
-            LEFT JOIN FormalizationCounts fc ON vc.advisorname = fc.advisorname;
-        `;
+        const query = `
+            WITH VisitCounts AS (
+                SELECT v.advisorname, COUNT(*) AS visit_count
+                FROM visits v
+                JOIN centers c ON v.centername = c.name
+                -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
+                INNER JOIN advisors a ON v.advisorname = a.name
+                WHERE a.estado = 'activo'
+                -- --- FIN: MODIFICACIÓN 1 ---
+                GROUP BY v.advisorname
+            ),
+            FormalizationCounts AS (
+                SELECT v.advisorname, COUNT(*) AS formalization_count
+                FROM visits v
+                JOIN centers c ON v.centername = c.name
+                -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
+                INNER JOIN advisors a ON v.advisorname = a.name
+                WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo' AND a.estado = 'activo'
+                -- --- FIN: MODIFICACIÓN 2 ---
+                GROUP BY v.advisorname
+            )
+            SELECT
+                vc.advisorname,
+                vc.visit_count,
+                COALESCE(fc.formalization_count, 0) AS formalization_count
+            FROM VisitCounts vc
+            LEFT JOIN FormalizationCounts fc ON vc.advisorname = fc.advisorname;
+        `;
 
-        const { rows: advisorsData } = await pool.query(query);
-        console.log(`Datos crudos de la BD: ${advisorsData.length} asesores encontrados.`);
+        const { rows: advisorsData } = await pool.query(query);
+        console.log(`Datos crudos de la BD: ${advisorsData.length} asesores encontrados.`);
 
-        if (advisorsData.length === 0) {
-            console.log("No hay datos de asesores, devolviendo array vacío.");
-            return res.json([]);
-        }
+        if (advisorsData.length === 0) {
+            console.log("No hay datos de asesores, devolviendo array vacío.");
+            return res.json([]);
+        }
 
-        const maxVisits = Math.max(...advisorsData.map(a => a.visit_count));
-        const maxFormalizations = Math.max(...advisorsData.map(a => a.formalization_count));
-        console.log(`Valores máximos - Visitas: ${maxVisits}, Formalizaciones: ${maxFormalizations}`);
+        const maxVisits = Math.max(...advisorsData.map(a => a.visit_count));
+        const maxFormalizations = Math.max(...advisorsData.map(a => a.formalization_count));
+        console.log(`Valores máximos - Visitas: ${maxVisits}, Formalizaciones: ${maxFormalizations}`);
 
-        const performanceData = advisorsData.map(advisor => {
-            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
-            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
-            const totalScore = visitScore + formalizationScore;
+        const performanceData = advisorsData.map(advisor => {
+            const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
+            const formalizationScore = (maxFormalizations > 0) ? (advisor.formalization_count / maxFormalizations) * 30 : 0;
+            const totalScore = visitScore + formalizationScore;
 
-            return {
-                advisorname: advisor.advisorname,
-                performance_score: parseFloat(totalScore.toFixed(1))
-            };
-        });
+            return {
+                advisorname: advisor.advisorname,
+                performance_score: parseFloat(totalScore.toFixed(1))
+            };
+        });
 
-        performanceData.sort((a, b) => b.performance_score - a.performance_score);
-        console.log("Cálculo de desempeño completado exitosamente.");
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+_error('Cálculo de desempeño completado exitosamente.');
 
-        res.json(performanceData);
+        res.json(performanceData);
 
-    } catch (error) {
-        console.error('ERROR DETALLADO en /api/advisor-performance:', error);
-        res.status(500).json({
-            message: 'Error en el servidor al calcular el desempeño.',
-            error: error.message
-        });
-    }
+    } catch (error) {
+        console.error('ERROR DETALLADO en /api/advisor-performance:', error);
+        res.status(500).json({
+            message: 'Error en el servidor al calcular el desempeño.',
+            error: error.message
+        });
+    }
 });
-
 // ======================================================================
 // ========= INICIO: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ========
 // ======================================================================
@@ -1285,50 +1295,57 @@ app.get('/api/debug/audit-advisor-follow-up', requireLogin, requireAdmin, async 
 // ========= INICIO: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO =====
 // ======================================================================
 app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
-    try {
-        // Esta consulta calcula el promedio de días desde la última visita
-        // para todos los centros que no están en un estado final.
-        const query = `
-            WITH ActiveCentersLastVisit AS (
-                SELECT
-                    latest_visit.advisorname,
-                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
-                FROM
-                    centers c
-                JOIN LATERAL (
-                    SELECT v.advisorname, v.commenttext, v.visitdate
-                    FROM visits v
-                    WHERE v.centername = c.name
-                    ORDER BY v.visitdate DESC, v.createdat DESC
-                    LIMIT 1
-                ) AS latest_visit ON true
-                WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
-            )
-            SELECT
-                advisorname,
-                AVG(days_since_last_visit) AS average_follow_up_days
-            FROM
-                ActiveCentersLastVisit
-            WHERE
-                advisorname IS NOT NULL
-            GROUP BY
-                advisorname
-            ORDER BY
-                average_follow_up_days ASC;
-        `;
-        
-        const result = await pool.query(query);
-        res.json(result.rows);
+    try {
+        // Esta consulta calcula el promedio de días desde la última visita
+        // para todos los centros que no están en un estado final.
+        const query = `
+            WITH ActiveCentersLastVisit AS (
+                SELECT
+                    latest_visit.advisorname,
+                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
+                FROM
+                    centers c
+                JOIN LATERAL (
+                    SELECT v.advisorname, v.commenttext, v.visitdate
+                    FROM visits v
+                    WHERE v.centername = c.name
+                    ORDER BY v.visitdate DESC, v.createdat DESC
+          _error('Cálculo de desempeño completado exitosamente.');
+                  LIMIT 1
+                ) AS latest_visit ON true
+                WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
+            )
+            SELECT
+                alv.advisorname,
+                AVG(alv.days_since_last_visit) AS average_follow_up_days
+            FROM
+                ActiveCentersLastVisit alv
+            -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
+            JOIN
+                advisors a ON alv.advisorname = a.name
+T-1
+            -- --- FIN: MODIFICACIÓN ---
+            WHERE
+                alv.advisorname IS NOT NULL
+                AND a.estado = 'activo' -- <-- Filtro añadido
+            GROUP BY
+                alv.advisorname
+            ORDER BY
+                average_follow_up_days ASC;
+        `;
+        
+        const result = await pool.query(query);
+        res.json(result.rows);
 
-    } catch (err) {
-        console.error('Error al obtener el ranking de seguimiento:', err);
-        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
-    }
+    } catch (err) {
+    t-2
+      console.error('Error al obtener el ranking de seguimiento:', err);
+        res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
+    }
 });
 // ======================================================================
 // ========= FIN: RUTA PARA RANKING DE EFICIENCIA DE SEGUIMIENTO ========
 // ======================================================================
-
 
 
 // ======================================================================
@@ -1414,84 +1431,100 @@ app.delete('/api/comments/:id', requireLogin, checkRole(['Administrador']), asyn
 // ========= INICIO: RUTA DE API PARA PANEL DE COORDINADORA =============
 // ======================================================================
 app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinador', 'Administrador']), async (req, res) => {
-    try {
-        // 1. OBTENER LAS MÉTRICAS DE TODOS LOS ASESORES A LA VEZ
-        const visitsQuery = pool.query(`
-            SELECT advisorname, COUNT(*) as total_visits FROM visits GROUP BY advisorname
-        `);
-        const formalizationsQuery = pool.query(`
-            SELECT advisor_name, COUNT(*) as total_formalizations FROM formalized_centers GROUP BY advisor_name
-        `);
-        const followUpQuery = pool.query(`
-            WITH ActiveCentersLastVisit AS (
-                SELECT
-                    latest_visit.advisorname,
-                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
-                FROM centers c
-                JOIN LATERAL (
-                    SELECT v.advisorname, v.commenttext, v.visitdate
-                    FROM visits v WHERE v.centername = c.name
-                    ORDER BY v.visitdate DESC, v.createdat DESC LIMIT 1
-                ) AS latest_visit ON true
-                WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
-            )
-            SELECT advisorname, AVG(days_since_last_visit) AS average_follow_up_days
-            FROM ActiveCentersLastVisit
-            WHERE advisorname IS NOT NULL
-            GROUP BY advisorname;
-        `);
+    try {
+        // 1. OBTENER LAS MÉTRICAS DE TODOS LOS ASESORES A LA VEZ
+        const visitsQuery = pool.query(`
+            SELECT v.advisorname, COUNT(*) as total_visits 
+            FROM visits v
+            -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON v.advisorname = a.name
+            WHERE a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 1 ---
+            GROUP BY v.advisorname
+        `);
+        const formalizationsQuery = pool.query(`
+            SELECT fc.advisor_name, COUNT(*) as total_formalizations 
+            FROM formalized_centers fc
+            -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON fc.advisor_name = a.name
+            WHERE a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 2 ---
+            GROUP BY fc.advisor_name
+        `);
+        const followUpQuery = pool.query(`
+            WITH ActiveCentersLastVisit AS (
+                SELECT
+                    latest_visit.advisorname,
+                    (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
+                FROM centers c
+                JOIN LATERAL (
+                    SELECT v.advisorname, v.commenttext, v.visitdate
+                    FROM visits v WHERE v.centername = c.name
+                    ORDER BY v.visitdate DESC, v.createdat DESC LIMIT 1
+                ) AS latest_visit ON true
+                WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
+            )
+            SELECT alv.advisorname, AVG(alv.days_since_last_visit) AS average_follow_up_days
+            FROM ActiveCentersLastVisit alv
+            -- --- INICIO: MODIFICACIÓN 3 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON alv.advisorname = a.name
+            WHERE alv.advisorname IS NOT NULL
+              AND a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 3 ---
+            GROUP BY alv.advisorname;
+        `);
 
-        // Ejecutamos todas las consultas en paralelo para máxima eficiencia
-        const [visitsResults, formalizationsResults, followUpResults] = await Promise.all([
-            visitsQuery, formalizationsQuery, followUpQuery
-        ]);
+        // Ejecutamos todas las consultas en paralelo para máxima eficiencia
+        const [visitsResults, formalizationsResults, followUpResults] = await Promise.all([
+            visitsQuery, formalizationsQuery, followUpQuery
+        ]);
 
-        // 2. CONSOLIDAR LOS DATOS DEL EQUIPO
-        let totalTeamVisits = 0;
-        visitsResults.rows.forEach(row => { totalTeamVisits += parseInt(row.total_visits, 10); });
+        // 2. CONSOLIDAR LOS DATOS DEL EQUIPO
+        // ... (El resto de tu lógica de JS no necesita cambios) ...
+        let totalTeamVisits = 0;
+        visitsResults.rows.forEach(row => { totalTeamVisits += parseInt(row.total_visits, 10); });
 
-        let totalTeamFormalizations = 0;
-        formalizationsResults.rows.forEach(row => { totalTeamFormalizations += parseInt(row.total_formalizations, 10); });
-        
-        let totalFollowUpDaysSum = 0;
-        let advisorCountWithFollowUp = 0;
-        followUpResults.rows.forEach(row => { 
-            totalFollowUpDaysSum += parseFloat(row.average_follow_up_days);
-            advisorCountWithFollowUp++;
-        });
+        let totalTeamFormalizations = 0;
+        formalizationsResults.rows.forEach(row => { totalTeamFormalizations += parseInt(row.total_formalizations, 10); });
+        
+        let totalFollowUpDaysSum = 0;
+        let advisorCountWithFollowUp = 0;
+        followUpResults.rows.forEach(row => { 
+            totalFollowUpDaysSum += parseFloat(row.average_follow_up_days);
+            advisorCountWithFollowUp++;
+        });
 
-        // 3. CALCULAR LAS MÉTRICAS FINALES
-        const teamClosingRate = (totalTeamVisits > 0) ? (totalTeamFormalizations / totalTeamVisits) * 100 : 0;
-        const teamAverageFollowUpDays = (advisorCountWithFollowUp > 0) ? (totalFollowUpDaysSum / advisorCountWithFollowUp) : 0;
+        // 3. CALCULAR LAS MÉTRICAS FINALES
+        const teamClosingRate = (totalTeamVisits > 0) ? (totalTeamFormalizations / totalTeamVisits) * 100 : 0;
+        const teamAverageFollowUpDays = (advisorCountWithFollowUp > 0) ? (totalFollowUpDaysSum / advisorCountWithFollowUp) : 0;
 
-        // 4. IDENTIFICAR AL MEJOR Y PEOR ASESOR EN SEGUIMIENTO
-        followUpResults.rows.sort((a, b) => a.average_follow_up_days - b.average_follow_up_days);
-        const topPerformer = followUpResults.rows[0] || { advisorname: 'N/A', average_follow_up_days: 0 };
-        const improvementOpportunity = followUpResults.rows[followUpResults.rows.length - 1] || { advisorname: 'N/A', average_follow_up_days: 0 };
+        // 4. IDENTIFICAR AL MEJOR Y PEOR ASESOR EN SEGUIMIENTO
+        followUpResults.rows.sort((a, b) => a.average_follow_up_days - b.average_follow_up_days);
+        const topPerformer = followUpResults.rows[0] || { advisorname: 'N/A', average_follow_up_days: 0 };
+        const improvementOpportunity = followUpResults.rows[followUpResults.rows.length - 1] || { advisorname: 'N/A', average_follow_up_days: 0 };
 
-        // 5. ENVIAR LA RESPUESTA
-        res.json({
-            teamClosingRate: teamClosingRate.toFixed(1),
-            teamAverageFollowUpDays: teamAverageFollowUpDays.toFixed(1),
-            topPerformer: {
-                name: topPerformer.advisorname,
-                days: parseFloat(topPerformer.average_follow_up_days).toFixed(1)
-            },
-            improvementOpportunity: {
-                name: improvementOpportunity.advisorname,
-                days: parseFloat(improvementOpportunity.average_follow_up_days).toFixed(1)
-            }
-        });
+        // 5. ENVIAR LA RESPUESTA
+        res.json({
+            teamClosingRate: teamClosingRate.toFixed(1),
+            teamAverageFollowUpDays: teamAverageFollowUpDays.toFixed(1),
+            topPerformer: {
+                name: topPerformer.advisorname,
+                days: parseFloat(topPerformer.average_follow_up_days).toFixed(1)
+            },
+            improvementOpportunity: {
+                name: improvementOpportunity.advisorname,
+                days: parseFloat(improvementOpportunity.average_follow_up_days).toFixed(1)
+            }
+        });
 
-    } catch (err) {
-        console.error("Error al calcular el desempeño del equipo:", err);
-        res.status(500).json({ message: 'Error en el servidor al calcular las métricas del equipo.' });
-    }
+    } catch (err) {
+        console.error("Error al calcular el desempeño del equipo:", err);
+        res.status(500).json({ message: 'Error en el servidor al calcular las métricas del equipo.' });
+    }
 });
 // ======================================================================
 // ========= FIN: RUTA DE API PARA PANEL DE COORDINADORA ================
 // ======================================================================
-
 // ======================================================================
 // ========= INICIO: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS =========
 // ======================================================================
@@ -1524,152 +1557,247 @@ app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coor
 
 // 2. API PARA EL RANKING DE ALCANCE (CENTROS ÚNICOS)
 app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
-    try {
-        const query = `
-            SELECT advisorname, COUNT(DISTINCT centername) as unique_centers_count
-            FROM visits
-            GROUP BY advisorname
-            ORDER BY unique_centers_count DESC;
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        console.error("Error al obtener ranking de alcance:", err);
-        res.status(500).json({ message: 'Error en el servidor.' });
-    }
+    try {
+        const query = `
+            SELECT 
+                v.advisorname, 
+                COUNT(DISTINCT v.centername) as unique_centers_count
+            FROM 
+                visits v
+            -- --- INICIO: MODIFICACIÓN (FILTRAR ACTIVOS) ---
+            JOIN 
+                advisors a ON v.advisorname = a.name
+            WHERE
+                a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN ---
+            GROUP BY 
+                v.advisorname
+            ORDER BY 
+                unique_centers_count DESC;
+        `;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener ranking de alcance:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
 });
 
 // 3. API PARA EL RANKING DE TASA DE CONVERSIÓN
 app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
-    try {
-        const managedQuery = `SELECT advisorname, COUNT(DISTINCT centername) as total_managed FROM visits GROUP BY advisorname`;
-        const formalizedQuery = `SELECT advisor_name, COUNT(*) as total_formalized FROM formalized_centers GROUP BY advisor_name`;
+    try {
+        const managedQuery = `
+            SELECT v.advisorname, COUNT(DISTINCT v.centername) as total_managed 
+            FROM visits v
+            -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON v.advisorname = a.name
+            WHERE a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 1 ---
+            GROUP BY v.advisorname
+        `;
+        const formalizedQuery = `
+            SELECT fc.advisor_name, COUNT(*) as total_formalized 
+            FROM formalized_centers fc
+            -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON fc.advisor_name = a.name
+            WHERE a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 2 ---
+            GROUP BY fc.advisor_name
+        `;
 
-        const [managedResults, formalizedResults] = await Promise.all([
-            pool.query(managedQuery),
-            pool.query(formalizedQuery)
-        ]);
+        const [managedResults, formalizedResults] = await Promise.all([
+            pool.query(managedQuery),
+            pool.query(formalizedQuery)
+        ]);
 
-        const advisorData = {};
-        managedResults.rows.forEach(row => {
-            advisorData[row.advisorname] = {
-                name: row.advisorname,
-                managed: parseInt(row.total_managed, 10),
-                formalized: 0
-            };
-        });
+        const advisorData = {};
+        managedResults.rows.forEach(row => {
+            advisorData[row.advisorname] = {
+                name: row.advisorname,
+                managed: parseInt(row.total_managed, 10),
+                formalized: 0
+            };
+        });
 
-        formalizedResults.rows.forEach(row => {
-            if (advisorData[row.advisor_name]) {
-                advisorData[row.advisor_name].formalized = parseInt(row.total_formalized, 10);
-            }
-        });
+        formalizedResults.rows.forEach(row => {
+            if (advisorData[row.advisor_name]) {
+                advisorData[row.advisor_name].formalized = parseInt(row.total_formalized, 10);
+            }
+        });
 
-        const conversionRates = Object.values(advisorData).map(advisor => {
-            const rate = (advisor.managed > 0) ? (advisor.formalized / advisor.managed) * 100 : 0;
-            return {
-                advisorname: advisor.name,
-                conversion_rate: rate
-            };
-        });
+        const conversionRates = Object.values(advisorData).map(advisor => {
+            const rate = (advisor.managed > 0) ? (advisor.formalized / advisor.managed) * 100 : 0;
+            return {
+                advisorname: advisor.name,
+                conversion_rate: rate
+            };
+        });
 
-        conversionRates.sort((a, b) => b.conversion_rate - a.conversion_rate);
+        conversionRates.sort((a, b) => b.conversion_rate - a.conversion_rate);
 
-        res.json(conversionRates);
-    } catch (err) {
-        console.error("Error al obtener ranking de conversión:", err);
-        res.status(500).json({ message: 'Error en el servidor.' });
-    }
+        res.json(conversionRates);
+    } catch (err) {
+        console.error("Error al obtener ranking de conversión:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
 });
-
-// ======================================================================
-// ========= FIN: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS ============
-// ======================================================================
-// ======================================================================
-// ========= INICIO: APIS PARA IDE Y PULSO DE EQUIPO ====================
-// ======================================================================
-
 // 1. API PARA EL ÍNDICE DE DESEMPEÑO ESTRATÉGICO (IDE)
 app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
-    try {
-        // Obtenemos los datos base de los otros rankings
-        const reachQuery = `SELECT advisorname, COUNT(DISTINCT centername) as value FROM visits GROUP BY advisorname`;
-        const followUpQuery = `WITH LastVisits AS (SELECT v.advisorname, (CURRENT_DATE - v.visitdate) AS days FROM visits v JOIN centers c ON v.centername = c.name WHERE c.etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')) SELECT advisorname, AVG(days) as value FROM LastVisits GROUP BY advisorname`;
-        const conversionQuery = `WITH M AS (SELECT advisorname, COUNT(DISTINCT centername) AS total FROM visits GROUP BY advisorname), F AS (SELECT advisor_name, COUNT(*) AS total FROM formalized_centers GROUP BY advisor_name) SELECT M.advisorname, (COALESCE(F.total, 0) * 100.0 / M.total) AS value FROM M LEFT JOIN F ON M.advisorname = F.advisor_name`;
+    try {
+        // Obtenemos los datos base de los otros rankings
+        const reachQuery = `
+            SELECT v.advisorname, COUNT(DISTINCT v.centername) as value 
+            FROM visits v
+            -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
+            JOIN advisors a ON v.advisorname = a.name
+            WHERE a.estado = 'activo'
+            -- --- FIN: MODIFICACIÓN 1 ---
+            GROUP BY v.advisorname
+        `;
+        const followUpQuery = `
+            WITH LastVisits AS (
+                SELECT v.advisorname, (CURRENT_DATE - v.visitdate) AS days 
+                FROM visits v 
+                JOIN centers c ON v.centername = c.name
+                -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
+                JOIN advisors a ON v.advisorname = a.name
+                WHERE c.etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')
+                AND a.estado = 'activo'
+                -- --- FIN: MODIFICACIÓN 2 ---
+            ) 
+            SELECT advisorname, AVG(days) as value 
+            FROM LastVisits 
+            GROUP BY advisorname
+        `;
+        const conversionQuery = `
+            WITH M AS (
+                -- --- INICIO: MODIFICACIÓN 3A (FILTRAR ACTIVOS) ---
+                SELECT v.advisorname, COUNT(DISTINCT v.centername) AS total 
+                FROM visits v
+                JOIN advisors a ON v.advisorname = a.name
+                WHERE a.estado = 'activo'
+                GROUP BY v.advisorname
+                -- --- FIN: MODIFICACIÓN 3A ---
+            ), 
+            F AS (
+                -- --- INICIO: MODIFICACIÓN 3B (FILTRAR ACTIVOS) ---
+                SELECT fc.advisor_name, COUNT(*) AS total 
+                FROM formalized_centers fc
+                JOIN advisors a ON fc.advisor_name = a.name
+                WHERE a.estado = 'activo'
+                GROUP BY fc.advisor_name
+            	-- --- FIN: MODIFICACIÓN 3B ---
+            ) 
+            SELECT M.advisorname, (COALESCE(F.total, 0) * 100.0 / M.total) AS value 
+            FROM M 
+            LEFT JOIN F ON M.advisorname = F.advisor_name
+        `;
 
-        const [reachRes, followUpRes, conversionRes] = await Promise.all([
-            pool.query(reachQuery),
-            pool.query(followUpQuery),
-            pool.query(conversionQuery)
-        ]);
+        const [reachRes, followUpRes, conversionRes] = await Promise.all([
+            pool.query(reachQuery),
+            pool.query(followUpQuery),
+            pool.query(conversionQuery)
+        ]);
 
-        const advisors = {};
-        const initAdvisor = (name) => {
-            if (!advisors[name]) {
-                advisors[name] = { advisorname: name, reach: 0, followUp: 0, conversion: 0 };
-            }
-        };
+        const advisors = {};
+        const initAdvisor = (name) => {
+            if (!advisors[name]) {
+                advisors[name] = { advisorname: name, reach: 0, followUp: 0, conversion: 0 };
+            }
+        };
 
-        reachRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].reach = parseFloat(r.value); });
-        followUpRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].followUp = parseFloat(r.value); });
-        conversionRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].conversion = parseFloat(r.value); });
+        reachRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].reach = parseFloat(r.value); });
+        followUpRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].followUp = parseFloat(r.value); });
+        conversionRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].conversion = parseFloat(r.value); });
 
-        const advisorList = Object.values(advisors);
-        const maxReach = Math.max(...advisorList.map(a => a.reach));
-        const followUpDays = advisorList.filter(a => a.followUp > 0).map(a => a.followUp);
-        const minFollowUp = Math.min(...followUpDays);
-        const maxFollowUp = Math.max(...followUpDays);
-        const maxConversion = Math.max(...advisorList.map(a => a.conversion));
+        const advisorList = Object.values(advisors);
+        const maxReach = Math.max(...advisorList.map(a => a.reach));
+        const followUpDays = advisorList.filter(a => a.followUp > 0).map(a => a.followUp);
+        const minFollowUp = followUpDays.length > 0 ? Math.min(...followUpDays) : 0; // <-- Corregido para evitar error si está vacío
+        const maxFollowUp = followUpDays.length > 0 ? Math.max(...followUpDays) : 0; // <-- Corregido para evitar error si está vacío
+        const maxConversion = Math.max(...advisorList.map(a => a.conversion));
 
-        const performanceData = advisorList.map(advisor => {
-            const reachScore = (maxReach > 0) ? (advisor.reach / maxReach) : 0;
-            let followUpScore = 0;
-            if (advisor.followUp > 0) {
-                if (maxFollowUp === minFollowUp) {
-                    followUpScore = 1;
-                } else {
-                    followUpScore = 1 - ((advisor.followUp - minFollowUp) / (maxFollowUp - minFollowUp));
-                }
-            }
-            const conversionScore = (maxConversion > 0) ? (advisor.conversion / maxConversion) : 0;
+        const performanceData = advisorList.map(advisor => {
+            const reachScore = (maxReach > 0) ? (advisor.reach / maxReach) : 0;
+            let followUpScore = 0;
+            if (advisor.followUp > 0) {
+                if (maxFollowUp === minFollowUp) {
+                    followUpScore = 1;
+                } else {
+                    followUpScore = 1 - ((advisor.followUp - minFollowUp) / (maxFollowUp - minFollowUp));
+                }
+            }
+            const conversionScore = (maxConversion > 0) ? (advisor.conversion / maxConversion) : 0;
 
-            const totalScore = (reachScore * 40) + (followUpScore * 40) + (conversionScore * 20);
-            return { advisorname: advisor.advisorname, performance_score: totalScore };
-        });
+            const totalScore = (reachScore * 40) + (followUpScore * 40) + (conversionScore * 20);
+            return { advisorname: advisor.advisorname, performance_score: totalScore };
+        });
 
-        performanceData.sort((a, b) => b.performance_score - a.performance_score);
-        res.json(performanceData);
-    } catch (err) {
-        console.error("Error al calcular el IDE:", err);
-        res.status(500).json({ message: 'Error en el servidor.' });
-    }
+        performanceData.sort((a, b) => b.performance_score - a.performance_score);
+        res.json(performanceData);
+    } catch (err) {
+        console.error("Error al calcular el IDE:", err);
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
 });
-
 // 2. API PARA EL PANEL "PULSO DEL EQUIPO"
 app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    try {
-        const activeProspectsQuery = `SELECT COUNT(*) as value FROM centers WHERE etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')`;
-        const conversionRateQuery = `SELECT (SELECT COUNT(*) FROM formalized_centers) * 100.0 / NULLIF((SELECT COUNT(DISTINCT centername) FROM visits), 0) as value`;
-        const salesCycleQuery = `WITH FirstVisits AS (SELECT centername, MIN(visitdate) as first_visit_date FROM visits GROUP BY centername) SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value FROM formalized_centers fc JOIN FirstVisits fv ON fc.center_name = fv.centername`;
-        const bottleneckQuery = `SELECT etapa_venta as value, COUNT(*) as count FROM centers WHERE etapa_venta NOT IN ('Prospecto', 'Acuerdo Formalizado', 'No Logrado') GROUP BY etapa_venta ORDER BY count DESC LIMIT 1`;
+    try {
+        const activeProspectsQuery = `SELECT COUNT(*) as value FROM centers WHERE etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')`;
+        
+        // --- INICIO: MODIFICADA (FILTRA ACTIVOS) ---
+        const conversionRateQuery = `
+            SELECT
+                (SELECT COUNT(fc.id) 
+                 FROM formalized_centers fc 
+                 JOIN advisors a ON fc.advisor_name = a.name 
+                 WHERE a.estado = 'activo') * 100.0
+                /
+                NULLIF((SELECT COUNT(DISTINCT v.centername) 
+                       FROM visits v 
+                       JOIN advisors a ON v.advisorname = a.name 
+                       WHERE a.estado = 'activo'), 0)
+            as value
+        `;
+        // --- FIN: MODIFICADA ---
 
-        const [activeProspectsRes, conversionRateRes, salesCycleRes, bottleneckRes] = await Promise.all([
-            pool.query(activeProspectsQuery),
-            pool.query(conversionRateQuery),
-            pool.query(salesCycleQuery),
-            pool.query(bottleneckQuery)
-        ]);
+        // --- INICIO: MODIFICADA (FILTRA ACTIVOS) ---
+        const salesCycleQuery = `
+            WITH FirstVisits AS (
+                SELECT v.centername, MIN(v.visitdate) as first_visit_date 
+                FROM visits v
+                JOIN advisors a ON v.advisorname = a.name
+                WHERE a.estado = 'activo'
+                GROUP BY v.centername
+            ) 
+            SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value 
+            FROM formalized_centers fc 
+            JOIN FirstVisits fv ON fc.center_name = fv.centername
+            JOIN advisors a ON fc.advisor_name = a.name
+            WHERE a.estado = 'activo'
+        `;
+        // --- FIN: MODIFICADA ---
 
-        res.json({
-            activeProspects: activeProspectsRes.rows[0]?.value || 0,
-            overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
-            averageSalesCycle: parseFloat(salesCycleRes.rows[0]?.value || 0).toFixed(0),
-            mainBottleneck: bottleneckRes.rows[0]?.value || 'N/A'
-        });
-    } catch (err) {
-        console.error("Error al calcular el Pulso del Equipo:", err);
-        res.status(500).json({ message: 'Error en el servidor.' });
-    }
+        const bottleneckQuery = `SELECT etapa_venta as value, COUNT(*) as count FROM centers WHERE etapa_venta NOT IN ('Prospecto', 'Acuerdo Formalizado', 'No Logrado') GROUP BY etapa_venta ORDER BY count DESC LIMIT 1`;
+
+        const [activeProspectsRes, conversionRateRes, salesCycleRes, bottleneckRes] = await Promise.all([
+            pool.query(activeProspectsQuery),
+            pool.query(conversionRateQuery),
+            pool.query(salesCycleQuery),
+            pool.query(bottleneckQuery)
+        ]);
+
+        res.json({
+            activeProspects: activeProspectsRes.rows[0]?.value || 0,
+            overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
+            averageSalesCycle: parseFloat(salesCycleRes.rows[0]?.value || 0).toFixed(0),
+            mainBottleneck: bottleneckRes.rows[0]?.value || 'N/A'
+        });
+    } catch (err) {
+        console.error("Error al calcular el Pulso del Equipo:", err);
+NT-1
+        res.status(500).json({ message: 'Error en el servidor.' });
+    }
 });
 
 // ======================================================================
@@ -1682,25 +1810,25 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
 // --- INICIO DEL CÓDIGO AÑADIDO ---
 // Regla de seguridad específica para el reporte de visitas, ANTES de la regla general.
 app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => {
-    const requestedPath = path.join(__dirname, req.path);
-    if (fs.existsSync(requestedPath)) {
-        res.sendFile(requestedPath);
-    } else {
-        res.status(404).send('Página no encontrada');
-    }
+    const requestedPath = path.join(__dirname, req.path);
+    if (fs.existsSync(requestedPath)) {
+        res.sendFile(requestedPath);
+    } else {
+        res.status(404).send('Página no encontrada');
+    }
 });
 
 // --- NUEVA RUTA PARA EXPONER PRODUCTOS ---
 app.get('/api/productos', (req, res) => {
-  // Esta es la variable 'products' que encontramos antes
-  res.json(products);
+  // Esta es la variable 'products' que encontramos antes
+  res.json(products);
 });
 
 // --- FIN DEL CÓDIGO AÑADIDO ---
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
 app.listen(PORT, async () => {
-    loadProducts();
-    await initializeDatabase();
-    console.log(`✅ Servidor de Asesores (v17.1 - CORS Habilitado) corriendo en el puerto ${PORT}`);
+    loadProducts();
+    await initializeDatabase();
+    console.log(`✅ Servidor de Asesores (v17.1 - CORS Habilitado) corriendo en el puerto ${PORT}`);
 });
