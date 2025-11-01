@@ -1179,8 +1179,9 @@ app.get('/api/advisor-performance', requireLogin, async (req, res) => {
             };
         });
 
+       
         performanceData.sort((a, b) => b.performance_score - a.performance_score);
-_error('Cálculo de desempeño completado exitosamente.');
+        console.log('Cálculo de desempeño completado exitosamente.'); // <-- ¡LÍNEA CORREGIDA!
 
         res.json(performanceData);
 
@@ -1323,7 +1324,6 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
             -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
             JOIN
                 advisors a ON alv.advisorname = a.name
-T-1
             -- --- FIN: MODIFICACIÓN ---
             WHERE
                 alv.advisorname IS NOT NULL
@@ -1338,7 +1338,6 @@ T-1
         res.json(result.rows);
 
     } catch (err) {
-    t-2
       console.error('Error al obtener el ranking de seguimiento:', err);
         res.status(500).json({ message: 'Error en el servidor al consultar el ranking.' });
     }
