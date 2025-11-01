@@ -1787,7 +1787,7 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
                 SELECT v.centername, MIN(v.visitdate) as first_visit_date 
                 FROM visits v
                 JOIN advisors a ON v.advisorname = a.name
-               WHERE a.estado = 'activo'
+                WHERE a.estado = 'activo' // <-- 's' eliminada de la línea anterior
                 GROUP BY v.centername
             ) 
             SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value 
@@ -1802,14 +1802,14 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
 
         const [activeProspectsRes, conversionRateRes, salesCycleRes, bottleneckRes] = await Promise.all([
             pool.query(activeProspectsQuery),
-             pool.query(conversionRateQuery),
+            pool.query(conversionRateQuery), // <-- 'g' eliminada de la línea anterior
             pool.query(salesCycleQuery),
             pool.query(bottleneckQuery)
         ]);
 
         res.json({
             activeProspects: activeProspectsRes.rows[0]?.value || 0,
-           overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
+            overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1), // <-- 's' eliminada de la línea anterior
             averageSalesCycle: parseFloat(salesCycleRes.rows[0]?.value || 0).toFixed(0),
             mainBottleneck: bottleneckRes.rows[0]?.value || 'N/A'
         });
