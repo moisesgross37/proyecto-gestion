@@ -110,6 +110,26 @@ const initializeDatabase = async () => {
                 formalization_date TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+		// ======================================================
+// ========= PARCHE TEMPORAL PARA AÑADIR COLUMNA ========
+// ======================================================
+try {
+    console.log("Intentando añadir la columna 'estado' a la tabla 'advisors'...");
+    // Añade la columna 'estado' si no existe.
+    await client.query('ALTER TABLE advisors ADD COLUMN estado VARCHAR(50) DEFAULT \'activo\' NOT NULL');
+    console.log("¡Columna 'estado' añadida exitosamente a 'advisors'!");
+} catch (e) {
+    if (e.code === '42701') {
+        // El código '42701' es 'duplicate_column' en PostgreSQL
+        console.log("La columna 'estado' ya existe en 'advisors'. No se necesita hacer nada.");
+    } else {
+        // Ignoramos otros posibles errores para no detener el inicio
+        console.error("Error al intentar añadir la columna 'estado' (se ignora para el arranque):", e.message);
+    }
+}
+// ======================================================
+// ========= FIN DEL PARCHE TEMPORAL ====================
+// ======================================================
     } catch (err) {
        console.error('Error al inicializar las tablas de la aplicación:', err);
     } finally {
