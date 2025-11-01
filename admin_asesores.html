@@ -6,6 +6,24 @@
     <title>Gestión de Asesores - Admin</title>
     <link rel="stylesheet" href="/estilos.css">
     <link rel="stylesheet" href="/admin-estilos.css">
+    <style>
+        .btn-activate {
+            background-color: #28a745; /* Verde */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-activate:hover {
+            background-color: #218838;
+        }
+        .advisor-status {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-left: 8px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -42,20 +60,44 @@
                 try {
                     const response = await fetch(API_URL);
                     if (!response.ok) throw new Error(`Error al obtener ${resourceName}.`);
+                    
+                    // El API ahora devuelve { id, name, estado }
                     const items = await response.json();
                     list.innerHTML = '';
+                    
                     if (items.length === 0) {
                         list.innerHTML = `<li>No hay ${resourceName} registrados.</li>`;
                         return;
                     }
+                    
                     items.forEach(item => {
                         const listItem = document.createElement('li');
-                        listItem.textContent = item.name;
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = 'Eliminar';
-                        deleteButton.classList.add('btn-delete');
-                        deleteButton.addEventListener('click', () => deleteItem(item.id));
-                        listItem.appendChild(deleteButton);
+                        
+                        // --- MODIFICADO: Mostrar Nombre y Estado ---
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = item.name;
+                        
+                        const statusSpan = document.createElement('span');
+                        statusSpan.textContent = ` (${item.estado})`;
+                        statusSpan.className = 'advisor-status';
+                        
+                        // --- MODIFICADO: Crear botón de Activar/Desactivar ---
+                        const toggleButton = document.createElement('button');
+                        
+                        if (item.estado === 'activo') {
+                            toggleButton.textContent = 'Desactivar';
+                            toggleButton.classList.add('btn-delete'); // Botón rojo
+                        } else {
+                            toggleButton.textContent = 'Activar';
+                            toggleButton.classList.add('btn-activate'); // Botón verde
+                        }
+                        
+                        // Usamos la nueva función 'toggleItemStatus'
+                        toggleButton.addEventListener('click', () => toggleItemStatus(item.id, item.estado));
+                        
+                        listItem.appendChild(nameSpan);
+                        listItem.appendChild(statusSpan);
+                        listItem.appendChild(toggleButton);
                         list.appendChild(listItem);
                     });
                 } catch (error) {
@@ -66,6 +108,7 @@
 
             const addItem = async (name) => {
                 try {
+                    // Esto no cambia, el backend guarda por defecto como 'activo'
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -80,15 +123,25 @@
                 }
             };
 
-            const deleteItem = async (id) => {
-                if (!confirm(`¿Estás seguro de que quieres eliminar este ${entityDisplayName.toLowerCase()}?`)) return;
+            // --- NUEVA FUNCIÓN ---
+            // Reemplaza a 'deleteItem'
+            const toggleItemStatus = async (id, currentState) => {
+                const actionText = currentState === 'activo' ? 'desactivar' : 'activar';
+                if (!confirm(`¿Estás seguro de que quieres ${actionText} este ${entityDisplayName.toLowerCase()}?`)) return;
+
                 try {
-                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                    if (!response.ok) throw new Error(`Error al eliminar ${entityDisplayName}.`);
+                    // Llamamos a la NUEVA ruta del backend
+                    const response = await fetch(`${API_URL}/${id}/toggle-status`, { 
+                        method: 'POST' 
+                    });
+                    
+                    if (!response.ok) throw new Error(`Error al ${actionText} ${entityDisplayName}.`);
+                    
+                    // Si todo sale bien, refrescamos la lista
                     await fetchAndDisplayItems();
                 } catch (error) {
                     console.error(error);
-                    alert(`No se pudo eliminar el ${entityDisplayName}.`);
+                    alert(`No se pudo ${actionText} el ${entityDisplayName}.`);
                 }
             };
 
@@ -101,5 +154,5 @@
             fetchAndDisplayItems();
         });
     </script>
-</body>
+    </body>
 </html>
