@@ -1606,7 +1606,7 @@ app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordin
 app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const managedQuery = `
-            SELECT v.advisorname, COUNT(DISTINCT v.centername) as total_managed 
+            SELECT v.advisorname, COUNT(DISTINCT v.centername) as total_managed 
             FROM visits v
             -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
             JOIN advisors a ON v.advisorname = a.name
@@ -1615,7 +1615,7 @@ app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Co
             GROUP BY v.advisorname
         `;
         const formalizedQuery = `
-            SELECT fc.advisor_name, COUNT(*) as total_formalized 
+            SELECT fc.advisor_name, COUNT(*) as total_formalized 
             FROM formalized_centers fc
             -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
             JOIN advisors a ON fc.advisor_name = a.name
