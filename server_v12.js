@@ -1321,7 +1321,7 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
         // para todos los centros que no están en un estado final.
         const query = `WITH ActiveCentersLastVisit AS (
 		SELECT
-                    latest_visit.advisorname,
+		latest_visit.advisorname,
                     (CURRENT_DATE - latest_visit.visitdate) AS days_since_last_visit
                 FROM
                     centers c
