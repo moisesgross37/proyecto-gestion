@@ -1578,20 +1578,20 @@ app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coor
 app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
         const query = `
-            SELECT 
-                v.advisorname, 
+            SELECT 
+                v.advisorname, 
                 COUNT(DISTINCT v.centername) as unique_centers_count
-            FROM 
+            FROM 
                 visits v
             -- --- INICIO: MODIFICACIÓN (FILTRAR ACTIVOS) ---
-            JOIN 
+            JOIN 
                 advisors a ON v.advisorname = a.name
             WHERE
                 a.estado = 'activo'
             -- --- FIN: MODIFICACIÓN ---
-            GROUP BY 
+            GROUP BY 
                 v.advisorname
-            ORDER BY 
+            ORDER BY 
                 unique_centers_count DESC;
         `;
         const result = await pool.query(query);
@@ -1601,7 +1601,6 @@ app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordin
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-
 // 3. API PARA EL RANKING DE TASA DE CONVERSIÓN
 app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
@@ -1665,7 +1664,7 @@ app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
     try {
         // Obtenemos los datos base de los otros rankings
         const reachQuery = `
-            SELECT v.advisorname, COUNT(DISTINCT v.centername) as value 
+            SELECT v.advisorname, COUNT(DISTINCT v.centername) as value 
             FROM visits v
             -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
             JOIN advisors a ON v.advisorname = a.name
@@ -1675,40 +1674,40 @@ app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
         `;
         const followUpQuery = `
             WITH LastVisits AS (
-                SELECT v.advisorname, (CURRENT_DATE - v.visitdate) AS days 
-                FROM visits v 
+                SELECT v.advisorname, (CURRENT_DATE - v.visitdate) AS days 
+                FROM visits v 
                 JOIN centers c ON v.centername = c.name
                 -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
                 JOIN advisors a ON v.advisorname = a.name
                 WHERE c.etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')
                 AND a.estado = 'activo'
                 -- --- FIN: MODIFICACIÓN 2 ---
-            ) 
-            SELECT advisorname, AVG(days) as value 
-            FROM LastVisits 
+            ) 
+            SELECT advisorname, AVG(days) as value 
+            FROM LastVisits 
             GROUP BY advisorname
         `;
         const conversionQuery = `
             WITH M AS (
                 -- --- INICIO: MODIFICACIÓN 3A (FILTRAR ACTIVOS) ---
-                SELECT v.advisorname, COUNT(DISTINCT v.centername) AS total 
+                SELECT v.advisorname, COUNT(DISTINCT v.centername) AS total 
                 FROM visits v
                 JOIN advisors a ON v.advisorname = a.name
                 WHERE a.estado = 'activo'
                 GROUP BY v.advisorname
                 -- --- FIN: MODIFICACIÓN 3A ---
-            ), 
+            ), 
             F AS (
                 -- --- INICIO: MODIFICACIÓN 3B (FILTRAR ACTIVOS) ---
-                SELECT fc.advisor_name, COUNT(*) AS total 
+                SELECT fc.advisor_name, COUNT(*) AS total 
                 FROM formalized_centers fc
                 JOIN advisors a ON fc.advisor_name = a.name
                 WHERE a.estado = 'activo'
                 GROUP BY fc.advisor_name
             	-- --- FIN: MODIFICACIÓN 3B ---
-            ) 
-            SELECT M.advisorname, (COALESCE(F.total, 0) * 100.0 / M.total) AS value 
-            FROM M 
+            ) 
+            SELECT M.advisorname, (COALESCE(F.total, 0) * 100.0 / NULLIF(M.total, 0)) AS value  -- <-- Añadida protección NULLIF
+            FROM M 
             LEFT JOIN F ON M.advisorname = F.advisor_name
         `;
 
@@ -1727,27 +1726,29 @@ app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
 
         reachRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].reach = parseFloat(r.value); });
         followUpRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].followUp = parseFloat(r.value); });
-        conversionRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].conversion = parseFloat(r.value); });
+        conversionRes.rows.forEach(r => { initAdvisor(r.advisorname); advisors[r.advisorname].conversion = parseFloat(r.value || 0); }); // <-- Añadido control de 'null'
 
         const advisorList = Object.values(advisors);
-        const maxReach = Math.max(...advisorList.map(a => a.reach));
+        const maxReach = Math.max(0, ...advisorList.map(a => a.reach)); // <-- Añadida protección
         const followUpDays = advisorList.filter(a => a.followUp > 0).map(a => a.followUp);
-        const minFollowUp = followUpDays.length > 0 ? Math.min(...followUpDays) : 0; // <-- Corregido para evitar error si está vacío
-        const maxFollowUp = followUpDays.length > 0 ? Math.max(...followUpDays) : 0; // <-- Corregido para evitar error si está vacío
-        const maxConversion = Math.max(...advisorList.map(a => a.conversion));
+        const minFollowUp = followUpDays.length > 0 ? Math.min(...followUpDays) : 0;
+        const maxFollowUp = followUpDays.length > 0 ? Math.max(...followUpDays) : 0;
+        const maxConversion = Math.max(0, ...advisorList.map(a => a.conversion)); // <-- Añadida protección
 
         const performanceData = advisorList.map(advisor => {
             const reachScore = (maxReach > 0) ? (advisor.reach / maxReach) : 0;
             let followUpScore = 0;
             if (advisor.followUp > 0) {
                 if (maxFollowUp === minFollowUp) {
-                    followUpScore = 1;
+                    followUpScore = 1; // Si solo hay un valor, tiene el 100%
                 } else {
+                    // Normalización inversa: menos días es mejor
                     followUpScore = 1 - ((advisor.followUp - minFollowUp) / (maxFollowUp - minFollowUp));
                 }
             }
             const conversionScore = (maxConversion > 0) ? (advisor.conversion / maxConversion) : 0;
 
+            // Ponderación: Alcance (40%), Seguimiento (40%), Conversión (20%)
             const totalScore = (reachScore * 40) + (followUpScore * 40) + (conversionScore * 20);
             return { advisorname: advisor.advisorname, performance_score: totalScore };
         });
@@ -1772,7 +1773,7 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
                  JOIN advisors a ON fc.advisor_name = a.name 
                  WHERE a.estado = 'activo') * 100.0
                 /
-                NULLIF((SELECT COUNT(DISTINCT v.centername)s
+                NULLIF((SELECT COUNT(DISTINCT v.centername) -- <-- ¡ERROR 's' ELIMINADO AQUÍ!
                        FROM visits v 
                        JOIN advisors a ON v.advisorname = a.name 
                        WHERE a.estado = 'activo'), 0)
@@ -1786,7 +1787,7 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
                 SELECT v.centername, MIN(v.visitdate) as first_visit_date 
                 FROM visits v
                 JOIN advisors a ON v.advisorname = a.name
-                WHERE a.estado = 'activo'
+               WHERE a.estado = 'activo'
                 GROUP BY v.centername
             ) 
             SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value 
@@ -1801,14 +1802,14 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
 
         const [activeProspectsRes, conversionRateRes, salesCycleRes, bottleneckRes] = await Promise.all([
             pool.query(activeProspectsQuery),
-            pool.query(conversionRateQuery),
+             pool.query(conversionRateQuery),
             pool.query(salesCycleQuery),
             pool.query(bottleneckQuery)
         ]);
 
         res.json({
             activeProspects: activeProspectsRes.rows[0]?.value || 0,
-            overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
+           overallConversionRate: parseFloat(conversionRateRes.rows[0]?.value || 0).toFixed(1),
             averageSalesCycle: parseFloat(salesCycleRes.rows[0]?.value || 0).toFixed(0),
             mainBottleneck: bottleneckRes.rows[0]?.value || 'N/A'
         });
