@@ -1331,8 +1331,8 @@ app.get('/api/advisor-follow-up-ranking', requireLogin, async (req, res) => {
                     FROM visits v
                     WHERE v.centername = c.name
                     ORDER BY v.visitdate DESC, v.createdat DESC
-          _error('Cálculo de desempeño completado exitosamente.');
-                  LIMIT 1
+                    -- --- LÍNEA DE ERROR ELIMINADA ---
+                    LIMIT 1
                 ) AS latest_visit ON true
                 WHERE latest_visit.commenttext NOT IN ('Formalizar Acuerdo', 'No Logrado')
             )
@@ -1763,18 +1763,18 @@ app.get('/api/strategic-performance-index', requireLogin, async (req, res) => {
 app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
         const activeProspectsQuery = `SELECT COUNT(*) as value FROM centers WHERE etapa_venta NOT IN ('Acuerdo Formalizado', 'No Logrado')`;
-        
+        
         // --- INICIO: MODIFICADA (FILTRA ACTIVOS) ---
         const conversionRateQuery = `
             SELECT
-                (SELECT COUNT(fc.id) 
-                 FROM formalized_centers fc 
-                 JOIN advisors a ON fc.advisor_name = a.name 
+                (SELECT COUNT(fc.id) 
+                 FROM formalized_centers fc 
+                 JOIN advisors a ON fc.advisor_name = a.name 
                  WHERE a.estado = 'activo') * 100.0
                 /
-                NULLIF((SELECT COUNT(DISTINCT v.centername) 
-                       FROM visits v 
-                       JOIN advisors a ON v.advisorname = a.name 
+                NULLIF((SELECT COUNT(DISTINCT v.centername)s
+                       FROM visits v 
+                       JOIN advisors a ON v.advisorname = a.name 
                        WHERE a.estado = 'activo'), 0)
             as value
         `;
@@ -1783,14 +1783,14 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
         // --- INICIO: MODIFICADA (FILTRA ACTIVOS) ---
         const salesCycleQuery = `
             WITH FirstVisits AS (
-                SELECT v.centername, MIN(v.visitdate) as first_visit_date 
+                SELECT v.centername, MIN(v.visitdate) as first_visit_date 
                 FROM visits v
                 JOIN advisors a ON v.advisorname = a.name
                 WHERE a.estado = 'activo'
                 GROUP BY v.centername
-            ) 
-            SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value 
-            FROM formalized_centers fc 
+            ) 
+            SELECT AVG(fc.formalization_date::date - fv.first_visit_date) as value 
+            FROM formalized_centers fc 
             JOIN FirstVisits fv ON fc.center_name = fv.centername
             JOIN advisors a ON fc.advisor_name = a.name
             WHERE a.estado = 'activo'
@@ -1814,11 +1814,9 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
         });
     } catch (err) {
         console.error("Error al calcular el Pulso del Equipo:", err);
-NT-1
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
-
 // ======================================================================
 // ========= FIN: APIS PARA IDE Y PULSO DE EQUIPO =======================
 // ======================================================================
