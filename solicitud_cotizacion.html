@@ -6,87 +6,159 @@
     <title>Solicitud de Cotización</title>
     <link rel="stylesheet" href="estilos.css">
     <style>
-        /* Estilos para el autocompletado */
-        .autocomplete-results {
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 150px;
-            overflow-y: auto;
-            position: absolute;
-            width: calc(100% - 2px);
-            background-color: #fff;
-            z-index: 100;
-        }
-        .autocomplete-results div {
+        /* Estilos generales y del formulario (combinados) */
+        body { font-family: sans-serif; margin: 0; background-color: #f4f7f6; }
+        .container { max-width: 800px; margin: 20px auto; padding: 20px; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-radius: 8px; }
+        header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 1.8em; color: #333; flex-grow: 1; text-align: center; }
+        .back-button { color: #007bff; text-decoration: none; font-size: 0.9em; }
+        .back-button:hover { text-decoration: underline; }
+        .card { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .card h2 { margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; font-size: 1.4em; }
+        .form-group { margin-bottom: 15px; position: relative; /* Para autocompletado */ }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
             padding: 10px;
-            cursor: pointer;
-        }
-        .autocomplete-results div:hover {
-            background-color: #f1f1f1;
-        }
-        .form-group {
-            position: relative;
-        }
-
-        /* Estilos para el acordeón de productos */
-        #productos-por-reglon details {
-            border: 1px solid #ddd;
+            border: 1px solid #ccc;
             border-radius: 4px;
-            margin-bottom: 10px;
-            background-color: #fff;
+            box-sizing: border-box; /* Importante para que padding no aumente el ancho */
         }
-        #productos-por-reglon summary {
-            font-weight: bold;
-            padding: 15px;
+        .form-group input[disabled] { background-color: #eee; cursor: not-allowed; }
+        .radio-group { display: flex; gap: 15px; align-items: center; }
+        .radio-label { font-weight: normal; margin-left: 5px; }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            background-color: #f7f7f7;
-            outline: none; /* Quita el borde al hacer clic en Chrome */
+            font-size: 1em;
+            display: inline-block; /* Para botones lado a lado */
+            text-align: center;
         }
-        #productos-por-reglon details[open] summary {
-            border-bottom: 1px solid #ddd;
-        }
-        .accordion-content {
-            padding: 15px;
-        }
-        .sub-reglon-group h4 {
-            font-size: 1.1em;
-            margin-top: 15px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-        .sub-reglon-group:first-child h4 {
-            margin-top: 0;
-        }
-        .product-item {
-            display: block;
-            margin-bottom: 8px;
-        }
-        .product-item label {
-            font-weight: normal;
-            cursor: pointer;
-        }
-        .product-item input[type="checkbox"] {
-            margin-right: 8px;
-        }
-
-        .summary-box {
-            background-color: #e9f7ef;
-            border: 1px solid #28a745;
-            border-radius: 8px;
-            padding: 15px;
+        .btn:hover { background-color: #0056b3; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+        /* --- INICIO: Grupo de botones para alinear --- */
+        .button-group {
+            display: flex;
+            flex-wrap: wrap; /* Para que en móvil se pongan uno debajo del otro */
+            justify-content: center; /* Centrar botones */
+            gap: 15px; /* Espacio entre botones */
             margin-top: 20px;
         }
-        .summary-box h3 {
-            color: #28a745;
-            margin-top: 0;
-            border-bottom: 1px solid #28a745;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+        .button-group .btn,
+        .button-group .btn-secondary {
+            margin-top: 0; /* Quitar margen superior de los botones dentro del grupo */
         }
-        .summary-box p {
-            margin: 5px 0;
+        /* --- FIN: Grupo de botones --- */
+        .hidden { display: none; } /* Para mensajes de éxito/error */
+        .notification { padding: 15px; margin-top: 15px; border-radius: 4px; border: 1px solid transparent; }
+        .notification.success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .notification.error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+
+        /* Estilos Autocompletado */
+        .autocomplete-results {
+            border: 1px solid #ddd; border-top: none; max-height: 150px; overflow-y: auto;
+            position: absolute; width: calc(100% - 2px); background-color: #fff; z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 0 0 4px 4px;
         }
+        .autocomplete-results div { padding: 10px; cursor: pointer; }
+        .autocomplete-results div:hover { background-color: #f1f1f1; }
+        .autocomplete-results small { display: block; color: #888; font-size: 0.85em; } /* Para la dirección */
+
+        /* Estilos Acordeón Productos */
+        #contenedor-productos details { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; background-color: #fff; }
+        #contenedor-productos summary { font-weight: bold; padding: 15px; cursor: pointer; background-color: #f7f7f7; outline: none; list-style: none; /* Ocultar marcador por defecto */ position: relative; }
+        #contenedor-productos summary::-webkit-details-marker { display: none; } /* Ocultar marcador en Chrome/Safari */
+        #contenedor-productos summary::before { /* Flecha personalizada */ content: '▶'; position: absolute; left: 15px; top: 15px; transform: rotate(0deg); transition: transform 0.2s; font-size: 0.8em; color: #666;}
+        #contenedor-productos details[open] summary::before { transform: rotate(90deg); }
+        #contenedor-productos details[open] summary { border-bottom: 1px solid #ddd; }
+        .accordion-content { padding: 15px; }
+        .sub-reglon-group h4 { font-size: 1.1em; margin-top: 15px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; color: #444; }
+        .sub-reglon-group:first-child h4 { margin-top: 0; }
+        .product-item { display: block; margin-bottom: 8px; }
+        .product-item label { font-weight: normal; cursor: pointer; } /* Corregido: la etiqueta es el label en sí */
+        .product-item input[type="checkbox"] { margin-right: 8px; vertical-align: middle; }
+
+        /* Estilos Resumen */
+        .summary-box { background-color: #e9f7ef; border: 1px solid #28a745; border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .summary-box h3 { color: #28a745; margin-top: 0; border-bottom: 1px solid #28a745; padding-bottom: 5px; margin-bottom: 10px; font-size: 1.3em; }
+        .summary-box p { margin: 8px 0; font-size: 1em; }
+        .summary-box span { font-weight: bold; color: #28a745; }
+        #calculated-gratuities { padding: 10px; border: 1px solid #eee; background-color: #fdfdfd; margin-top: 10px; border-radius: 4px; font-size: 0.9em; }
+        #calculated-gratuities ul { margin: 0; padding-left: 20px; }
+
+        /* Estilos Modal de Ajuste */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; /* Ajuste para centrar mejor */ padding: 25px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 8px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .modal-content h2 { margin-top: 0; color: #333; }
+        .close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-button:hover, .close-button:focus { color: black; text-decoration: none; }
+        #adjustment-saved-indicator { color: green; margin-left: 10px; font-style: italic; font-size: 0.9em; }
+
+        /* --- INICIO: NUEVOS ESTILOS PARA MODAL DE BORRADOR --- */
+        #borrador-modal .modal-content-borrador {
+            background-color: #fefefe;
+            margin: 5% auto; /* Más arriba por ser más grande */
+            padding: 30px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 700px; /* Más ancho que el modal de ajuste */
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            overflow: hidden; /* Importante para el agua de sello */
+
+            /* --- CAPA DE SEGURIDAD 1: ANTI-COPIA --- */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10+ */
+            user-select: none; /* Estándar */
+        }
+        .agua-de-sello-borrador {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            z-index: 1; /* Detrás del texto, pero sobre el fondo */
+            font-size: 4em; /* Gigante */
+            font-weight: bold;
+            color: rgba(221, 0, 0, 0.1); /* Rojo muy transparente */
+            pointer-events: none; /* No se puede clickear */
+            text-align: center;
+            width: 200%; /* Asegura que cubra todo */
+            line-height: 1.5;
+        }
+        #borrador-contenido {
+            position: relative;
+            z-index: 2; /* Asegura que el texto esté sobre el agua de sello */
+        }
+        #borrador-contenido h2 { text-align: center; color: #dc3545; }
+        #borrador-contenido h4 { border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 20px;}
+        #borrador-productos-lista { list-style-type: disc; padding-left: 25px; }
+        /* --- FIN: NUEVOS ESTILOS --- */
+
+
+        /* Responsividad básica */
+        @media (max-width: 600px) {
+            .container { margin: 10px; padding: 15px; }
+            header { flex-direction: column; align-items: flex-start; }
+            header h1 { text-align: left; margin-top: 10px; font-size: 1.5em; }
+            .modal-content { width: 95%; margin: 20% auto; }
+            .btn { width: 100%; margin-top: 10px; box-sizing: border-box; }
+            .btn-secondary { margin-top: 15px; } /* Espacio extra para el botón secundario */
+            .radio-group { flex-direction: column; align-items: flex-start; gap: 5px;}
+            
+            /* Ajuste para grupo de botones en móvil */
+            .button-group { flex-direction: column; gap: 10px; }
+            .button-group .btn { width: 100%; margin-top: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -96,26 +168,28 @@
             <h1>Solicitud de Cotización</h1>
         </header>
 
+        <div id="success-message" class="notification hidden"></div>
+
         <form id="quote-form">
             <div class="card">
                 <h2>1. Datos del Evento</h2>
                 <div class="form-group">
-    <label>Tipo de Membrete:</label>
-    <div class="radio-group">
-        <input type="radio" id="membrete-be" name="membrete" value="Be Eventos" checked>
-        <label for="membrete-be" class="radio-label">Be Eventos</label>
-        
-        <input type="radio" id="membrete-peque" name="membrete" value="Peque Planner">
-        <label for="membrete-peque" class="radio-label">Peque Planner</label>
-    </div>
-</div>
+                    <label>Tipo de Membrete:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="membrete-be" name="membrete" value="Be Eventos" checked>
+                        <label for="membrete-be" class="radio-label">Be Eventos</label>
+
+                        <input type="radio" id="membrete-peque" name="membrete" value="Peque Planner">
+                        <label for="membrete-peque" class="radio-label">Peque Planner</label>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="quoteNumber">Número de Cotización:</label>
                     <input type="text" id="quoteNumber" name="quoteNumber" disabled value="Cargando...">
                 </div>
                 <div class="form-group">
                     <label for="clientName">Nombre del Cliente (Centro Educativo):</label>
-                    <input type="text" id="clientName" name="clientName" required autocomplete="off">
+                    <input type="text" id="clientName" name="clientName" required autocomplete="off" placeholder="Escriba para buscar...">
                     <input type="hidden" id="clientId" name="clientId">
                     <div id="client-autocomplete-results" class="autocomplete-results"></div>
                 </div>
@@ -125,11 +199,13 @@
                 </div>
                 <div class="form-group">
                     <label for="asesor-a-cargo-select">Asesor a Cargo:</label>
-                    <select id="asesor-a-cargo-select"></select>
+                    <select id="asesor-a-cargo-select" name="advisorName" required>
+                         <option value="">Cargando asesores...</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label for="studentCount">Cantidad de Estudiantes:</label>
-                    <input type="number" id="studentCount" name="studentCount" required min="1">
+                    <input type="number" id="studentCount" name="studentCount" required min="1" placeholder="Ej: 50">
                 </div>
             </div>
 
@@ -144,15 +220,15 @@
                 <h2>3. Facilidades y Condiciones Especiales</h2>
                 <div class="form-group">
                     <label for="aporteInstitucion">Aporte a la Institución:</label>
-                    <input type="number" id="aporteInstitucion" name="aporteInstitucion" step="0.01" value="0">
+                    <input type="number" id="aporteInstitucion" name="aporteInstitucion" step="0.01" value="0" min="0">
                 </div>
                 <div class="form-group">
-                    <label for="estudiantesCortesia">Estudiantes de Cortesía:</label>
+                    <label for="estudiantesCortesia">Estudiantes de Cortesía (Manuales):</label>
                     <input type="number" id="estudiantesCortesia" name="estudiantesCortesia" value="0" min="0">
                 </div>
                 <div class="form-group">
-                    <label>Cortesías Calculadas:</label>
-                    <div id="calculated-gratuities" style="padding: 10px; border: 1px solid #eee; background-color: #f9f9f9;"></div>
+                    <label>Cortesías Calculadas Automáticamente:</label>
+                    <div id="calculated-gratuities">(Ingrese cantidad de estudiantes y seleccione productos)</div>
                 </div>
                 <div class="form-group" id="gift-options-container" style="display: none;">
                     <label>Selección de Regalo (por combo):</label>
@@ -160,6 +236,59 @@
                 </div>
             </div>
 
+            <div class="form-group button-group">
+                 <button type="button" id="open-adjustment-request-btn" class="btn btn-secondary">Solicitar Ajuste (Opcional)</button>
+                 
+                 <button type="button" id="ver-borrador-btn" class="btn btn-secondary" style="background-color: #5a6268;">Ver Borrador Interno</button>
+                 </div>
+
+            <div id="adjustment-request-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-button" id="close-adjustment-request-modal">&times;</span>
+                    <h2>Solicitud de Ajuste (<span id="adjustment-quote-number"></span>)</h2>
+                    <p>Completa si necesitas un precio diferente al estándar.</p>
+                    <form id="adjustment-request-form">
+                        <div class="form-group">
+                            <label for="requested-adjustment-amount">Monto del Ajuste (por estudiante):</label>
+                            <input type="number" id="requested-adjustment-amount" name="ajuste_solicitado_monto" step="any" placeholder="Ej: -20 (descuento), 15.50 (aumento)">
+                        </div>
+                        <div class="form-group">
+                            <label for="requested-adjustment-comment">Justificación detallada:</label>
+                            <textarea id="requested-adjustment-comment" name="ajuste_solicitado_comentario" rows="4" placeholder="¿Por qué se necesita este ajuste?" required></textarea>
+                        </div>
+                        <button type="button" id="save-adjustment-request-btn" class="btn">Guardar Solicitud de Ajuste</button>
+                         <small id="adjustment-saved-indicator" style="display:none;">Solicitud guardada.</small>
+                    </form>
+                </div>
+            </div>
+
+            <div id="borrador-modal" class="modal" oncontextmenu="return false;">
+                
+                <div class="modal-content-borrador">
+                    
+                    <div class="agua-de-sello-borrador">BORRADOR NO VÁLIDO<br>PENDIENTE APROBACIÓN</div>
+
+                    <span class="close-button" id="close-borrador-modal-btn">&times;</span>
+                    
+                    <div id="borrador-contenido">
+                        <h2>BORRADOR INTERNO (NO OFICIAL)</h2>
+                        
+                        <h4>Datos del Evento</h4>
+                        <p><strong>Cliente:</strong> <span id="borrador-cliente">N/A</span></p>
+                        <p><strong>Cantidad Estudiantes:</strong> <span id="borrador-estudiantes">0</span></p>
+                        
+                        <h4>Productos y Servicios Seleccionados</h4>
+                        <ul id="borrador-productos-lista">
+                            <li>No hay productos seleccionados.</li>
+                        </ul>
+                        
+                        <h4>Resumen Estimado (Sujeto a Aprobación)</h4>
+                        <p><strong>Precio por Estudiante:</strong> <span id="borrador-precio-estudiante">$0.00</span></p>
+                        <p><strong>Monto Total:</strong> <span id="borrador-total">$0.00</span></p>
+                    </div>
+
+                </div>
+            </div>
             <div class="summary-box">
                 <h3>Resumen Estimado</h3>
                 <p>Estudiantes a Facturar: <span id="summary-billable-students">0</span></p>
@@ -167,11 +296,10 @@
                 <p>Precio por Estudiante Estimado: <span id="summary-price-per-student">$0.00</span></p>
             </div>
 
-            <button type="submit" class="btn">Generar y Guardar Cotización</button>
-        </form>
-        <div id="success-message" class="hidden" style="margin-top: 20px;">¡Cotización creada con éxito!</div>
-    </div>
+            <button type="submit" id="submit-quote-btn" class="btn">Generar y Guardar Cotización</button>
 
-        <script src="solicitud_cotizacion.js"></script>
+        </form>
+
+    </div> <script src="solicitud_cotizacion.js"></script>
 </body>
 </html>

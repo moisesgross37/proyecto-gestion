@@ -48,9 +48,7 @@
                     </tbody>
             </table>
         </main>
-    </div>
-
-    <div id="rejected-quote-modal" class="modal">
+    </div> <div id="rejected-quote-modal" class="modal">
         <div class="modal-content">
             <span class="close-button" id="close-rejected-modal-btn">&times;</span>
             <h2>Detalles del Rechazo</h2>
@@ -68,6 +66,26 @@
                 <div id="rejected-quote-summary-details">
                     </div>
             </div>
+        </div>
+    </div>
+
+    <div id="request-adjustment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-adjustment-modal">&times;</span>
+            <h2>Solicitar Ajuste de Precio</h2>
+            <p>Cotización: <strong id="adjustment-quote-number"></strong></p>
+            <form id="adjustment-form">
+                <input type="hidden" id="adjustment-quote-id">
+                <div class="form-group">
+                    <label for="adjustment-amount">Monto del Ajuste (por estudiante):</label>
+                    <input type="number" id="adjustment-amount" step="0.01" required placeholder="Ej: -20 para descuento">
+                </div>
+                <div class="form-group">
+                    <label for="adjustment-comment">Justificación detallada:</label>
+                    <textarea id="adjustment-comment" rows="4" required placeholder="Explica por qué es necesario este ajuste..."></textarea>
+                </div>
+                <button type="submit" class="btn">Enviar Solicitud</button>
+            </form>
         </div>
     </div>
     <script src="aprobacion.js"></script>

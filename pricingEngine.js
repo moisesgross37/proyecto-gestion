@@ -79,7 +79,7 @@ function calculateLaunchExtraCost(studentCount) {
 
 // --- FUNCIÓN PRINCIPAL DEL MOTOR DE PRECIOS ---
 
-function assembleQuote(quoteInput, db) {
+function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
     const {
         studentCount = 0,
         productIds = [],
@@ -172,6 +172,13 @@ function assembleQuote(quoteInput, db) {
     const estudiantesParaFacturar = Math.floor(Math.max(0, (studentCount * (1 - tasaDesercion)) - estudiantesCortesia));
     const precioFinalPorEstudiante = estudiantesParaFacturar > 0 ? precioVentaTotalProyecto / estudiantesParaFacturar : 0;
     const precioRedondeado = redondeoComercial(precioFinalPorEstudiante);
+    // --- INICIO DEL NUEVO BLOQUE DE AJUSTE ---
+    let precioFinalAjustado = precioRedondeado;
+    if (ajuste_aprobado_monto !== 0) {
+        // Sumamos el ajuste (que puede ser positivo o negativo)
+        precioFinalAjustado += ajuste_aprobado_monto;
+    }
+    // --- FIN DEL NUEVO BLOQUE DE AJUSTE ---
 
     const facilidades = [];
     const hasPolo = selectedProducts.some(p => (p['PRODUCTO / SERVICIO'] || '').trim().startsWith('Polo'));
@@ -183,10 +190,10 @@ function assembleQuote(quoteInput, db) {
     }
 
     const result = {
-        calculatedPrices: [{
-            montoTotalProyecto: precioVentaTotalProyecto.toFixed(2),
-            precioFinalPorEstudiante: precioRedondeado.toFixed(2),
-            estudiantesFacturables: estudiantesParaFacturar
+            calculatedPrices: [{
+                montoTotalProyecto: precioVentaTotalProyecto.toFixed(2),
+                precioFinalPorEstudiante: precioFinalAjustado.toFixed(2), // <-- CAMBIO AQUÍ
+                estudiantesFacturables: estudiantesParaFacturar
         }],
         facilidadesAplicadas: facilidades
     };

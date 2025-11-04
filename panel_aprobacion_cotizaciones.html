@@ -10,34 +10,130 @@
         .container { max-width: 1200px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #444; }
         table { width: 100%; border-collapse: collapse; margin-top: 2em; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; vertical-align: middle; } /* Alineación vertical */
         th { background-color: #f2f2f2; }
-        .actions button, .actions .view-btn { margin-right: 5px; padding: 8px 12px; cursor: pointer; text-decoration: none; color: white; border: none; border-radius: 4px; font-size: 14px; }
-        .approve-btn { background-color: #28a745; }
-        .reject-btn { background-color: #dc3545; }
-        .view-btn { background-color: #007bff; display: inline-block; }
-        .back-link { display: block; text-align: center; margin-top: 1.5em; }
+        /* Ajuste para que los botones no se separen tanto en móvil */
+        .actions button, .actions .view-btn { margin-right: 5px; margin-bottom: 5px; padding: 8px 12px; cursor: pointer; text-decoration: none; color: white; border: none; border-radius: 4px; font-size: 14px; display: inline-block; /* Asegura que estén en línea */ }
+
+        /* Estilos específicos para cada botón de decisión */
+        .decision-btn { background-color: #007bff; } /* Azul para 'Revisar Ajuste' */
+        .approve-adj-btn { background-color: #28a745; } /* Verde para 'Aprobar con Ajuste' */
+        .approve-std-btn { background-color: #ffc107; color: #333; } /* Amarillo para 'Aprobar Estándar' / 'Decidir' */
+        .reject-btn { background-color: #dc3545; } /* Rojo para 'Rechazar Cotización' (en modal) */
+        /* .view-btn { background-color: #17a2b8; } /* REMOVIDO: Ya no hay botón PDF en la fila */
+        .delete-btn-table { background-color: #dc3545; } /* Rojo para Eliminar en tabla */
+
+
+        .back-link { display: block; text-align: center; margin-top: 1.5em; color: #007bff; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* Estilos Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-button:hover, .close-button:focus { color: black; text-decoration: none; }
+        .modal-content h2 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+
+        /* Enlace PDF dentro del modal */
+        #modal-pdf-link { display: inline-block; margin-bottom: 20px; font-weight: bold; padding: 10px 15px; border-radius: 4px; text-decoration: none; background-color: #17a2b8; color: white; }
+        #modal-pdf-link:hover { opacity: 0.9; }
+
+        /* Panel Solicitud de Ajuste */
+        .adjustment-request-panel { background-color: #fff8e1; border: 1px solid #ffecb3; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .adjustment-request-panel h4 { margin-top: 0; color: #e65100; border-bottom: 1px solid #ffcc80; padding-bottom: 5px; }
+        .adjustment-request-panel p { margin: 5px 0; font-size: 0.95em; }
+        .adjustment-request-panel blockquote { margin: 10px 0 0 0; padding: 10px; background-color: #fffdf7; border-left: 4px solid #e65100; font-style: italic; font-size: 0.9em; word-wrap: break-word; /* Para comentarios largos */ }
+
+        /* Barra de Notificación */
+        #notification-bar { padding: 15px; margin-bottom: 20px; border-radius: 4px; color: white; display: none; font-weight: bold; text-align: center; }
+        #notification-bar.success { background-color: #28a745; }
+        #notification-bar.error { background-color: #dc3545; }
+
+        /* Estilos Formulario Modal */
+        .modal .form-group label { display: block; margin-bottom: 8px; font-weight: bold;} /* Label visible */
+        .modal .form-group input, .modal .form-group textarea { margin-bottom: 10px; width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; } /* Estilos input modal */
+        .modal .actions { margin-top: 25px; text-align: right; border-top: 1px solid #eee; padding-top: 15px; }
+        .modal .actions button { margin-left: 10px; } /* Espacio entre botones del modal */
+
+        /* Responsividad */
+        @media (max-width: 768px) {
+            body { padding: 1em; }
+            .container { padding: 1em; }
+            th, td { padding: 8px; font-size: 0.9em; }
+            .actions button, .actions .view-btn { font-size: 13px; padding: 6px 10px; }
+            .modal-content { margin: 15% auto; width: 95%; padding: 15px; }
+            .modal .actions { text-align: center; }
+            .modal .actions button { display: block; width: 100%; margin: 10px 0 0 0; } /* Botones uno debajo del otro */
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Cotizaciones Pendientes de Aprobación</h1>
+
+        <!-- Barra de Notificación -->
+        <div id="notification-bar"></div>
+
         <table>
             <thead>
                 <tr>
                     <th>Número</th>
                     <th>Cliente</th>
                     <th>Asesor</th>
-                    <th>Fecha de Creado</th>
+                    <th>Fecha Creado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="pending-quotes-tbody">
-                </tbody>
+                <!-- Las filas se cargarán aquí desde JS -->
+                <tr><td colspan="5">Cargando cotizaciones...</td></tr>
+            </tbody>
         </table>
         <a href="/index.html" class="back-link">Volver al Menú Principal</a>
+    </div>
+
+    <!-- Modal para Tomar Decisión -->
+    <div id="decision-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-decision-modal">&times;</span>
+            <h2 id="modal-title">Decisión de Cotización: COT-XXXXX</h2>
+
+            <!-- Enlace al PDF (AHORA SOLO AQUÍ) -->
+            <a id="modal-pdf-link" href="#" target="_blank" rel="noopener noreferrer">Ver PDF de la Propuesta</a>
+
+            <!-- Panel de Solicitud de Asesor (se rellena con JS) -->
+            <div id="adjustment-request-display" class="adjustment-request-panel" style="display: none;">
+                <h4>Solicitud de Ajuste del Asesor</h4>
+                <p><strong>Monto Solicitado (por estudiante):</strong> <span id="requested-amount-display"></span></p>
+                <p><strong>Justificación:</strong></p>
+                <blockquote id="requested-comment-display"></blockquote>
+            </div>
+
+            <!-- Formulario de Decisión del Administrador -->
+            <form id="decision-form">
+                <input type="hidden" id="current-quote-id">
+
+                <div class="form-group">
+                    <label for="approved-adjustment-amount">Monto de Ajuste Aprobado (por estudiante):</label>
+                    <input type="number" id="approved-adjustment-amount" step="any" placeholder="Ej: -80 (descuento), 0 (estándar), 20 (aumento)">
+                </div>
+                <div class="form-group">
+                    <label for="admin-decision-comment">Comentario de Aprobación/Rechazo:</label>
+                    <textarea id="admin-decision-comment" rows="3" placeholder="Obligatorio si rechaza. Opcional si aprueba."></textarea>
+                </div>
+
+                <!-- Los 3 botones de decisión -->
+                <div class="actions">
+                    <button type="button" id="approve-adj-btn" class="approve-adj-btn">Aprobar con Ajuste</button>
+                    <button type="button" id="approve-std-btn" class="approve-std-btn">Aprobar Precio Estándar</button>
+                    <button type="button" id="reject-btn" class="reject-btn">Rechazar Cotización</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="/panel_aprobacion_cotizaciones.js"></script>
 </body>
 </html>
+
