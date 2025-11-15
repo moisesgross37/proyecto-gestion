@@ -952,17 +952,27 @@ app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, 
             ORDER BY createdat DESC
         `);
 
-        // Mapear a nombres de propiedad consistentes (camelCase) si es necesario para el frontend JS
-        const quotesToSend = result.rows.map(q => ({
-            id: q.id,
-            quotenumber: q.quotenumber,
-            clientname: q.clientname,
-            advisorname: q.advisorname,
-            createdat: q.createdat,
-            status: q.status,
-            ajusteSolicitadoMonto: q.ajuste_solicitado_monto, // camelCase
-            ajusteSolicitadoComentario: q.ajuste_solicitado_comentario // camelCase
-        }));
+        // Mapear a nombres de propiedad (camelCase) SI es necesario para el frontend JS
+        const quotesToPend = result.rows.map(q => ({
+            id: q.id,
+            quotenumber: q.quotenumber,
+            clientname: q.clientname,
+            advisorname: q.advisorname,
+            createdat: q.createdat,
+            status: q.status,
+
+            // --- INICIO DEL ARREGLO DEFENSIVO ---
+            // Si el valor es NULL (o undefined), usa 0 como default.
+            ajusteSolicitadoMonto: q.ajuste_solicitado_monto || 0,
+            // Si el valor es NULL, usa un string vacío '' como default.
+            ajusteSolicitadoComentario: q.ajuste_solicitado_comentario || '',
+            // Añadimos el resto de columnas nuevas para estar seguros
+            ajusteAprobadoMonto: q.ajuste_aprobado_monto || 0,
+            estudiantesCortesia: q.estudiantes_cortesia || 0,
+            menuCortesia: q.menu_cortesia || '',
+            menuCortesiaCantidad: q.menu_cortesia_cantidad || 0
+            // --- FIN DEL ARREGLO DEFENSIVO ---
+        }));
 
         res.status(200).json(quotesToSend);
     } catch (err) {
