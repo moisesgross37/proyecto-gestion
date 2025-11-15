@@ -62,6 +62,7 @@ const pool = new Pool(dbConfig);
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
+        // --- INICIO: PRIMERA CONSULTA (Crear todas las tablas) ---
         await client.query(`
             CREATE TABLE IF NOT EXISTS users ( id SERIAL PRIMARY KEY, nombre VARCHAR(255) NOT NULL, username VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, rol VARCHAR(50) NOT NULL, estado VARCHAR(50) DEFAULT 'activo' );
             CREATE TABLE IF NOT EXISTS advisors ( id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, estado VARCHAR(50) DEFAULT 'activo' NOT NULL );
@@ -89,15 +90,13 @@ const initializeDatabase = async () => {
                 totals JSONB,
                 aporte_institucion NUMERIC DEFAULT 0,
                 membrete_tipo VARCHAR(50),
-
-                -- === INICIO: NUEVAS COLUMNAS PARA AJUSTES (AÑADIDO) ===
+                -- (La columna de cortesía se añade con ALTER TABLE abajo)
                 ajuste_solicitado_monto DECIMAL(10, 2),
                 ajuste_solicitado_comentario TEXT,
                 ajuste_aprobado_monto DECIMAL(10, 2),
                 ajuste_aprobado_comentario TEXT,
                 ajuste_aprobado_por VARCHAR(255),
                 ajuste_fecha TIMESTAMPTZ
-                -- === FIN: NUEVAS COLUMNAS PARA AJUSTES ===
             );
             CREATE TABLE IF NOT EXISTS visits ( id SERIAL PRIMARY KEY, centername VARCHAR(255), advisorname VARCHAR(255), visitdate DATE, commenttext TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
             CREATE TABLE IF NOT EXISTS payments ( id SERIAL PRIMARY KEY, quote_id INTEGER REFERENCES quotes(id) ON DELETE CASCADE, payment_date DATE NOT NULL, amount NUMERIC NOT NULL, students_covered INTEGER, comment TEXT, createdat TIMESTAMPTZ DEFAULT NOW() );
@@ -110,14 +109,25 @@ const initializeDatabase = async () => {
             DO $$ BEGIN IF NOT EXISTS ( SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey' ) THEN ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE; END IF; END$$;
             CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
         `);
+        // --- FIN DE LA PRIMERA CONSULTA ---
+
+        
+        // --- INICIO: SEGUNDA CONSULTA (Asegurar la columna que falta) ---
+        // Esto arregla el error "column does not exist" para tablas ya creadas
+        await client.query(`
+            ALTER TABLE quotes
+            ADD COLUMN IF NOT EXISTS estudiantes_cortesia INTEGER DEFAULT 0;
+        `);
+        // --- FIN DE LA SEGUNDA CONSULTA ---
+
+        
         console.log("Bloque 1: Inicialización de la base de datos completada.");
     } catch (err) {
         console.error('Error Crítico en Bloque 1 (initializeDatabase):', err);
     } finally {
         client.release();
     }
-};
-// --- Fin Bloque 1 ---
+};// --- Fin Bloque 1 ---
 // --- Bloque 2: Carga Productos, Sesiones, Auth y Rutas Base (DE LA NUBE) ---
 let products = [];
 const loadProducts = () => {
@@ -388,19 +398,6 @@ app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res
         res.status(500).json({ message: 'Error en el servidor al actualizar rol.' });
     }
 });
-app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; const { newRole } = req.body; try { await pool.query('UPDATE users SET rol = $1 WHERE id = $2', [newRole, id]); res.status(200).json({ message: 'Rol actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { const { id } = req.params; try { const result = await pool.query('SELECT estado FROM users WHERE id = $1', [id]); const newStatus = result.rows[0].estado === 'activo' ? 'inactivo' : 'activo'; await pool.query('UPDATE users SET estado = $1 WHERE id = $2', [newStatus, id]); res.status(200).json({ message: 'Estado actualizado' }); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-app.get('/api/advisors', requireLogin, async (req, res) => { 
-    try { 
-        // --- MODIFICADO --- Ahora seleccionamos el 'estado' también
-        const result = await pool.query('SELECT id, name, estado FROM advisors ORDER BY name ASC'); 
-        res.json(result.rows); 
-    } catch (err) { 
-        console.error(err); 
-        res.status(500).json({ message: 'Error en el servidor' }); 
-    } 
-});
-app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => { const { name } = req.body; try { const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name]); res.status(201).json(newAdvisor.rows[0]); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
 // ======================================================================
 // ========= INICIO: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ========
 // ======================================================================
@@ -429,8 +426,6 @@ app.post('/api/advisors/:id/toggle-status', requireLogin, requireAdmin, async (r
 // ======================================================================
 // ========= FIN: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ===========
 // ======================================================================
-app.get('/api/visits', requireLogin, async (req, res) => { try { const result = await pool.query('SELECT * FROM visits ORDER BY visitdate DESC'); res.json(result.rows); } catch (err) { console.error(err); res.status(500).json({ message: 'Error en el servidor' }); } });
-
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -474,25 +469,6 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => {
             return res.status(409).json({ message: 'Ya existe un asesor con ese nombre.' });
         }
         res.status(500).json({ message: 'Error en el servidor al crear asesor.' });
-    }
-});
-
-app.delete('/api/advisors/:id', requireLogin, requireAdmin, async (req, res) => {
-    const { id } = req.params;
-    try {
-        // Podríamos añadir lógica para verificar si el asesor tiene visitas/cotizaciones antes de borrar
-        const result = await pool.query('DELETE FROM advisors WHERE id = $1 RETURNING id', [id]);
-        if (result.rowCount === 0) {
-             return res.status(404).json({ message: 'Asesor no encontrado.' });
-        }
-        res.status(200).json({ message: 'Asesor eliminado con éxito.' });
-    } catch (err) {
-        console.error(`Error en DELETE /api/advisors/${id}:`, err);
-        // Manejar error de llave foránea si el asesor está referenciado en otras tablas
-        if (err.code === '23503') { // Código de error PostgreSQL para violación de FK
-            return res.status(400).json({ message: 'No se puede eliminar el asesor porque tiene registros asociados (visitas, cotizaciones, etc.).' });
-        }
-        res.status(500).json({ message: 'Error en el servidor al eliminar asesor.' });
     }
 });
 // --- FIN RUTAS DE GESTIÓN DE ASESORES ---
@@ -628,20 +604,20 @@ app.post('/api/visits', requireLogin, async (req, res) => {
 // --- FIN RUTAS DE GESTIÓN DE VISITAS ---
 
 
-// --- RUTAS DE GESTIÓN DE CENTROS ---
+// --- RUTAS DE GESTIÓN DE CENTROS (CORREGIDA) ---
 app.get('/api/centers', requireLogin, async (req, res) => {
     // 1. OBTENEMOS EL ROL Y NOMBRE DEL USUARIO EN SESIÓN
     const { rol, nombre: userAdvisorName } = req.session.user;
     
     // 2. OBTENEMOS LOS FILTROS OPCIONALES DEL DROPDOWN
-    const { advisor, comment } = req.query;
+    // (Limpiado para evitar doble declaración)
+    const { advisor, comment, stage } = req.query;
 
     try {
-        const { advisor, comment, stage } = req.query; // Añadido filtro por etapa
         let queryParams = [];
         let whereClauses = [];
 
-        // Subconsulta optimizada para obtener la última visita
+        // Subconsulta optimizada (sin cambios)
         let query = `
             SELECT
                 c.id, c.name, c.address, c.sector, c.contactname, c.contactnumber, c.etapa_venta,
@@ -656,29 +632,32 @@ app.get('/api/centers', requireLogin, async (req, res) => {
             ) lv ON true
         `;
 
-        // 3. AQUÍ ESTÁ LA NUEVA LÓGICA DE FILTRADO POR ROL
+        // 3. LÓGICA DE FILTRADO (CORREGIDA)
         if (rol === 'Asesor') {
             // Si es Asesor, forzamos el filtro a su nombre.
-            // Ignoramos lo que venga en el filtro `advisor` del dropdown.
             queryParams.push(userAdvisorName);
-            whereClauses.push(`latest_visit.advisorname = $${queryParams.length}`);
+            
+            // --- ¡CORRECCIÓN AQUÍ! ---
+            // El alias es 'lv', no 'latest_visit'
+            whereClauses.push(`lv.advisorname = $${queryParams.length}`);
+            // --- FIN DE LA CORRECCIÓN ---
             
         } else if (advisor) {
-            // Si es Admin o Coordinador Y ADEMÁS usa el filtro del dropdown, lo aplicamos.
+            // Admin o Coordinador (sin cambios)
             queryParams.push(advisor);
             whereClauses.push(`lv.advisorname = $${queryParams.length}`);
         }
 
-        // El filtro de comentario se aplica para todos los roles
+        // Filtros de comentario y etapa (sin cambios)
         if (comment) {
             queryParams.push(comment);
             whereClauses.push(`lv.commenttext = $${queryParams.length}`);
         }
-        if (stage) { // Nuevo filtro por etapa
+        if (stage) { 
              queryParams.push(stage);
              whereClauses.push(`c.etapa_venta = $${queryParams.length}`);
         }
-        // ========= FIN DE LA LÓGICA DE FILTRADO POR ROL =========
+        // ========= FIN DE LA LÓGICA DE FILTRADO =========
 
         if (whereClauses.length > 0) {
             query += ` WHERE ${whereClauses.join(' AND ')}`;
@@ -692,14 +671,6 @@ app.get('/api/centers', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener la lista de centros.' });
     }
 });
-
-app.get('/api/centers/search', requireLogin, async (req, res) => { // Asegurado requireLogin
-    const searchTerm = (req.query.q || '').toLowerCase().trim();
-    if (searchTerm.length < 2) { // Evitar búsquedas vacías o muy cortas
-         return res.json([]);
-    }
-    try {
-        // Buscar por nombre O dirección O sector (más útil)
 // ======================================================================
 // ========= FIN: RUTA MEJORADA DE GESTIÓN DE CENTROS (CON ROLES) ========
 // ======================================================================
@@ -817,18 +788,16 @@ app.post('/api/quotes/calculate-estimate', requireLogin, (req, res) => {
         res.status(500).json({ message: `Error al calcular la estimación: ${error.message}` });
     }
 });
-
-// === INICIO: RUTA GUARDAR COTIZACIÓN (MODIFICADA PARA AJUSTES) ===
+// === INICIO: RUTA GUARDAR COTIZACIÓN (CORREGIDA) ===
 // Guarda la cotización inicial con estado 'pendiente' y la solicitud de ajuste si existe.
 app.post('/api/quote-requests', requireLogin, async (req, res) => {
     
     // --- INICIO DE LA CORRECCIÓN ---
-    // 'advisorName' ya no se toma del body, se toma de la sesión para
-    // garantizar consistencia entre el creador y el propietario.
     const {
-        clientName, /* advisorName, <-- ELIMINADO DE AQUÍ */ 
+        clientName, 
         studentCount, productIds, quoteNumber, aporteInstitucion, membrete_tipo,
-        ajuste_solicitado_monto, ajuste_solicitado_comentario // <-- Nuevos campos de solicitud
+        ajuste_solicitado_monto, ajuste_solicitado_comentario,
+        estudiantesCortesia // <-- ¡CORRECCIÓN 1: LEEMOS EL DATO!
     } = req.body;
 
     // Obtener el nombre del asesor DIRECTAMENTE de la sesión
@@ -836,8 +805,7 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
     // --- FIN DE LA CORRECCIÓN ---
 
 
-     // Validaciones básicas de entrada
-     // Se usa el advisorName de la sesión, pero la validación sigue siendo útil
+     // Validaciones básicas (sin cambios)
     if (!clientName || !advisorName || !studentCount || !productIds || !quoteNumber) {
         return res.status(400).json({ message: 'Faltan datos requeridos para crear la cotización.' });
     }
@@ -849,14 +817,11 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
         return res.status(400).json({ message: 'La cantidad de estudiantes debe ser un número positivo.' });
     }
 
-
-    // El motor de precios se llama SIN ajuste (0) para el guardado inicial del precio estándar
-    // --- CORRECCIÓN AQUÍ TAMBIÉN ---
-    const quoteInput = { clientName, advisorName: advisorName, studentCount: studentCountInt, productIds, quoteNumber, aporteInstitucion, membrete_tipo }; // Usar el advisorName de la sesión
+    // ... (El bloque del motor de precios no cambia) ...
+    const quoteInput = { clientName, advisorName: advisorName, studentCount: studentCountInt, productIds, quoteNumber, aporteInstitucion, membrete_tipo };
     const dbDataForCalculation = { products: products };
     let calculationResult;
     try {
-        // Asegurarse que products esté cargado
         if (products.length === 0) {
             console.error("Error Crítico: Intentando calcular cotización sin productos cargados.");
             throw new Error("Los datos de productos no están disponibles.");
@@ -866,64 +831,56 @@ app.post('/api/quote-requests', requireLogin, async (req, res) => {
          console.error('Error en assembleQuote al guardar cotización:', calcError);
          return res.status(500).json({ message: `Error interno al calcular precios: ${calcError.message}` });
     }
-
-    // Extraer y validar resultados del cálculo
     const { facilidadesAplicadas, items, totals } = calculationResult;
-    const precios = calculationResult.calculatedPrices?.[0]; // Acceso seguro
+    const precios = calculationResult.calculatedPrices?.[0]; 
     if (!precios) {
          console.error('Error: El resultado de assembleQuote no contiene calculatedPrices.', calculationResult);
          return res.status(500).json({ message: 'Error interno: No se pudieron determinar los precios finales.'});
     }
     const precioFinalPorEstudiante = precios.precioFinalPorEstudiante;
     const estudiantesParaFacturar = precios.estudiantesFacturables;
-
-    // Validar que los precios calculados sean números válidos ANTES de guardar
     const precioFinalNum = parseFloat(precioFinalPorEstudiante);
     const estudiantesFactNum = parseInt(estudiantesParaFacturar, 10);
     if (isNaN(precioFinalNum) || isNaN(estudiantesFactNum)) {
         console.error('Error: Precio o estudiantes calculados no son números válidos:', { precioFinalPorEstudiante, estudiantesParaFacturar });
         return res.status(500).json({ message: 'Error interno al validar valores finales calculados.' });
     }
+    // ... (Fin bloque motor de precios) ...
 
     try {
         // Insertar la cotización con el estado 'pendiente' y los datos de la solicitud de ajuste
         const result = await pool.query(
             `INSERT INTO quotes (
                 clientname, advisorname, studentcount, productids,
-                preciofinalporestudiante, -- Precio estándar calculado SIN ajuste
+                preciofinalporestudiante,
                 estudiantesparafacturar,
                 facilidadesaplicadas, items, totals, status, quotenumber, aporte_institucion, membrete_tipo,
-                ajuste_solicitado_monto, ajuste_solicitado_comentario -- Guardar solicitud
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11, $12, $13, $14)
+                ajuste_solicitado_monto, ajuste_solicitado_comentario,
+                estudiantes_cortesia -- <-- ¡CORRECCIÓN 2: AÑADIMOS LA COLUMNA!
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pendiente', $10, $11, $12, $13, $14, $15) -- <-- ¡Ahora $15!
             RETURNING id`, // Devolver ID para posible uso futuro
             [
-                clientName, advisorName, studentCountInt, productIds, // <-- CORRECCIÓN: Usar advisorName de la sesión
-                precioFinalNum, // Usar valor numérico validado
-                estudiantesFactNum, // Usar valor numérico validado
-                facilidadesAplicadas || [], // Asegurar que sea un array
+                clientName, advisorName, studentCountInt, productIds,
+                precioFinalNum,
+                estudiantesFactNum,
+                facilidadesAplicadas || [], 
                 JSON.stringify(items || {}), JSON.stringify(totals || {}), quoteNumber, aporteInstitucion || 0, membrete_tipo || 'Be Eventos',
-                ajuste_solicitado_monto || null, ajuste_solicitado_comentario || null // Usar NULL si no vienen
+                ajuste_solicitado_monto || null, ajuste_solicitado_comentario || null,
+                estudiantesCortesia || 0 // <-- ¡CORRECCIÓN 3: AÑADIMOS EL VALOR!
             ]
         );
-        // --- CORRECCIÓN: Log mejorado ---
+        
         console.log(`Cotización ${quoteNumber} (ID: ${result.rows[0].id}) guardada como pendiente por ${advisorName}.`);
         res.status(201).json({ message: 'Cotización guardada con éxito como pendiente.', quoteId: result.rows[0].id });
     } catch (err) {
         console.error('Error al guardar cotización en BD:', err);
-        // Mejorar mensaje de error para duplicados
-        if (err.code === '23505' && err.constraint === 'quotes_quotenumber_key') { // Asumiendo que tienes una constraint UNIQUE en quotenumber
+        if (err.code === '23505' && err.constraint === 'quotes_quotenumber_key') { 
              return res.status(409).json({ message: `Error: El número de cotización '${quoteNumber}' ya existe.` });
         }
         res.status(500).json({ message: `Error interno del servidor al guardar: ${err.message}` });
     }
 });
 // === FIN: RUTA GUARDAR COTIZACIÓN ===
-
-
-// === INICIO: RUTA LISTAR COTIZACIONES (CORREGIDA) ===
-// Esta es la ruta que llama tu aprobacion.js.
-// La lógica se asegura de que el Asesor reciba TODAS sus cotizaciones (incluyendo 'aprobada')
-// y sea el frontend (aprobacion.js) el que las filtre en las tablas correctas.
 app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor', 'Coordinador']), async (req, res) => {
     const userRole = req.session.user.rol;
     const userName = req.session.user.nombre;
@@ -1346,10 +1303,17 @@ app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
                 if (doc.y + requiredHeight > effectivePageHeight) {
                     console.log(`[PDF Req ${quoteId}] Salto de página antes del producto ${index + 1}`);
                     doc.addPage();
-                    if (fs.existsSync(backgroundImagePath)) {
-                        try { doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); } catch (imgErr) { console.error(`[PDF Req ${quoteId}] Error membrete página nueva:`, imgErr); }
-                    }
-                    doc.y = pageMargin; // Resetear Y al margen superior estándar
+                    // Pega esto para reemplazar desde la línea 1341 a la 1345 de tu imagen
+if (fs.existsSync(backgroundImagePath)) {
+    // INICIO DE LA CORRECCIÓN
+    try { 
+        doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); 
+    } catch (imgErr) { 
+        console.error(`[PDF Req ${quoteId}] Error membrete página nueva:`, imgErr); 
+    }
+    // FIN DE LA CORRECCIÓN
+}
+doc.y = pageMargin; // Resetear Y al margen superior estándar
                 }
 
                 // Renderizar producto
@@ -1402,11 +1366,28 @@ app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
 
         const aporteValor = quote.aporte_institucion || 0;
         const codigoSecreto = `codigo wxz(${parseFloat(aporteValor).toFixed(0)})api`;
+        
         let conditions = [
             `Cálculo basado en ${quote.studentcount || 0} estudiantes y evaluable a un mínimo de ${quote.estudiantesparafacturar || 'N/A'} estudiantes.`,
             'Condiciones de Pago a debatir.',
             codigoSecreto
         ];
+
+        // --- INICIO DE LA LÓGICA DE CORTESÍA AÑADIDA ---
+        
+        // 1. Obtenemos el número de cortesías.
+        //    (Estoy asumiendo que se guarda en la base de datos como 'estudiantes_cortesia')
+        const numCortesias = parseInt(quote.estudiantes_cortesia, 10) || 0;
+
+        // 2. Si hay cortesías (es > 0), añadimos tu código secreto al array
+        if (numCortesias > 0) {
+            // Formateamos el número a dos dígitos (ej: 1 -> "01", 12 -> "12")
+            const codigoCortesia = `referencia${numCortesias.toString().padStart(2, '0')}`;
+            
+            // Añadimos el código a la lista
+            conditions.push(codigoCortesia);
+        }
+        // --- FIN DE LA LÓGICA DE CORTESÍA AÑADIDA ---
 
         // === LÓGICA CONDICIONAL PARA AJUSTE ===
         const ajusteMontoNum = parseFloat(quote.ajuste_aprobado_monto);
@@ -1457,18 +1438,7 @@ app.get('/api/quote-requests/:id/pdf', allowUserOrApiKey, async (req, res) => {
              res.end();
          }
     }
-});
-// ======================================================================
-// ========= INICIO: RUTA DE ACUERDO PDF (VERSIÓN PROFESIONAL) ==========
-// ======================================================================
-app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
-    try {
-        const quoteId = req.params.id;
-        const client = await pool.connect();
-        let quote;
-
-
-
+    });
 // Ruta para PDF del Acuerdo (DE LA NUBE - SIN CAMBIOS)
 app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const quoteId = req.params.id;
@@ -1495,7 +1465,6 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         doc.pipe(res);
 
         // --- Lógica de Membrete (de la nube) ---
-        const backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg'); // Asumiendo siempre el membrete estándar para acuerdos
         // 1. DIBUJAR EL MEMBRETE
         let backgroundImagePath;
         if (quote.membrete_tipo === 'Peque Planner') {
@@ -1503,11 +1472,19 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         } else {
             backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
         }
-        if (fs.existsSync(backgroundImagePath)) {
-            try { doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); } catch(e) { console.error(`[Agreement PDF Req ${quoteId}] Error imagen membrete acuerdo:`, e); }
-        } else {
-             console.warn(`[Agreement PDF Req ${quoteId}] WARN: Membrete acuerdo no encontrado en ${backgroundImagePath}`);
-        }
+        // --- INICIO DE LA CORRECCIÓN ---
+
+if (fs.existsSync(backgroundImagePath)) {
+    try {
+        doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+    } catch (err) {
+        console.error(`[Agreement PDF Req ${quoteId}] Error al dibujar imagen de membrete:`, err);
+    }
+} else {
+    console.warn(`[Agreement PDF Req ${quoteId}] WARN: Membrete acuerdo no encontrado en ${backgroundImagePath}`);
+}
+
+// --- FIN DE LA CORRECCIÓN ---
 
         const pageMargin = 60;
         const contentWidth = doc.page.width - (pageMargin * 2);
@@ -1546,7 +1523,7 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         };
         drawSection('1. Nuestro Propósito Común', 'Ambas partes unimos esfuerzos...');
         // ... (resto de las llamadas a drawSection de la nube) ...
-        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.preciofinalporestudiante || 0).toFixed(2)} por estudiante...`); // Usar precio final guardado
+        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.precio).toFixed(2)} más el 18% de ITBIS`);
         // ...
         drawSection('6. Marco Legal', 'Este acuerdo se rige por...');
 
@@ -1567,19 +1544,6 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         res.status(500).send('Error interno al generar el PDF del acuerdo.');
     }
 });
-// ======================================================================
-// ========= FIN: RUTA DE ACUERDO PDF (VERSIÓN PROFESIONAL) =============
-// ======================================================================
-// ======================================================================
-// ========= INICIO: NUEVA RUTA PARA OBTENER DETALLES DE COTIZACIÓN =====
-// ======================================================================
-app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query('SELECT * FROM quotes WHERE id = $1', [id]);
-
-// === INICIO: RUTA OBTENER DETALLES (MODIFICADA PARA AJUSTES) ===
-// Devuelve todos los detalles de una cotización, incluyendo los campos de ajuste.
 app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
     console.log(`[Details Req ${id}] Solicitud recibida.`);
@@ -2005,22 +1969,10 @@ app.get('/api/formalized-centers-list', requireLogin, checkRole(['Administrador'
         res.status(500).json({ message: 'Error en el servidor al obtener lista de formalizados.' });
     }
 });
-
-// --- RUTAS DE GESTIÓN DE COMENTARIOS (DE LA NUBE - SIN CAMBIOS) ---
 app.get('/api/comments', requireLogin, requireAdmin, async (req, res) => { /* ... código completo de la Nube ... */ });
 app.post('/api/comments', requireLogin, requireAdmin, async (req, res) => { /* ... código completo de la Nube ... */ });
 app.delete('/api/comments/:id', requireLogin, requireAdmin, async (req, res) => { /* ... código completo de la Nube ... */ });
 // --- FIN RUTAS DE GESTIÓN DE COMENTARIOS ---
-
-// --- RUTAS PANEL COORDINADORA Y RANKINGS ESTRATÉGICOS (DE LA NUBE - SIN CAMBIOS) ---
-app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinador', 'Administrador']), async (req, res) => { /* ... código completo de la Nube ... */ });
-app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => { /* ... código completo de la Nube ... */ });
-app.get('/api/reach-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => { /* ... código completo de la Nube ... */ });
-app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => { /* ... código completo de la Nube ... */ });
-app.get('/api/strategic-performance-index', requireLogin, async (req, res) => { /* ... código completo de la Nube ... */ });
-app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => { /* ... código completo de la Nube ... */ });
-// --- FIN RUTAS PANEL COORDINADORA Y RANKINGS ---
-
 
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS (DE LA NUBE + AJUSTE LOCAL) ---
 app.use(express.static(path.join(__dirname))); // Servir archivos estáticos (CSS, JS del cliente, imágenes)
@@ -2050,10 +2002,21 @@ app.get('/login.html', (req, res) => {
         res.sendFile(path.join(__dirname, 'login.html'));
     }
 });
-
+// --- INICIO DE LA CORRECCIÓN #2 (ASEGÚRATE DE PEGAR ESTO) ---
 
 // Regla de seguridad específica para el reporte de visitas (solo Admin y Coordinador)
-app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res, next) => { // Añadido next
+app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res, next) => {
+    // --- ESTA ES LA LÓGICA QUE FALTABA PARA CERRAR ---
+    const requestedPath = path.join(__dirname, req.path);
+    if (fs.existsSync(requestedPath)) {
+        res.sendFile(requestedPath);
+    } else {
+        next(); // Pasar al manejador 404 si no existe
+    }
+    // --- AQUÍ CERRAMOS LA RUTA app.get ---
+});
+
+// AHORA LA RUTA app.delete ESTÁ AFUERA Y ES VÁLIDA
 app.delete('/api/comments/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
     const { id } = req.params;
     try {
@@ -2064,6 +2027,8 @@ app.delete('/api/comments/:id', requireLogin, checkRole(['Administrador']), asyn
         res.status(500).json({ message: 'Error en el servidor.' });
     }
 });
+
+// --- FIN DE LA CORRECCIÓN #2 ---
 // ======================================================================
 // ========= FIN: RUTAS DE API PARA GESTIÓN DE COMENTARIOS ==============
 // ======================================================================
@@ -2283,7 +2248,8 @@ app.get('/api/conversion-ranking', requireLogin, checkRole(['Administrador', 'Co
         console.error("Error al obtener ranking de conversión:", err);
         res.status(500).json({ message: 'Error en el servidor.' });
     }
-});// ======================================================================
+});
+// ======================================================================
 // ========= INICIO: APIS PARA IDE (HISTÓRICO Y QUINCENAL) ==============
 // ======================================================================
 
@@ -2603,18 +2569,6 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
 // --- RUTAS HTML Y ARCHIVOS ESTÁTICOS ---
 app.use(express.static(path.join(__dirname)));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
-// --- INICIO DEL CÓDIGO AÑADIDO ---
-// Regla de seguridad específica para el reporte de visitas, ANTES de la regla general.
-app.get('/reporte_visitas.html', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => {
-    const requestedPath = path.join(__dirname, req.path);
-    if (fs.existsSync(requestedPath)) {
-        res.sendFile(requestedPath);
-    } else {
-        next(); // Pasar al manejador 404 si no existe
-    }
-});
-
-// --- NUEVA RUTA PARA EXPONER PRODUCTOS ---
 app.get('/api/productos', (req, res) => {
   // Esta es la variable 'products' que encontramos antes
   res.json(products);

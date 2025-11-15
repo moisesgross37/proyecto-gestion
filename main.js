@@ -57,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Cargar todos los rankings
+        // === INICIO: CORRECCIÓN DE LLAMADA ===
+        loadBonoQuincenal(); // <-- ¡AÑADIDA!
+        // === FIN: CORRECCIÓN DE LLAMADA ===
         loadStrategicPerformanceIndex();
         loadPipelineRanking();
         loadReachRanking();
@@ -67,41 +70,88 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NUEVAS FUNCIONES DE RANKING ---
 
     async function loadTeamPulsePanel() {
-        const container = document.getElementById('team-pulse-panel');
-        try {
-            const response = await fetch('/api/team-pulse');
-            const data = await response.json();
-            container.innerHTML = `
-                <h3>❤️ Pulso del Equipo</h3>
-                <div class="team-pulse-grid">
-                    <div><strong>Prospectos Activos:</strong> <span>${data.activeProspects}</span></div>
-                    <div><strong>Tasa de Conversión:</strong> <span>${data.overallConversionRate}%</span></div>
-                    <div><strong>Ciclo de Venta Promedio:</strong> <span>${data.averageSalesCycle} días</span></div>
-                    <div><strong>Principal Cuello de Botella:</strong> <span>${data.mainBottleneck}</span></div>
-                </div>
-            `;
-        } catch (error) { container.innerHTML = '<h3>❤️ Pulso del Equipo</h3><p>Error al cargar.</p>'; }
-    }
+    // Apuntamos al 'div' principal del panel complejo
+    const container = document.getElementById('team-pulse-panel'); 
+    
+    try {
+        // --- INICIO DE LA CORRECCIÓN ---
+        // Cambiamos la ruta incorrecta ('/api/team-pulse')
+        // por la ruta CORRECTA que SÍ tiene los datos para este panel.
+        const response = await fetch('/api/coordinator/team-performance');
+        // --- FIN DE LA CORRECCIÓN ---
 
-    async function loadStrategicPerformanceIndex() {
-        const container = document.getElementById('strategic-performance-container');
+        const data = await response.json();
+
+        // Ahora llenamos los IDs correctos que están en tu index.html
+        document.getElementById('team-closing-rate').textContent = `${data.teamClosingRate}%`;
+        document.getElementById('team-follow-up-average').textContent = `${data.teamAverageFollowUpDays} días`;
+        
+        document.getElementById('top-performer-name').textContent = data.topPerformer.name;
+        document.getElementById('top-performer-days').textContent = `${data.topPerformer.days} días`;
+        
+        document.getElementById('improvement-opportunity-name').textContent = data.improvementOpportunity.name;
+        document.getElementById('improvement-opportunity-days').textContent = `${data.improvementOpportunity.days} días`;
+        
+    } catch (error) { 
+        console.error('Error al cargar Panel de Desempeño:', error);
+        container.innerHTML = '<p>Error al cargar el Panel de Desempeño.</p>'; 
+    }
+}
+
+    // === INICIO: FUNCIÓN AÑADIDA ===
+    async function loadBonoQuincenal() {
+        // Usamos el ID que pusimos en el index.html
+        const container = document.getElementById('bono-quincenal-container'); 
         const getScoreClass = (score) => {
             if (score >= 75) return 'score-high';
             if (score >= 50) return 'score-medium';
             return 'score-low';
         };
         try {
-            const response = await fetch('/api/strategic-performance-index');
+            // Usamos la ruta que SÍ existe en tu server_v12.js
+            const response = await fetch('/api/ide-quincenal'); 
             const data = await response.json();
-            let content = '<h3>🏆 Índice de Desempeño Estratégico (IDE)</h3>';
+            
+            let content = '<h3>💰 Bono Quincenal (IDE)</h3>'; // Título
             data.forEach((item, index) => {
                 let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
                 const score = parseFloat(item.performance_score).toFixed(1);
                 content += `<div class="performance-item"><span class="performance-advisor">${medal} ${item.advisorname}</span><span class="performance-score ${getScoreClass(score)}">${score} / 100</span></div>`;
             });
             container.innerHTML = content;
-        } catch (error) { container.innerHTML = '<h3>🏆 IDE</h3><p>Error al cargar.</p>'; }
+            
+        } catch (error) { 
+            container.innerHTML = '<h3>💰 Bono Quincenal</h3><p>Error al cargar.</p>'; 
+            console.error('Error al cargar Bono Quincenal:', error);
+        }
     }
+    // === FIN: FUNCIÓN AÑADIDA ===
+
+    async function loadStrategicPerformanceIndex() {
+    const container = document.getElementById('strategic-performance-container'); 
+    
+    const getScoreClass = (score) => {
+        if (score >= 75) return 'score-high';
+        if (score >= 50) return 'score-medium';
+        return 'score-low';
+    };
+    
+    try {
+        const response = await fetch('/api/ide-historico'); // <-- Corregido
+        const data = await response.json();
+        let content = '<h3>🏆 IDE Histórico</h3>'; // <-- Corregido
+        data.forEach((item, index) => {
+            let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+            const score = parseFloat(item.performance_score).toFixed(1);
+            content += `<div class="performance-item"><span class="performance-advisor">${medal} ${item.advisorname}</span><span class="performance-score ${getScoreClass(score)}">${score} / 100</span></div>`;
+        });
+        container.innerHTML = content;
+        
+    } catch (error) { 
+        container.innerHTML = '<h3>🏆 IDE Histórico</h3><p>Error al cargar.</p>'; // <-- Corregido
+        console.error('Error al cargar IDE Histórico:', error);
+    }
+}
     
     // --- FUNCIONES DE RANKING ANTERIORES (CON MEJORAS VISUALES) ---
 

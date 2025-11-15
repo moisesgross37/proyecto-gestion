@@ -10,7 +10,7 @@
 <body>
     <div class="container">
         <header>
-            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <a href="/admin_menu.html" id="back-link" class="back-button">&larr; Volver al Menú</a>
             <h1>Gestión de Centros de Estudio</h1>
         </header>
 
@@ -20,7 +20,7 @@
                 <p>Aquí puedes editar los centros para corregir sus datos.</p>
 
                 <div class="filters-container">
-                    <div class="filter-group">
+                    <div id="advisor-filter-group" class="filter-group">
                         <label for="filter-advisor">Filtrar por Asesor:</label>
                         <select id="filter-advisor">
                             <option value="">Todos los asesores</option>
@@ -36,12 +36,15 @@
                         <button id="clear-filters-btn" class="btn btn-secondary">Limpiar Filtros</button>
                     </div>
                 </div>
+
                 <table class="centers-table">
                     <thead>
                         <tr>
                             <th>Nombre del Centro</th>
-                            <th>Contacto</th>
-                            <th>Teléfono</th>
+                            <th>Asesor Principal</th>
+                            <th>Último Comentario</th>
+                            <th>Fecha Últ. Visita</th>
+                            <th>Días Transcurridos</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
