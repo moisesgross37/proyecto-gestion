@@ -974,7 +974,7 @@ app.get('/api/quotes/pending-approval', requireLogin, requireAdmin, async (req, 
             // --- FIN DEL ARREGLO DEFENSIVO ---
         }));
 
-        res.status(200).json(quotesToSend);
+        res.status(200).json(quotesToPend);
     } catch (err) {
         console.error('Error en GET /api/quotes/pending-approval:', err);
         res.status(500).json({ message: 'Error interno del servidor al obtener cotizaciones pendientes.' });
