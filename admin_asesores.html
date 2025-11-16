@@ -38,9 +38,12 @@
             const resourceName = 'asesores';
             const entityDisplayName = 'Asesor';
 
+            // Reemplaza tu fetchAndDisplayItems con este:
             const fetchAndDisplayItems = async () => {
                 try {
-                    const response = await fetch(API_URL);
+                    // Esta parte (fetch) ya estaba bien, pero la dejamos
+                    // porque ahora solo recibirá asesores 'activos' gracias al Parche 1.1
+                    const response = await fetch(API_URL); 
                     if (!response.ok) throw new Error(`Error al obtener ${resourceName}.`);
                     const items = await response.json();
                     list.innerHTML = '';
@@ -51,10 +54,15 @@
                     items.forEach(item => {
                         const listItem = document.createElement('li');
                         listItem.textContent = item.name;
+                        
+                        // --- INICIO DE LA CORRECCIÓN 2.2 ---
                         const deleteButton = document.createElement('button');
-                        deleteButton.textContent = 'Eliminar';
+                        deleteButton.textContent = 'Desactivar'; // <-- Texto cambiado
                         deleteButton.classList.add('btn-delete');
-                        deleteButton.addEventListener('click', () => deleteItem(item.id));
+                        // Usamos la nueva función 'toggleItemStatus' que creaste en el paso 2.1
+                        deleteButton.addEventListener('click', () => toggleItemStatus(item.id)); // <-- Función cambiada
+                        // --- FIN DE LA CORRECCIÓN 2.2 ---
+                        
                         listItem.appendChild(deleteButton);
                         list.appendChild(listItem);
                     });
@@ -80,17 +88,33 @@
                 }
             };
 
-            const deleteItem = async (id) => {
-                if (!confirm(`¿Estás seguro de que quieres eliminar este ${entityDisplayName.toLowerCase()}?`)) return;
+            // Reemplaza tu función "deleteItem" por esta nueva función "toggleItemStatus"
+        async function toggleItemStatus(id) {
+            
+            // Cambiamos la pregunta para que sea más clara
+            const confirmMessage = `¿Estás seguro de que deseas cambiar el estado (activar/desactivar) de este ${entityDisplayName.toLowerCase()}? \n\n(Esto no lo borrará, solo lo ocultará de las listas).`;
+            
+            if (confirm(confirmMessage)) {
                 try {
-                    const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                    if (!response.ok) throw new Error(`Error al eliminar ${entityDisplayName}.`);
-                    await fetchAndDisplayItems();
+                    // Llamamos a la nueva ruta "buena" del servidor
+                    const response = await fetch(`${API_URL}/${entityId}/${id}/toggle-status`, {
+                        method: 'POST' 
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error al cambiar el estado del ${entityDisplayName}`);
+                    }
+                    
+                    // Éxito, volvemos a cargar la lista
+                    // (el asesor desactivado ya no aparecerá gracias al Parche 1.1)
+                    await fetchAndDisplayItems(); 
+
                 } catch (error) {
                     console.error(error);
-                    alert(`No se pudo eliminar el ${entityDisplayName}.`);
+                    alert(`No se pudo cambiar el estado del ${entityDisplayName}.`);
                 }
-            };
+            }
+        }
 
             form.addEventListener('submit', (event) => {
                 event.preventDefault();

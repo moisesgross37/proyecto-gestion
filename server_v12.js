@@ -398,9 +398,7 @@ app.post('/api/users/:id/edit-role', requireLogin, requireAdmin, async (req, res
         res.status(500).json({ message: 'Error en el servidor al actualizar rol.' });
     }
 });
-// ======================================================================
-// ========= INICIO: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ========
-// ======================================================================
+// --- INICIO: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ---
 // (Esto REEMPLAZA tu app.delete('/api/advisors/:id', ...))
 app.post('/api/advisors/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => { 
     const { id } = req.params; 
@@ -423,9 +421,8 @@ app.post('/api/advisors/:id/toggle-status', requireLogin, requireAdmin, async (r
         res.status(500).json({ message: 'Error en el servidor' }); 
     } 
 });
-// ======================================================================
-// ========= FIN: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ===========
-// ======================================================================
+// --- FIN: RUTA MEJORADA PARA CAMBIAR ESTADO DE ASESOR ---
+
 app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -447,7 +444,8 @@ app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req,
 // --- RUTAS DE GESTIÓN DE ASESORES (ADMIN) ---
 app.get('/api/advisors', requireLogin, requireAdmin, async (req, res) => { // Asegurado requireAdmin
     try {
-        const result = await pool.query('SELECT * FROM advisors ORDER BY name ASC');
+        // CORRECCIÓN: Filtramos solo por asesores 'activos'
+        const result = await pool.query("SELECT * FROM advisors WHERE estado = 'activo' ORDER BY name ASC");
         res.json(result.rows);
     } catch (err) {
         console.error('Error en GET /api/advisors:', err);
@@ -461,6 +459,7 @@ app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => {
         return res.status(400).json({ message: 'El nombre del asesor es requerido.' });
     }
     try {
+        // Al crear un asesor, el default 'activo' de la BD se encargará del estado.
         const newAdvisor = await pool.query('INSERT INTO advisors (name) VALUES ($1) RETURNING *', [name.trim()]);
         res.status(201).json(newAdvisor.rows[0]);
     } catch (err) {
