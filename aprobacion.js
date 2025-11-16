@@ -164,13 +164,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- (Aquí va todo tu código original de handleArchive, handleDelete, showRejectionDetails, etc...) ---
     // --- FUNCIONES ORIGINALES (handleArchive, handleDelete, showRejectionDetails) ---
+    // REEMPLAZA TU handleArchive CON ESTO:
     const handleArchive = async (quoteId) => {
         try {
+            // Paso 1: Abrir el PDF (esto estaba bien)
             window.open(`/api/quote-requests/${quoteId}/pdf`, '_blank');
+
+            // Paso 2: Intentar archivar
             const response = await fetch(`/api/quote-requests/${quoteId}/archive`, { method: 'POST' });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Error al archivar.'); }
+
+            // Paso 3: Manejo de errores MEJORADO
+            if (!response.ok) {
+                // Si la respuesta NO es JSON (ej. un error 403 de HTML),
+                // simplemente mostramos el texto del error.
+                let errorMessage = await response.text(); // Leemos como texto
+                try {
+                    // Intentamos ver si es JSON por si acaso
+                    const errorData = JSON.parse(errorMessage);
+                    errorMessage = errorData.message || 'Error al archivar.';
+                } catch (e) {
+                    // No era JSON, probablemente era el HTML de "Acceso Prohibido"
+                    // Limpiamos el HTML para que sea legible
+                    errorMessage = "Error del servidor: " + errorMessage.replace(/<[^>]+>/g, '').substring(0, 100);
+                }
+                throw new Error(errorMessage);
+            }
+
+            // Si todo salió bien, actualizamos las tablas
             fetchAllQuotes(); 
-        } catch (error) { console.error(error); alert(error.message); }
+        } catch (error) { 
+            console.error(error); 
+            alert(error.message); // Ahora mostrará "Acceso Prohibido" en lugar de "Unexpected token <"
+        }
     };
     const handleDelete = async (quoteId) => {
         if (!confirm('¿Estás seguro de que deseas eliminar permanentemente esta cotización?')) return;

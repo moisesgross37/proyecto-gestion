@@ -438,7 +438,15 @@ app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req,
         console.error(`Error en POST /api/users/${id}/toggle-status:`, err);
         res.status(500).json({ message: 'Error en el servidor al cambiar estado.' });
     }
-});
+});// --- AÑADIR ESTA NUEVA FUNCIÓN DE PERMISO ---
+const requireAdminOrCoordinator = (req, res, next) => {
+    if (req.session.user && (req.session.user.rol === 'Administrador' || req.session.user.rol === 'Coordinador')) {
+        next(); // El usuario es Admin o Coordinador, continuar
+    } else {
+        res.status(403).json({ message: 'Acceso prohibido. Se requiere rol de Administrador o Coordinador.' });
+    }
+};
+// --- FIN DE LA NUEVA FUNCIÓN ---
 // --- FIN RUTAS DE GESTIÓN DE USUARIOS ---
 
 // --- RUTAS DE GESTIÓN DE ASESORES (ADMIN) ---
@@ -1162,7 +1170,7 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
 
 
 // Ruta para Archivar (DE LA NUBE - SIN CAMBIOS)
-app.post('/api/quote-requests/:id/archive', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+app.post('/api/quote-requests/:id/archive', requireLogin, requireAdminOrCoordinator, async (req, res) => {
     const { id } = req.params;
     try {
         // Solo permitir archivar si está 'aprobada'
