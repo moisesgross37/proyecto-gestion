@@ -442,7 +442,7 @@ app.post('/api/users/:id/toggle-status', requireLogin, requireAdmin, async (req,
 // --- FIN RUTAS DE GESTIÓN DE USUARIOS ---
 
 // --- RUTAS DE GESTIÓN DE ASESORES (ADMIN) ---
-app.get('/api/advisors', requireLogin, requireAdmin, async (req, res) => { // Asegurado requireAdmin
+app.get('/api/advisors', requireLogin, async (req, res) => { // ¡requireAdmin quitado para que Coordinador pueda ver!
     try {
         // CORRECCIÓN: Filtramos solo por asesores 'activos'
         const result = await pool.query("SELECT * FROM advisors WHERE estado = 'activo' ORDER BY name ASC");
