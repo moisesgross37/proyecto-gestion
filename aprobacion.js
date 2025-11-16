@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  } else if (quote.status === 'rechazada') { 
                     actionButtons = `<button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
                  }
-            } else if (currentUser.rol === 'Asesor' || currentUser.rol === 'Coordinadora') {
+            } else if (currentUser.rol === 'Asesor' || currentUser.rol === 'Coordinador') {
                  if (quote.status === 'pendiente_ajuste') { 
                     actionButtons = `<span>En revisión por Admin</span>`; 
                  } else if (quote.status === 'pendiente') { 
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  actionsHTML += ` <a href="/api/agreements/${quote.id}/pdf" class="btn btn-primary" target="_blank">Imprimir Acuerdo</a>`;
              } else if (quote.status === 'archivada') {
                  // Permitir eliminar archivadas solo si es Admin o el Asesor dueño
-                 if (currentUser && (currentUser.rol === 'Administrador' || currentUser.rol === 'Coordinadora' || currentUser.nombre === quote.advisorName)) {
+                 if (currentUser && (currentUser.rol === 'Administrador' || currentUser.rol === 'Coordinador' || currentUser.nombre === quote.advisorName)) {
                      actionsHTML += ` <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
                  }
              }
