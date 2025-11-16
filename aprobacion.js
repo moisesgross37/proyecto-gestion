@@ -19,10 +19,24 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null; // Necesitamos saber el rol del usuario actual
     // --- FIN: CÓDIGO AÑADIDO ---
 
-    // Función fetchAllQuotes (Correcta y Completa)
+    // ==============================================
+    // INICIO: VARIABLES GLOBALES PARA FILTRO (PASO 2.1)
+    // ==============================================
+    let allActionableQuotes = []; // Guardará todas las cotizaciones "accionables"
+    let allFinalizedQuotes = []; // Guardará todas las cotizaciones "finalizadas"
+    const advisorFilterSelect = document.getElementById('advisor-filter');
+    const filterContainer = document.getElementById('filter-container');
+    // ==============================================
+    // FIN: VARIABLES GLOBALES PARA FILTRO
+    // ==============================================
+
+
+    // ==========================================================
+    // INICIO: fetchAllQuotes MODIFICADA (PASO 2.2)
+    // ==========================================================
     const fetchAllQuotes = async () => {
         try {
-            // --- INICIO: OBTENER USUARIO ACTUAL ---
+            // --- OBTENER USUARIO ACTUAL ---
             const userResponse = await fetch('/api/user-session');
             if (!userResponse.ok) {
                  console.error('Usuario no autenticado, redirigiendo...');
@@ -36,13 +50,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Error al cargar las cotizaciones.');
             const allQuotes = await response.json();
 
-            // --- LÓGICA DE FILTRADO CORRECTA ---
-            const actionableQuotes = allQuotes.filter(q => ['pendiente', 'pendiente_ajuste', 'aprobada', 'rechazada'].includes(q.status));
-            const finalizedQuotes = allQuotes.filter(q => ['archivada', 'formalizada'].includes(q.status));
+            // --- LÓGICA DE FILTRADO (AHORA GUARDA EN GLOBALES) ---
+            allActionableQuotes = allQuotes.filter(q => ['pendiente', 'pendiente_ajuste', 'aprobada', 'rechazada'].includes(q.status));
+            allFinalizedQuotes = allQuotes.filter(q => ['archivada', 'formalizada'].includes(q.status));
             // --- FIN: LÓGICA DE FILTRADO ---
 
-            renderActionableQuotesTable(actionableQuotes);
-            renderFinalizedQuotesTable(finalizedQuotes);
+            // 1. Dibuja las tablas por primera vez (con todo)
+            renderActionableQuotesTable(allActionableQuotes);
+            renderFinalizedQuotesTable(allFinalizedQuotes);
+
+            // 2. NUEVO: Configura el filtro (solo si es Coordinador)
+            setupAdvisorFilter();
 
         } catch (error) {
             console.error('Error en fetchAllQuotes:', error);
@@ -50,8 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(finalizedTableBody) finalizedTableBody.innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
         }
     };
+    // ==========================================================
+    // FIN: fetchAllQuotes MODIFICADA
+    // ==========================================================
 
-    // Función renderActionableQuotesTable (CORREGIDA CON EL BOTÓN ELIMINAR)
+
+    // Función renderActionableQuotesTable (YA CORREGIDA para Coordinador con 'o')
     const renderActionableQuotesTable = (quotes) => {
         if (!approvedTableBody) return;
         approvedTableBody.innerHTML = '';
@@ -64,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             row.dataset.quoteId = quote.id; 
             let actionButtons = '';
 
-            // --- LÓGICA DE BOTONES COMPLETA Y FINAL ---
             if (currentUser.rol === 'Administrador') {
                  if (quote.status === 'pendiente_ajuste') { 
                     actionButtons = `<button class="review-adjustment-btn btn" data-id="${quote.id}">Revisar Ajuste</button>`; 
@@ -75,29 +96,26 @@ document.addEventListener('DOMContentLoaded', () => {
                  } else if (quote.status === 'rechazada') { 
                     actionButtons = `<button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
                  }
-            } else if (currentUser.rol === 'Asesor' || currentUser.rol === 'Coordinador') {
+            } else if (currentUser.rol === 'Asesor' || currentUser.rol === 'Coordinador') { // <-- ARREGLO DE ROL
                  if (quote.status === 'pendiente_ajuste') { 
                     actionButtons = `<span>En revisión por Admin</span>`; 
                  } else if (quote.status === 'pendiente') { 
                     actionButtons = `<button class="request-adjustment-btn btn" data-id="${quote.id}" data-number="${quote.quoteNumber}">Solicitar Ajuste</button>`;
                  } 
-                 // --- INICIO: CORRECCIÓN PARA ASESOR ---
-                 else if (quote.status === 'aprobada') { // Si está aprobada
+                 else if (quote.status === 'aprobada') { 
                     actionButtons = `
                         <button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button>
                         <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button> 
-                    `; // <-- SE AÑADIÓ EL BOTÓN ELIMINAR AQUÍ
+                    `; 
                  } 
-                 // --- FIN: CORRECCIÓN PARA ASESOR ---
-                 else if (quote.status === 'rechazada') { // ESTADO ORIGINAL PARA ASESOR (YA ESTABA BIEN)
+                 else if (quote.status === 'rechazada') { 
                     actionButtons = `
                         <button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> 
                         <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
                     `;
                  }
             }
-            // --- FIN: LÓGICA DE BOTONES ---
-
+            
             const formattedDate = quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('es-DO', { timeZone: 'UTC'}) : 'N/A';
 
             row.innerHTML = `
@@ -109,9 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             approvedTableBody.appendChild(row);
         });
-    }; // <-- Cierre de la función renderActionableQuotesTable
+    }; 
 
-    // Función renderFinalizedQuotesTable (Original, MODIFICADA para usar currentUser)
+    // Función renderFinalizedQuotesTable (YA CORREGIDA para Coordinador con 'o')
     const renderFinalizedQuotesTable = (quotes) => {
          if (!finalizedTableBody) return;
          finalizedTableBody.innerHTML = '';
@@ -126,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
              if (quote.status === 'formalizada') {
                  actionsHTML += ` <a href="/api/agreements/${quote.id}/pdf" class="btn btn-primary" target="_blank">Imprimir Acuerdo</a>`;
              } else if (quote.status === 'archivada') {
-                 // Permitir eliminar archivadas solo si es Admin o el Asesor dueño
-                 if (currentUser && (currentUser.rol === 'Administrador' || currentUser.rol === 'Coordinador' || currentUser.nombre === quote.advisorName)) {
+                 // Permitir eliminar archivadas solo si es Admin, Coordinador o el Asesor dueño
+                 if (currentUser && (currentUser.rol === 'Administrador' || currentUser.rol === 'Coordinador' || currentUser.nombre === quote.advisorName)) { // <-- ARREGLO DE ROL
                      actionsHTML += ` <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
                  }
              }
@@ -144,14 +162,14 @@ document.addEventListener('DOMContentLoaded', () => {
          });
     };
 
+    // --- (Aquí va todo tu código original de handleArchive, handleDelete, showRejectionDetails, etc...) ---
     // --- FUNCIONES ORIGINALES (handleArchive, handleDelete, showRejectionDetails) ---
-    // (Incluidas completas y sin cambios, pero movidas dentro del DOMContentLoaded)
     const handleArchive = async (quoteId) => {
         try {
             window.open(`/api/quote-requests/${quoteId}/pdf`, '_blank');
             const response = await fetch(`/api/quote-requests/${quoteId}/archive`, { method: 'POST' });
             if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.message || 'Error al archivar.'); }
-            fetchAllQuotes(); // Usamos fetchAllQuotes en lugar de loadQuotes
+            fetchAllQuotes(); 
         } catch (error) { console.error(error); alert(error.message); }
     };
     const handleDelete = async (quoteId) => {
@@ -161,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
             alert(result.message);
-            fetchAllQuotes(); // Usamos fetchAllQuotes
+            fetchAllQuotes(); 
         } catch (error) { console.error('Error al eliminar:', error); alert(error.message); }
     };
     const showRejectionDetails = async (quoteId) => {
@@ -179,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { console.error(error); alert(error.message); }
     };
 
-    // --- INICIO: CÓDIGO AÑADIDO PARA AJUSTES ---
     // --- NUEVAS FUNCIONES PARA MANEJAR AJUSTES ---
     function openAdjustmentModal(quoteId, quoteNumber) {
         if (adjustmentModal) {
@@ -191,15 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     async function handleReviewAdjustment(quoteId) {
-        // En el futuro, podemos hacer un modal más elegante. Por ahora, prompts son seguros.
         const newAmount = prompt(`Revisión de Ajuste para Cotización #${quoteId}\nIngrese el MONTO FINAL a aprobar (ej: -15 para descuento):`);
-        if (newAmount === null) return; // Si el usuario presiona cancelar
+        if (newAmount === null) return; 
 
         const newComment = prompt("Ingrese un comentario interno para el asesor sobre esta aprobación:");
-        if (newComment === null) return; // Si el usuario presiona cancelar
+        if (newComment === null) return; 
 
         try {
-             // Validar que el monto sea un número
              const montoFloat = parseFloat(newAmount);
              if (isNaN(montoFloat)) {
                  alert("El monto ingresado no es un número válido.");
@@ -208,16 +223,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/api/quote-requests/${quoteId}/approve-adjustment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ monto: montoFloat, comentario: newComment }) // Usar monto validado
+                body: JSON.stringify({ monto: montoFloat, comentario: newComment }) 
             });
             if (!response.ok) throw new Error('No se pudo aprobar el ajuste.');
-            fetchAllQuotes(); // Recargar la lista para que la cotización vuelva a "pendiente"
+            fetchAllQuotes(); 
         } catch (error) {
-             console.error("Error en handleReviewAdjustment:", error); // Añadir log de error
+             console.error("Error en handleReviewAdjustment:", error); 
             alert(`Error: ${error.message}`);
         }
     }
-    // --- FIN: CÓDIGO AÑADIDO ---
 
     // --- Event listener para el formulario de ajuste (NUEVO) ---
     if (adjustmentForm) {
@@ -232,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) throw new Error('No se pudo enviar la solicitud.');
                 if(adjustmentModal) adjustmentModal.style.display = 'none';
                 adjustmentForm.reset();
-                fetchAllQuotes(); // Usar fetchAllQuotes
+                fetchAllQuotes(); 
             } catch (error) { alert(`Error: ${error.message}`); }
         });
     }
@@ -240,34 +254,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- MANEJO DE EVENTOS CORREGIDO Y FUSIONADO ---
     document.body.addEventListener('click', (event) => {
         const target = event.target;
-        // Busca el ID subiendo por el DOM (más robusto)
         const quoteId = target.closest('[data-id]') ? target.closest('[data-id]').dataset.id : null;
 
-        // Manejo de botones de cierre de modales (Original + Nuevo)
         if (target === closeRejectedModalBtn && rejectedModal) { rejectedModal.style.display = 'none'; return; }
         if (target === closeAdjustmentModalBtn && adjustmentModal) { adjustmentModal.style.display = 'none'; return; }
 
-        // Si no hay ID o no es un botón/enlace relevante, salir
-        // Simplificado para mayor claridad
         if (!quoteId || !target.classList.contains('btn') && !target.classList.contains('view-btn') && !target.classList.contains('admin-button') && !target.classList.contains('request-adjustment-btn') && !target.classList.contains('review-adjustment-btn') && !target.classList.contains('approve-btn') && !target.classList.contains('reject-btn')) {
              return;
         }
 
-        // Lógica para cada botón (original + nuevo)
-        if (target.classList.contains('approve-btn')) { // Botón Admin (pendiente)
+        if (target.classList.contains('approve-btn')) { 
             handleApprove(quoteId);
-        } else if (target.classList.contains('reject-btn')) { // Botón Admin (pendiente)
+        } else if (target.classList.contains('reject-btn')) { 
             handleReject(quoteId);
-        } else if (target.classList.contains('archive-btn')) { // Botón Asesor/Admin (aprobada)
+        } else if (target.classList.contains('archive-btn')) { 
             handleArchive(quoteId);
-        } else if (target.classList.contains('delete-btn')) { // Botón Asesor/Admin (aprobada/rechazada/archivada)
+        } else if (target.classList.contains('delete-btn')) { 
             handleDelete(quoteId);
-        } else if (target.classList.contains('view-rejection-details-btn')) { // Botón Asesor/Admin (rechazada)
+        } else if (target.classList.contains('view-rejection-details-btn')) { 
             showRejectionDetails(quoteId);
-        } else if (target.classList.contains('request-adjustment-btn')) { // Botón Nuevo Asesor (pendiente)
+        } else if (target.classList.contains('request-adjustment-btn')) { 
             const quoteNumber = target.dataset.number || target.closest('tr')?.querySelector('td:first-child')?.textContent || 'N/A';
             openAdjustmentModal(quoteId, quoteNumber);
-        } else if (target.classList.contains('review-adjustment-btn')) { // Botón Nuevo Admin (pendiente_ajuste)
+        } else if (target.classList.contains('review-adjustment-btn')) { 
             handleReviewAdjustment(quoteId);
         }
     });
@@ -279,5 +288,89 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Carga inicial de toda la página
-    fetchAllQuotes(); // Llamar a la función original de la nube
-});
+    fetchAllQuotes(); 
+
+
+    // ==============================================
+    // INICIO: NUEVAS FUNCIONES DE FILTRO (PASO 2.3)
+    // ==============================================
+
+    /**
+     * Configura el filtro de asesor si el usuario es Coordinador
+     */
+    async function setupAdvisorFilter() {
+        // Solo mostramos el filtro si es Coordinador (con 'o', como arreglamos)
+        if (currentUser.rol !== 'Coordinador') {
+            return; 
+        }
+
+        try {
+            // Mostramos el contenedor del filtro
+            if (filterContainer) filterContainer.style.display = 'block';
+
+            // 1. Obtenemos la lista de asesores activos
+            // (Usamos la ruta que ya arreglamos en el "soft delete")
+            const response = await fetch('/api/advisors');
+            if (!response.ok) throw new Error('No se pudo cargar la lista de asesores.');
+            const advisors = await response.json();
+
+            // 2. Limpiamos y llenamos el filtro
+            if (!advisorFilterSelect) return;
+            advisorFilterSelect.innerHTML = ''; // Limpiar opciones
+
+            // 3. Añadir opción "Ver Todos"
+            const allOption = document.createElement('option');
+            allOption.value = 'todos';
+            allOption.textContent = 'Ver Todos los Asesores';
+            advisorFilterSelect.appendChild(allOption);
+
+            // 4. Añadir a cada asesor
+            advisors.forEach(advisor => {
+                const option = document.createElement('option');
+                option.value = advisor.name;
+                
+                // Marcar al propio Coordinador (Griselda) como "(Yo)"
+                if (advisor.name === currentUser.nombre) {
+                    option.textContent = `${advisor.name} (Yo)`;
+                } else {
+                    option.textContent = advisor.name;
+                }
+                advisorFilterSelect.appendChild(option);
+            });
+
+            // 5. Añadir el listener para que el filtro funcione
+            advisorFilterSelect.addEventListener('change', filterTables);
+
+        } catch (error) {
+            console.error("Error configurando el filtro de asesor:", error);
+            if (filterContainer) filterContainer.innerHTML = '<p>Error al cargar el filtro.</p>';
+        }
+    }
+
+    /**
+     * Se llama cada vez que el <select> del filtro cambia.
+     * Vuelve a dibujar las tablas con los datos filtrados.
+     */
+    function filterTables() {
+        if (!advisorFilterSelect) return;
+        const selectedAdvisor = advisorFilterSelect.value;
+
+        // 1. Filtrar la tabla de "Pendientes"
+        let filteredActionable = allActionableQuotes;
+        if (selectedAdvisor !== 'todos') {
+            filteredActionable = allActionableQuotes.filter(q => q.advisorName === selectedAdvisor);
+        }
+        renderActionableQuotesTable(filteredActionable); // Volver a dibujar tabla 1
+
+        // 2. Filtrar la tabla de "Historial"
+        let filteredFinalized = allFinalizedQuotes;
+        if (selectedAdvisor !== 'todos') {
+            filteredFinalized = allFinalizedQuotes.filter(q => q.advisorName === selectedAdvisor);
+        }
+        renderFinalizedQuotesTable(filteredFinalized); // Volver a dibujar tabla 2
+    }
+    // ==============================================
+    // FIN: NUEVAS FUNCIONES DE FILTRO
+    // ==============================================
+
+}); // <-- Esta es la última línea de tu archivo

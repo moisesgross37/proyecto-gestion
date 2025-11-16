@@ -16,6 +16,19 @@
         </header>
 
         <main>
+            <!-- ============================================== -->
+            <!-- INICIO: FILTRO AÑADIDO (PASO 1 DEL PARCHE) -->
+            <!-- ============================================== -->
+            <div id="filter-container" style="display: none; margin-bottom: 25px; margin-top: 15px; padding: 15px; background-color: #f9f9f9; border-radius: 8px;">
+                <label for="advisor-filter" style="display: block; margin-bottom: 8px; font-weight: 500;">Filtrar por Asesor:</label>
+                <select id="advisor-filter" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <!-- Las opciones se cargarán con JavaScript -->
+                </select>
+            </div>
+            <!-- ============================================== -->
+            <!-- FIN: FILTRO AÑADIDO -->
+            <!-- ============================================== -->
+
             <h2>Cotizaciones Pendientes de Descarga</h2>
             <table class="centers-table">
                 <thead>
@@ -28,7 +41,8 @@
                     </tr>
                 </thead>
                 <tbody id="pending-quotes-table-body">
-                    </tbody>
+                    <!-- Filas generadas por JS -->
+                </tbody>
             </table>
 
             <hr style="margin: 40px 0;">
@@ -45,10 +59,15 @@
                     </tr>
                 </thead>
                 <tbody id="finalized-quotes-table-body">
-                    </tbody>
+                    <!-- Filas generadas por JS -->
+                </tbody>
             </table>
         </main>
-    </div> <div id="rejected-quote-modal" class="modal">
+    </div>
+
+    <!-- (El resto del archivo no cambia: modales de rechazo y ajuste) -->
+    
+    <div id="rejected-quote-modal" class="modal">
         <div class="modal-content">
             <span class="close-button" id="close-rejected-modal-btn">&times;</span>
             <h2>Detalles del Rechazo</h2>
@@ -62,9 +81,11 @@
                 <h4>Resumen de la Cotización Rechazada:</h4>
                 <span id="rejected-quote-number"></span>
                 <ul id="rejected-quote-products">
-                    </ul>
+                    <!-- Productos generados por JS -->
+                </ul>
                 <div id="rejected-quote-summary-details">
-                    </div>
+                    <!-- Detalles generados por JS -->
+                </div>
             </div>
         </div>
     </div>
