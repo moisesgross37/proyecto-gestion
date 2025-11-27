@@ -1169,18 +1169,36 @@ app.post('/api/quote-requests/:id/reject', requireLogin, requireAdmin, async (re
 // === FIN: RUTAS DE DECISIÓN DEL ADMINISTRADOR ===
 
 
-// Ruta para Archivar (DE LA NUBE - SIN CAMBIOS)
-app.post('/api/quote-requests/:id/archive', requireLogin, requireAdminOrCoordinator, async (req, res) => {
+// Ruta para Archivar (CORREGIDA: Permite Admin, Coordinador y Asesor)
+app.post('/api/quote-requests/:id/archive', requireLogin, async (req, res) => {
     const { id } = req.params;
+    
+    // 1. OBTENER ROL DEL USUARIO
+    // Aseguramos que el usuario tenga un rol definido
+    const userRole = req.session.user ? req.session.user.rol : '';
+
+    // 2. VERIFICACIÓN DE PERMISOS MANUAL E INFALIBLE
+    // Permitimos pasar si es: Administrador O Coordinador O Asesor
+    if (userRole !== 'Administrador' && userRole !== 'Coordinador' && userRole !== 'Asesor') {
+        console.warn(`[Seguridad] Usuario con rol '${userRole}' intentó archivar y fue bloqueado.`);
+        return res.status(403).json({ message: 'No tienes permiso para archivar cotizaciones.' });
+    }
+
     try {
         // Solo permitir archivar si está 'aprobada'
         const result = await pool.query("UPDATE quotes SET status = 'archivada' WHERE id = $1 AND status = 'aprobada' RETURNING id", [id]);
+        
         if (result.rowCount === 0) {
              const currentState = await pool.query('SELECT status FROM quotes WHERE id = $1', [id]);
              if (currentState.rowCount === 0) return res.status(404).json({ message: 'Cotización no encontrada.' });
-             return res.status(400).json({ message: `Solo se pueden archivar cotizaciones aprobadas (estado actual: ${currentState.rows[0].status}).` });
+             
+             // Mensaje de error útil
+             return res.status(400).json({ message: `No se puede archivar. Estado actual: ${currentState.rows[0].status}` });
         }
+        
+        console.log(`Cotización ${id} archivada exitosamente por ${req.session.user.nombre} (${userRole}).`);
         res.status(200).json({ message: 'Cotización archivada con éxito.' });
+
     } catch (err) {
         console.error(`Error en POST /api/quote-requests/${id}/archive:`, err);
         res.status(500).json({ message: 'Error interno del servidor al archivar.' });

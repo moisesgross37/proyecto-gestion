@@ -73,47 +73,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================================
 
 
-    // Función renderActionableQuotesTable (YA CORREGIDA para Coordinador con 'o')
+    // Función renderActionableQuotesTable (FILTRO ESTRICTO: Solo muestra lo TERMINADO)
     const renderActionableQuotesTable = (quotes) => {
         if (!approvedTableBody) return;
         approvedTableBody.innerHTML = '';
-        if (quotes.length === 0) {
-            approvedTableBody.innerHTML = '<tr><td colspan="5">No hay cotizaciones nuevas para gestionar.</td></tr>';
+        
+        // 1. FILTRAR PRIMERO
+        // Solo queremos ver cotizaciones que ya fueron trabajadas por el Admin.
+        // Si está pendiente o en ajuste, las ignoramos (porque esas van en el otro panel).
+        const quotesToDisplay = quotes.filter(q => q.status === 'aprobada' || q.status === 'rechazada');
+
+        if (quotesToDisplay.length === 0) {
+            approvedTableBody.innerHTML = '<tr><td colspan="5">No hay cotizaciones listas para descargar.</td></tr>';
             return;
         }
-        quotes.forEach(quote => {
+
+        quotesToDisplay.forEach(quote => {
             const row = document.createElement('tr');
             row.dataset.quoteId = quote.id; 
             let actionButtons = '';
 
-            if (currentUser.rol === 'Administrador') {
-                 if (quote.status === 'pendiente_ajuste') { 
-                    actionButtons = `<button class="review-adjustment-btn btn" data-id="${quote.id}">Revisar Ajuste</button>`; 
-                 } else if (quote.status === 'pendiente') { 
-                    actionButtons = `<a href="/api/quote-requests/${quote.id}/pdf" target="_blank" class="admin-button view-btn btn">Ver PDF</a> <button class="approve-btn btn btn-success" data-id="${quote.id}">Aprobar</button> <button class="reject-btn btn btn-danger" data-id="${quote.id}">Rechazar</button>`;
-                 } else if (quote.status === 'aprobada') { 
-                    actionButtons = `<button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button> <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
-                 } else if (quote.status === 'rechazada') { 
-                    actionButtons = `<button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>`;
-                 }
-            } else if (currentUser.rol === 'Asesor' || currentUser.rol === 'Coordinador') { // <-- ARREGLO DE ROL
-                 if (quote.status === 'pendiente_ajuste') { 
-                    actionButtons = `<span>En revisión por Admin</span>`; 
-                 } else if (quote.status === 'pendiente') { 
-                    actionButtons = `<button class="request-adjustment-btn btn" data-id="${quote.id}" data-number="${quote.quoteNumber}">Solicitar Ajuste</button>`;
-                 } 
-                 else if (quote.status === 'aprobada') { 
-                    actionButtons = `
-                        <button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button>
-                        <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button> 
-                    `; 
-                 } 
-                 else if (quote.status === 'rechazada') { 
-                    actionButtons = `
-                        <button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> 
-                        <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
-                    `;
-                 }
+            // 2. DEFINIR ACCIONES (Ya sabemos que solo son Aprobadas o Rechazadas)
+            
+            if (quote.status === 'aprobada') { 
+                actionButtons = `
+                    <button class="btn archive-btn" data-id="${quote.id}">Descargar y Archivar</button>
+                    <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button> 
+                `; 
+            } else if (quote.status === 'rechazada') { 
+                actionButtons = `
+                    <button class="btn view-rejection-details-btn" data-id="${quote.id}">Ver Detalles del Rechazo</button> 
+                    <button class="btn btn-delete delete-btn" data-id="${quote.id}">Eliminar</button>
+                `;
             }
             
             const formattedDate = quote.createdAt ? new Date(quote.createdAt).toLocaleDateString('es-DO', { timeZone: 'UTC'}) : 'N/A';
@@ -127,8 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             approvedTableBody.appendChild(row);
         });
-    }; 
-
+    };
+    
     // Función renderFinalizedQuotesTable (YA CORREGIDA para Coordinador con 'o')
     const renderFinalizedQuotesTable = (quotes) => {
          if (!finalizedTableBody) return;
