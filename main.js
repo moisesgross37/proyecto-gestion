@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA DEL MENÚ PRINCIPAL ---
+    // --- LÓGICA DEL MENÚ PRINCIPAL (OPTIMIZADA: VISIBILIDAD POR ROL) ---
     const menuContainer = document.getElementById('menu-buttons-container');
     if (menuContainer) {
         const user = JSON.parse(localStorage.getItem('currentUser'));
@@ -50,21 +50,39 @@ document.addEventListener('DOMContentLoaded', () => {
         if (['Administrador', 'Coordinador', 'Asesor'].includes(user.rol)) buttonsHTML += '<a href="/asesores-menu.html" class="nav-button">Módulo de Asesores</a>';
         menuContainer.innerHTML = buttonsHTML;
 
-        // Decidir qué paneles mostrar
+        // Panel de Pulso (Solo jefes)
         if (user.rol === 'Administrador' || user.rol === 'Coordinador') {
             document.getElementById('team-pulse-panel').style.display = 'block';
             loadTeamPulsePanel();
         }
 
-        // Cargar todos los rankings
-        // === INICIO: CORRECCIÓN DE LLAMADA ===
+        // --- GESTIÓN DE RANKINGS ---
+        
+        // 1. EL ICE LO VEN TODOS (Es la meta principal del mes)
         loadIceRanking();
-        // === FIN: CORRECCIÓN DE LLAMADA ===
-        loadStrategicPerformanceIndex();
-        loadPipelineRanking();
-        loadReachRanking();
-        loadConversionRanking();
-        loadFollowUpRanking();
+
+        // 2. LOS DEMÁS RANKINGS: VISIBILIDAD CONDICIONAL
+        if (['Administrador', 'Coordinador'].includes(user.rol)) {
+            // Si es Jefe: Cargar toda la data para análisis
+            loadStrategicPerformanceIndex(); // Histórico
+            loadPipelineRanking();
+            loadReachRanking();
+            loadConversionRanking();
+            loadFollowUpRanking();
+        } else {
+            // Si es Asesor: OCULTAR los contenedores vacíos para que no estorben
+            const idsToHide = [
+                'strategic-performance-container',
+                'pipeline-container',
+                'reach-ranking-container',
+                'conversion-ranking-container',
+                'follow-up-ranking-container'
+            ];
+            idsToHide.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
     }
 
     // --- NUEVAS FUNCIONES DE RANKING ---
@@ -118,34 +136,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 content += '<p style="text-align:center; color: #999;">Iniciando mes... Aún no hay datos.</p>';
             } else {
                 ranking.forEach((advisor, index) => {
-                    // Iconos de medalla
+                    // 1. Iconos de medalla
                     let rankIcon = `#${index + 1}`;
                     if (index === 0) rankIcon = '🥇';
                     if (index === 1) rankIcon = '🥈';
                     if (index === 2) rankIcon = '🥉';
 
-                    // Colores según porcentaje de meta
+                    // 2. Colores según porcentaje de meta
                     const percent = parseFloat(advisor.percentage_bar);
                     let barColor = '#e74c3c'; // Rojo
                     if (percent >= 40) barColor = '#f1c40f'; // Amarillo
                     if (percent >= 70) barColor = '#2ecc71'; // Verde Bueno
                     if (percent >= 100) barColor = '#27ae60'; // Verde Éxito
 
-                    // Construcción de la fila visual
+                    // 3. Cálculo del castigo (Variable necesaria para el HTML)
+                    const castigoAbandono = advisor.details.abandonados * 10;
+
+                    // 4. Construcción de la fila visual (DISEÑO DOS PISOS)
                     content += `
-                        <div style="margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; margin-bottom: 2px;">
-                                <span>${rankIcon} ${advisor.advisorname}</span>
-                                <span style="color: #333;">${advisor.performance_score} Pts</span>
+                        <div style="margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-weight: bold; font-size: 1rem; color: #333;">${rankIcon} ${advisor.advisorname}</span>
+                                <span style="background: #333; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.85em; font-weight: bold;">${advisor.performance_score} Pts</span>
                             </div>
                             
-                            <div style="width: 100%; background-color: #eee; height: 8px; border-radius: 4px; overflow: hidden;">
+                            <div style="width: 100%; background-color: #eee; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
                                 <div style="width: ${percent}%; background-color: ${barColor}; height: 100%;"></div>
                             </div>
                             
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: #777; margin-top: 2px;">
-                                <span>Ventas: ${advisor.details.ventas} | Coti: ${advisor.details.descargas}</span>
-                                <span>Efec: ${advisor.details.visitas} | <span style="color: ${advisor.details.abandonados > 0 ? 'red' : 'inherit'}">Aband: ${advisor.details.abandonados}</span></span>
+                            <div style="font-size: 0.8em; color: #555;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+                                    <span>🛒 Ventas: <strong style="color: #27ae60;">${advisor.details.ventas}</strong></span>
+                                    <span>📄 Coti: <strong>${advisor.details.descargas}</strong></span>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>🤝 Efec: <strong>${advisor.details.visitas}</strong></span>
+                                    
+                                    <span style="color: ${advisor.details.abandonados > 0 ? '#e74c3c' : '#aaa'}; font-weight: ${advisor.details.abandonados > 0 ? 'bold' : 'normal'};">
+                                        ${advisor.details.abandonados > 0 ? '⚠️' : '✓'} Aband: ${advisor.details.abandonados} 
+                                        ${advisor.details.abandonados > 0 ? `(-${castigoAbandono})` : ''}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     `;
