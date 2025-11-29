@@ -1474,109 +1474,182 @@ doc.y = pageMargin; // Resetear Y al margen superior estándar
          }
     }
     });
-// Ruta para PDF del Acuerdo (DE LA NUBE - SIN CAMBIOS)
-app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
-    const quoteId = req.params.id;
-    console.log(`[Agreement PDF Req ${quoteId}] Solicitud recibida.`);
+// --- RUTA PDF ACUERDO (FUSIÓN: Lógica Dinámica + Corrección NaN + Validación Flexible) ---
+app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'Asesor', 'Coordinador']), async (req, res) => {
+    const { id } = req.params;
+    console.log(`[Agreement PDF Req ${id}] Solicitud recibida.`);
+
     try {
-        const client = await pool.connect(); // Usar cliente para asegurar liberación
-        let quote;
-        try {
-            // Asegurarse que la cotización esté formalizada
-            const quoteResult = await client.query("SELECT * FROM quotes WHERE id = $1 AND status = 'formalizada'", [quoteId]);
-            if (quoteResult.rows.length === 0) {
-                console.log(`[Agreement PDF Req ${quoteId}] Acuerdo no encontrado o cotización no formalizada.`);
-                return res.status(404).send('Acuerdo no encontrado o la cotización no está formalizada.');
-            }
-            quote = quoteResult.rows[0];
-            console.log(`[Agreement PDF Req ${quoteId}] Cotización formalizada encontrada (${quote.quotenumber}).`);
-        } finally {
-            client.release(); // Liberar cliente después de la consulta
+        // 1. CONSULTA A LA BASE DE DATOS
+        // Traemos todos los datos, formateamos fechas desde SQL para evitar líos de zona horaria
+        const result = await pool.query(`
+            SELECT 
+                q.*, 
+                to_char(q.ajuste_fecha, 'YYYY-MM-DD') as fecha_ajuste_str,
+                to_char(q.createdat, 'YYYY-MM-DD') as fecha_creacion_str
+            FROM quotes q 
+            WHERE q.id = $1
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).send('Cotización no encontrada.');
+        }
+        
+        const quote = result.rows[0];
+
+        // VALIDACIÓN DE ESTADO:
+        // Permitimos 'formalizada' (como antes) PERO TAMBIÉN 'aprobada' para poder firmar el contrato.
+        if (quote.status !== 'formalizada' && quote.status !== 'aprobada') {
+             return res.status(400).send(`No se puede generar el acuerdo. La cotización debe estar Aprobada o Formalizada (Estado actual: ${quote.status}).`);
         }
 
+        // 2. CEREBRO DE IDENTIDAD (Dinámico)
+        const esPequePlanner = quote.membrete_tipo === 'Peque Planner';
+
+        const BRANDING = {
+            nombre: esPequePlanner ? 'Peque Planner' : 'Be Eventos SRL',
+            rnc: esPequePlanner ? '1326794412' : '1326794412', // Ajusta el RNC de Peque si es distinto
+            direccion: 'Calle Acacias No. 15B, Jardines del Ozama',
+            color: esPequePlanner ? '#E91E63' : '#B8860B', // Rosa vs Dorado
+            // OJO: Verifica si tus archivos son .jpg o .png en tu carpeta plantillas
+            fondo: esPequePlanner ? 'membrete_peque_planner.jpg' : 'membrete.jpg' 
+        };
+
+        // 3. INICIO PDF
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename=ACUERDO-${quote.quotenumber || quoteId}.pdf`);
+        res.setHeader('Content-Disposition', `inline; filename=ACUERDO-${quote.quotenumber}.pdf`);
         doc.pipe(res);
 
-        // --- Lógica de Membrete (de la nube) ---
-        // 1. DIBUJAR EL MEMBRETE
-        let backgroundImagePath;
-        if (quote.membrete_tipo === 'Peque Planner') {
-            backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete_peque_planner.jpg');
-        } else {
-            backgroundImagePath = path.join(__dirname, 'plantillas', 'membrete.jpg');
-        }
-        // --- INICIO DE LA CORRECCIÓN ---
-
-if (fs.existsSync(backgroundImagePath)) {
-    try {
-        doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
-    } catch (err) {
-        console.error(`[Agreement PDF Req ${quoteId}] Error al dibujar imagen de membrete:`, err);
-    }
-} else {
-    console.warn(`[Agreement PDF Req ${quoteId}] WARN: Membrete acuerdo no encontrado en ${backgroundImagePath}`);
-}
-
-// --- FIN DE LA CORRECCIÓN ---
+        // Función de Fondo
+        const dibujarFondo = () => {
+            const fondoPath = path.join(__dirname, 'plantillas', BRANDING.fondo);
+            if (fs.existsSync(fondoPath)) {
+                try {
+                    doc.image(fondoPath, 0, 0, { width: doc.page.width, height: doc.page.height });
+                } catch (err) { console.error("Error dibujando fondo:", err); }
+            }
+        };
+        dibujarFondo();
+        doc.on('pageAdded', dibujarFondo);
 
         const pageMargin = 60;
         const contentWidth = doc.page.width - (pageMargin * 2);
+
+        // --- ENCABEZADO Y TÍTULOS ---
         
-        // --- MODIFICADO: Fecha y Lugar en la parte superior ---
-        const quoteDate = new Date(quote.createdat).toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+        // Fecha en la parte superior derecha (Estilo clásico)
+        const fechaDoc = new Date(quote.ajuste_fecha || quote.createdat).toLocaleDateString('es-DO', { 
+            day: 'numeric', month: 'long', year: 'numeric' 
+        });
+
         doc.font('Helvetica').fontSize(11).text(
-            `Santo Domingo, R.D., ${quoteDate}`, 
+            `Santo Domingo, R.D., ${fechaDoc}`, 
             pageMargin, 
-            180, // <-- Posición Y fija
+            180, // Posición Y fija (respetando tu diseño original)
             { align: 'right', width: contentWidth }
         );
-        // --- FIN MODIFICADO ---
 
-        // --- Contenido del Acuerdo (de la nube, sin cambios) ---
-        // Título y Partes
-        doc.font('Helvetica-Bold').fontSize(16).text('Acuerdo de Colaboración de Servicios', pageMargin, 200, { align: 'center', width: contentWidth });
-        doc.moveDown(4);
-        doc.font('Helvetica', 11).text(`Este acuerdo se celebra el día ${new Date(quote.ajuste_fecha || quote.createdat).toLocaleDateString('es-DO', { timeZone: 'UTC' })}, con el fin de establecer una colaboración profesional entre:`, { align: 'justify', width: contentWidth }); // Usar fecha de ajuste/creación
-        doc.moveDown(1.5);
-        doc.font('Helvetica-Bold', 12).text('Be Eventos SRL ("El Organizador")', { continued: true }).font('Helvetica', 11).text(', una empresa...'); // Acortado
-        doc.moveDown(1); doc.font('Helvetica', 11).text('y'); doc.moveDown(1);
-        doc.font('Helvetica-Bold', 12).text(`${quote.clientname} ("El Centro")`, { continued: true }).font('Helvetica', 11).text(', con quien nos complace colaborar.');
-        doc.moveDown(3);
+        doc.moveDown(2); // Separación
 
-        // Secciones (simplificado para brevedad, usar el código completo de la nube)
+        // Título del Documento
+        doc.font('Helvetica-Bold').fontSize(16).fillColor(BRANDING.color)
+           .text('Acuerdo de Colaboración de Servicios', { align: 'center' });
+        
+        doc.moveDown(2);
+        doc.fillColor('black').fontSize(11).font('Helvetica');
+
+        // Introducción
+        doc.text(`Este acuerdo se celebra con el fin de establecer una colaboración profesional entre:`, { align: 'justify' });
+        doc.moveDown(1);
+
+        // --- DEFINICIÓN DE PARTES (Dinámico) ---
+        // Aquí usamos "El Organizador" para que el resto del texto sirva para ambas empresas
+        doc.font('Helvetica-Bold').text(`${BRANDING.nombre} ("El Organizador")`, { continued: true })
+           .font('Helvetica').text(`, una empresa dedicada a la creación de momentos inolvidables, con RNC ${BRANDING.rnc} y domicilio en ${BRANDING.direccion}.`);
+        
+        doc.moveDown(0.5);
+        doc.text('y', { align: 'center' });
+        doc.moveDown(0.5);
+        
+        doc.font('Helvetica-Bold').text(`${quote.clientname} ("El Centro")`, { continued: true })
+           .font('Helvetica').text(', con quien nos complace colaborar.');
+        
+        doc.moveDown(2);
+
+        // --- FUNCIÓN DE SECCIONES (Corregida para no repetir texto) ---
         const drawSection = (title, content) => {
-             if (doc.y > 650) { doc.addPage(); if (fs.existsSync(backgroundImagePath)) { try { doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); } catch(e){} } doc.y = pageMargin; } // Salto página con membrete
-            doc.font('Helvetica-Bold').fontSize(11).text(title); doc.moveDown(0.5);
-            doc.font('Helvetica').fontSize(10).text(content, { align: 'justify', width: contentWidth }); doc.moveDown(1.5);
-            if (doc.y > 680) doc.addPage(); // <-- MODIFICADO: Límite ajustado
-            doc.font('Helvetica-Bold').fontSize(11).text(title);
-            doc.moveDown(0.3); // <-- MODIFICADO: Espacio reducido (de 0.5 a 0.3)
-            doc.font('Helvetica').fontSize(10).text(content, { align: 'justify', width: contentWidth });
-            doc.moveDown(1.2); // <-- MODIFICADO: Espacio reducido (de 1.5 a 1.2)
+            // Calculamos altura aproximada. Si estamos muy abajo (> 650), nueva página.
+            if (doc.y > 650) { 
+                doc.addPage(); 
+                doc.y = pageMargin + 50; // Margen superior seguro en nueva página
+            }
+
+            doc.font('Helvetica-Bold').fontSize(11).fillColor(BRANDING.color).text(title);
+            doc.moveDown(0.3);
+            doc.font('Helvetica').fontSize(10).fillColor('black').text(content, { align: 'justify', width: contentWidth });
+            doc.moveDown(1.2);
         };
-        drawSection('1. Nuestro Propósito Común', 'Ambas partes unimos esfuerzos...');
-        // ... (resto de las llamadas a drawSection de la nube) ...
-        drawSection('4. Acuerdo Económico', `El valor de la experiencia diseñada es de RD$ ${parseFloat(quote.precio).toFixed(2)} más el 18% de ITBIS`);
-        // ...
-        drawSection('6. Marco Legal', 'Este acuerdo se rige por...');
 
-        // Firmas (de la nube)
-        if (doc.y > doc.page.height - 200) { doc.addPage(); if (fs.existsSync(backgroundImagePath)) { try { doc.image(backgroundImagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); } catch(e){} } doc.y = pageMargin; }
-        const signatureY = doc.page.height - 180;
-        // ... (resto del código de firmas de la nube) ...
-        doc.text('Moisés Gross López', pageMargin, signatureY + 40);
-        doc.text('[Nombre Representante]', doc.page.width / 2, signatureY + 40, { align: 'right' });
+        // --- CONTENIDO DEL ACUERDO ---
 
+        drawSection('1. Nuestro Propósito Común', 
+            'Ambas partes unimos esfuerzos para la colaboración creativa, montaje o ejecución de un evento, asegurando una experiencia de la más alta calidad para todos los involucrados. Los servicios específicos y detalles se encuentran en la cotización adjunta.');
 
-        console.log(`[Agreement PDF Req ${quoteId}] Finalizando PDF del acuerdo.`);
+        drawSection('2. Detalle de la Experiencia', 
+            `Nos emociona crear la siguiente experiencia, referenciada bajo el número ${quote.quotenumber}. Incluye servicios de fotografía y logística según lo aprobado en la propuesta.`);
+
+        drawSection('3. Fechas Clave', 
+            'Las fechas principales del evento o actividades relacionadas serán coordinadas y confirmadas entre ambas partes a través de los canales de comunicación habituales.');
+
+        // --- CORRECCIÓN DE PRECIO (El arreglo principal) ---
+        const precioRaw = parseFloat(quote.preciofinalporestudiante);
+        // Si no es número válido, ponemos "A confirmar" en vez de NaN
+        const precioTexto = (isNaN(precioRaw) || precioRaw === 0) ? "A confirmar" : `RD$ ${precioRaw.toFixed(2)}`;
+
+        drawSection('4. Acuerdo Económico', 
+            `El valor de la experiencia diseñada es de ${precioTexto} por estudiante (más impuestos si aplican).\n\n` +
+            `La forma y el calendario de pagos serán coordinados y acordados directamente entre ambas partes. ` +
+            `Se acuerda que el Centro no asumirá el costo de los estudiantes que decidan no participar (siempre que se cumpla el mínimo requerido).`);
+
+        // Cláusulas de Seguridad (Neutras)
+        drawSection('4b. Medios de Pago y Seguridad', 
+            `Los pagos o abonos deberán realizarse únicamente mediante transferencia bancaria a la cuenta oficial de El Organizador o en efectivo a través de una persona previamente autorizada.\n\n` +
+            `IMPORTANTE: Por motivos de seguridad, los asesores comerciales NO están autorizados a recibir pagos en efectivo sin un recibo oficial numerado o confirmación de gerencia.`);
+
+        drawSection('4c. Modificaciones', 
+            'Cualquier cambio, ajuste o mejora en el servicio o en el valor económico deberá ser solicitado y confirmado por escrito para que tenga validez.');
+
+        drawSection('5. Nuestro Compromiso Mutuo', 
+            `Calidad y Confianza: El Organizador se compromete a entregar cada servicio con la máxima calidad.\n` +
+            'Colaboración: El Centro se compromete a facilitar la comunicación y coordinación necesarias.\n' +
+            'Uso de Imagen: El Centro autoriza la realización de fotografías y grabaciones del evento para fines del servicio contratado.');
+
+        drawSection('6. Marco Legal', 
+            'Este acuerdo se rige por las leyes de la República Dominicana. Cualquier modificación será formalizada por escrito entre ambas partes.');
+
+        // --- FIRMAS ---
+        doc.moveDown(3);
+        if (doc.y > 600) doc.addPage();
+        const signatureY = doc.y;
+
+        // Firma Izquierda (Dinámica)
+        doc.moveTo(pageMargin, signatureY).lineTo(pageMargin + 200, signatureY).stroke();
+        doc.font('Helvetica-Bold').text('Moisés Gross López', pageMargin, signatureY + 10);
+        doc.font('Helvetica').fontSize(9).text(`Gerente General - ${BRANDING.nombre}`, pageMargin, signatureY + 25);
+
+        // Firma Derecha (Cliente)
+        const rightMargin = doc.page.width - pageMargin - 200;
+        doc.moveTo(rightMargin, signatureY).lineTo(doc.page.width - pageMargin, signatureY).stroke();
+        doc.font('Helvetica-Bold').fontSize(11).text('Representante del Centro', rightMargin, signatureY + 10, { align: 'right', width: 200 });
+        doc.font('Helvetica').fontSize(9).text('Firma y Sello', rightMargin, signatureY + 25, { align: 'right', width: 200 });
+
+        console.log(`[Agreement PDF Req ${id}] PDF generado exitosamente.`);
         doc.end();
 
     } catch (error) {
-      console.error('Error al generar el PDF del acuerdo:', error);
-		
-        res.status(500).send('Error interno al generar el PDF del acuerdo.');
+        console.error('Error generando PDF Acuerdo:', error);
+        res.status(500).send('Error interno al generar el acuerdo.');
     }
 });
 app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
