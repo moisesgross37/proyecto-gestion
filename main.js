@@ -172,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 
                                 <div style="display: flex; justify-content: space-between;">
-                                    <span>🤝 Efec: <strong>${advisor.details.visitas}</strong></span>
+                                    <span>
+                                        🤝 Efec: <strong>${advisor.details.visitas}</strong> 
+                                        ${advisor.details.failed_visits > 0 ? `<span style="color: #c0392b; margin-left: 5px;">(❌ ${advisor.details.failed_visits})</span>` : ''}
+                                    </span>
                                     
                                     <span style="color: ${advisor.details.abandonados > 0 ? '#e74c3c' : '#aaa'}; font-weight: ${advisor.details.abandonados > 0 ? 'bold' : 'normal'};">
                                         ${advisor.details.abandonados > 0 ? '⚠️' : '✓'} Aband: ${advisor.details.abandonados} 
