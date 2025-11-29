@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Cargar todos los rankings
         // === INICIO: CORRECCIÓN DE LLAMADA ===
-        loadBonoQuincenal(); // <-- ¡AÑADIDA!
+        loadIceRanking();
         // === FIN: CORRECCIÓN DE LLAMADA ===
         loadStrategicPerformanceIndex();
         loadPipelineRanking();
@@ -98,35 +98,67 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
-    // === INICIO: FUNCIÓN AÑADIDA ===
-    async function loadBonoQuincenal() {
-        // Usamos el ID que pusimos en el index.html
-        const container = document.getElementById('bono-quincenal-container'); 
-        const getScoreClass = (score) => {
-            if (score >= 75) return 'score-high';
-            if (score >= 50) return 'score-medium';
-            return 'score-low';
-        };
+   // === INICIO: NUEVA FUNCIÓN ICE (REEMPLAZA A BONO QUINCENAL) ===
+    async function loadIceRanking() {
+        const container = document.getElementById('bono-quincenal-container'); // Mantenemos el mismo ID del HTML
+        if (!container) return;
+
         try {
-            // Usamos la ruta que SÍ existe en tu server_v12.js
-            const response = await fetch('/api/ide-quincenal'); 
-            const data = await response.json();
+            // 1. CONECTAMOS A LA NUEVA RUTA MENSUAL
+            const response = await fetch('/api/ide-mensual-eficiente'); 
+            const ranking = await response.json();
             
-            let content = '<h3>💰 Bono Quincenal (IDE)</h3>'; // Título
-            data.forEach((item, index) => {
-                let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-                const score = parseFloat(item.performance_score).toFixed(1);
-                content += `<div class="performance-item"><span class="performance-advisor">${medal} ${item.advisorname}</span><span class="performance-score ${getScoreClass(score)}">${score} / 100</span></div>`;
-            });
+            // 2. NUEVO TÍTULO PROFESIONAL
+            let content = `
+                <h3 style="margin-bottom: 5px;">🧬 Índice de Compromiso Empresarial (ICE)</h3>
+                <p style="font-size: 0.8em; color: #666; margin-bottom: 15px;">Eficiencia y Resultados del Mes</p>
+            `;
+
+            if (ranking.length === 0) {
+                content += '<p style="text-align:center; color: #999;">Iniciando mes... Aún no hay datos.</p>';
+            } else {
+                ranking.forEach((advisor, index) => {
+                    // Iconos de medalla
+                    let rankIcon = `#${index + 1}`;
+                    if (index === 0) rankIcon = '🥇';
+                    if (index === 1) rankIcon = '🥈';
+                    if (index === 2) rankIcon = '🥉';
+
+                    // Colores según porcentaje de meta
+                    const percent = parseFloat(advisor.percentage_bar);
+                    let barColor = '#e74c3c'; // Rojo
+                    if (percent >= 40) barColor = '#f1c40f'; // Amarillo
+                    if (percent >= 70) barColor = '#2ecc71'; // Verde Bueno
+                    if (percent >= 100) barColor = '#27ae60'; // Verde Éxito
+
+                    // Construcción de la fila visual
+                    content += `
+                        <div style="margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; margin-bottom: 2px;">
+                                <span>${rankIcon} ${advisor.advisorname}</span>
+                                <span style="color: #333;">${advisor.performance_score} Pts</span>
+                            </div>
+                            
+                            <div style="width: 100%; background-color: #eee; height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="width: ${percent}%; background-color: ${barColor}; height: 100%;"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: #777; margin-top: 2px;">
+                                <span>Ventas: ${advisor.details.ventas} | Coti: ${advisor.details.descargas}</span>
+                                <span>Efec: ${advisor.details.visitas} | <span style="color: ${advisor.details.abandonados > 0 ? 'red' : 'inherit'}">Aband: ${advisor.details.abandonados}</span></span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
             container.innerHTML = content;
             
         } catch (error) { 
-            container.innerHTML = '<h3>💰 Bono Quincenal</h3><p>Error al cargar.</p>'; 
-            console.error('Error al cargar Bono Quincenal:', error);
+            console.error('Error al cargar ICE:', error);
+            container.innerHTML = '<h3>🧬 ICE Mensual</h3><p>Error de conexión.</p>'; 
         }
     }
-    // === FIN: FUNCIÓN AÑADIDA ===
-
+    // === FIN: NUEVA FUNCIÓN ICE ===
     async function loadStrategicPerformanceIndex() {
     const container = document.getElementById('strategic-performance-container'); 
     

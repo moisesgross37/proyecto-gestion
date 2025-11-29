@@ -2671,6 +2671,140 @@ app.get('/api/team-pulse', requireLogin, checkRole(['Administrador', 'Coordinado
     }
 });
 // ======================================================================
+// ========= NUEVO: IDE MENSUAL EFICIENTE (LÓGICA SEGURA) ===============
+// ======================================================================
+// Esta ruta NO toca la lógica anterior. Es independiente.
+app.get('/api/ide-mensual-eficiente', requireLogin, async (req, res) => {
+    try {
+        const monthStartDateSQL = `date_trunc('month', NOW())::date`;
+
+        // 1. VENTAS (+50 PTS): Centros formalizados este mes
+        const salesQuery = `
+            SELECT fc.advisor_name, COUNT(*) AS count 
+            FROM formalized_centers fc
+            JOIN advisors a ON fc.advisor_name = a.name
+            WHERE a.estado = 'activo'
+              AND fc.formalization_date >= ${monthStartDateSQL}
+            GROUP BY fc.advisor_name;
+        `;
+
+        // 2. COTIZACIONES DESCARGADAS (+10 PTS): Estado 'archivada' este mes
+        const downloadsQuery = `
+            SELECT q.advisorname, COUNT(*) AS count
+            FROM quotes q
+            JOIN advisors a ON q.advisorname = a.name
+            WHERE a.estado = 'activo'
+              AND q.status = 'archivada'
+              AND q.createdat >= ${monthStartDateSQL}
+            GROUP BY q.advisorname;
+        `;
+
+        // 3. VISITAS (+5 Efectiva / -2 Fallida):
+        // Efectiva: Cualquier cosa que no sea 'No Logrado'.
+        // Fallida: 'No Logrado'.
+        const visitsQuery = `
+            SELECT 
+                v.advisorname,
+                COUNT(CASE WHEN v.commenttext != 'No Logrado' THEN 1 END) as efectivas,
+                COUNT(CASE WHEN v.commenttext = 'No Logrado' THEN 1 END) as fallidas
+            FROM visits v
+            JOIN advisors a ON v.advisorname = a.name
+            WHERE a.estado = 'activo'
+              AND v.visitdate >= ${monthStartDateSQL}
+            GROUP BY v.advisorname;
+        `;
+
+        // 4. PENALIZACIÓN POR ABANDONO (-5 PTS):
+        // SOLUCIÓN FINAL: Buscamos al asesor en la tabla de VISITAS, no en centros.
+        const abandonedQuery = `
+            WITH LastVisits AS (
+                SELECT centername, advisorname, MAX(visitdate) as last_visit
+                FROM visits
+                GROUP BY centername, advisorname
+            )
+            SELECT 
+                lv.advisorname, 
+                COUNT(*) as count
+            FROM LastVisits lv
+            JOIN centers c ON lv.centername = c.name
+            JOIN advisors a ON lv.advisorname = a.name
+            WHERE a.estado = 'activo'
+              AND c.etapa_venta IN ('Prospecto', 'Negociación', 'Cotización Presentada')
+              AND lv.last_visit < NOW() - INTERVAL '21 days'
+            GROUP BY lv.advisorname;
+        `;
+
+        // 5. OBTENER ASESORES (Para lista completa)
+        const advisorsQuery = "SELECT name FROM advisors WHERE estado = 'activo'";
+
+        // EJECUCIÓN
+        const [salesRes, downloadsRes, visitsRes, abandonedRes, allAdvisorsRes] = await Promise.all([
+            pool.query(salesQuery),
+            pool.query(downloadsQuery),
+            pool.query(visitsQuery),
+            pool.query(abandonedQuery),
+            pool.query(advisorsQuery)
+        ]);
+
+        // PROCESAMIENTO
+        const scoreboard = {};
+        allAdvisorsRes.rows.forEach(a => {
+            scoreboard[a.name] = { 
+                advisorname: a.name, sales: 0, downloads: 0, 
+                effective_visits: 0, failed_visits: 0, abandoned: 0 
+            };
+        });
+
+        // Mapeo de datos
+        salesRes.rows.forEach(r => { if(scoreboard[r.advisor_name]) scoreboard[r.advisor_name].sales = parseInt(r.count); });
+        downloadsRes.rows.forEach(r => { if(scoreboard[r.advisorname]) scoreboard[r.advisorname].downloads = parseInt(r.count); });
+        visitsRes.rows.forEach(r => { 
+            if(scoreboard[r.advisorname]) {
+                scoreboard[r.advisorname].effective_visits = parseInt(r.efectivas);
+                scoreboard[r.advisorname].failed_visits = parseInt(r.fallidas);
+            }
+        });
+        abandonedRes.rows.forEach(r => { if(scoreboard[r.advisorname]) scoreboard[r.advisorname].abandoned = parseInt(r.count); });
+
+        // CÁLCULO DE PUNTOS
+        const ranking = Object.values(scoreboard).map(advisor => {
+            let score = 
+                (advisor.sales * 50) +              // +50 por Venta
+                (advisor.downloads * 10) +          // +10 por Cotización Descargada
+                (advisor.effective_visits * 5) -    // +5 por Visita Buena
+                (advisor.failed_visits * 2) -       // -2 por Visita Mala ("No Logrado")
+                (advisor.abandoned * 5);            // -5 por Centro Abandonado
+
+            if (score < 0) score = 0; // No dar negativos para no desmoralizar
+
+            // Cálculo para la barra visual (Meta ejemplo: 500 pts)
+            const TARGET = 500;
+            const percentage = Math.min((score / TARGET) * 100, 100);
+
+            return {
+                advisorname: advisor.advisorname,
+                performance_score: score, // PUNTOS REALES
+                percentage_bar: percentage.toFixed(1), // PARA LA BARRA DE COLOR
+                details: {
+                    ventas: advisor.sales,
+                    descargas: advisor.downloads,
+                    visitas: advisor.effective_visits,
+                    abandonados: advisor.abandoned
+                }
+            };
+        });
+
+        ranking.sort((a, b) => b.performance_score - a.performance_score);
+        res.json(ranking);
+
+    } catch (err) {
+        console.error("Error en IDE Mensual Eficiente:", err);
+        // Si falla, enviamos array vacío para no romper el frontend
+        res.json([]); 
+    }
+});
+// ======================================================================
+// ======================================================================
 // ========= FIN: APIS PARA IDE Y PULSO DE EQUIPO =======================
 // ======================================================================
 
