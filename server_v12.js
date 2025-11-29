@@ -2770,10 +2770,10 @@ app.get('/api/ide-mensual-eficiente', requireLogin, async (req, res) => {
         const ranking = Object.values(scoreboard).map(advisor => {
             let score = 
                 (advisor.sales * 50) +              // +50 por Venta
-                (advisor.downloads * 10) +          // +10 por Cotización Descargada
+                (advisor.downloads * 5) +          // +10 por Cotización Descargada
                 (advisor.effective_visits * 5) -    // +5 por Visita Buena
                 (advisor.failed_visits * 2) -       // -2 por Visita Mala ("No Logrado")
-                (advisor.abandoned * 5);            // -5 por Centro Abandonado
+                (advisor.abandoned * 10);            // -5 por Centro Abandonado
 
             if (score < 0) score = 0; // No dar negativos para no desmoralizar
 
