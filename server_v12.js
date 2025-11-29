@@ -2789,6 +2789,7 @@ app.get('/api/ide-mensual-eficiente', requireLogin, async (req, res) => {
                     ventas: advisor.sales,
                     descargas: advisor.downloads,
                     visitas: advisor.effective_visits,
+                    fallidas: advisor.failed_visits, // <--- ¡ESTA ES LA LÍNEA NUEVA!
                     abandonados: advisor.abandoned
                 }
             };

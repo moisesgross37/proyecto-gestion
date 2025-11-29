@@ -149,10 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (percent >= 70) barColor = '#2ecc71'; // Verde Bueno
                     if (percent >= 100) barColor = '#27ae60'; // Verde Éxito
 
-                    // 3. Cálculo del castigo (Variable necesaria para el HTML)
-                    const castigoAbandono = advisor.details.abandonados * 10;
+                    // --- CÁLCULO VISUAL ---
+                    const castigoAbandono = advisor.details.abandonados * 10; 
 
-                    // 4. Construcción de la fila visual (DISEÑO DOS PISOS)
+                    // --- CONSTRUCCIÓN DE LA FILA (FINAL: CON VISITAS FALLIDAS) ---
                     content += `
                         <div style="margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                             
@@ -173,8 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>
-                                        🤝 Efec: <strong>${advisor.details.visitas}</strong> 
-                                        ${advisor.details.failed_visits > 0 ? `<span style="color: #c0392b; margin-left: 5px;">(❌ ${advisor.details.failed_visits})</span>` : ''}
+                                        🤝 Efec: <strong>${advisor.details.visitas}</strong>
+                                        ${advisor.details.fallidas > 0 ? `<span style="color: #c0392b; font-weight: bold; margin-left: 3px;">(❌ ${advisor.details.fallidas})</span>` : ''}
                                     </span>
                                     
                                     <span style="color: ${advisor.details.abandonados > 0 ? '#e74c3c' : '#aaa'}; font-weight: ${advisor.details.abandonados > 0 ? 'bold' : 'normal'};">
