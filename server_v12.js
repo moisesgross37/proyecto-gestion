@@ -925,18 +925,32 @@ app.get('/api/quote-requests', requireLogin, checkRole(['Administrador', 'Asesor
 // === FIN: RUTA LISTAR COTIZACIONES (CORREGIDA) ===
 
 
-// Ruta para obtener cotizaciones aprobadas/archivadas para formalización (DE LA NUBE - SIN CAMBIOS)
+// Ruta para obtener cotizaciones para formalizar (A PRUEBA DE MAYÚSCULAS/MINÚSCULAS)
 app.get('/api/quotes/approved', requireLogin, async (req, res) => {
     const { clientName } = req.query;
     if (!clientName) {
         return res.status(400).json({ message: 'El nombre del cliente es requerido.' });
     }
+    
+    // Limpiamos espacios por si acaso
+    const cleanClientName = clientName.trim();
+
     try {
+        // CORRECCIÓN CLAVE:
+        // 1. Usamos ILIKE en el nombre (por seguridad).
+        // 2. Usamos ILIKE en el status ('archivada', 'ARCHIVADA', 'Archivada'... todas valen).
         const result = await pool.query(
-            "SELECT id, quotenumber, studentcount, preciofinalporestudiante FROM quotes WHERE clientname = $1 AND (status = 'aprobada' OR status = 'archivada') ORDER BY createdat DESC",
-            [clientName]
+            `SELECT id, quotenumber, studentcount, preciofinalporestudiante 
+             FROM quotes 
+             WHERE TRIM(clientname) ILIKE $1 
+               AND (status ILIKE 'aprobada' OR status ILIKE 'archivada') 
+             ORDER BY createdat DESC`,
+            [cleanClientName]
         );
+        
+        console.log(`[Formalización] Buscando cotizaciones para: '${cleanClientName}'. Encontradas: ${result.rows.length}`);
         res.json(result.rows);
+
     } catch (err) {
         console.error('Error en GET /api/quotes/approved:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener cotizaciones aprobadas/archivadas.' });
