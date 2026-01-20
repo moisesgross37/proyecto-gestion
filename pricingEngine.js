@@ -11,15 +11,15 @@ function redondeoComercial(precio) {
 // --- TABLAS DE COSTOS POR TRAMOS ---
 
 const eventCostTiers = [
-    { min: 10, max: 25, cost: 1481 },
-    { min: 26, max: 50, cost: 1481 },
-    { min: 51, max: 75, cost: 1381 },
-    { min: 76, max: 100, cost: 1281 },
-    { min: 101, max: 125, cost: 1181 },
-    { min: 126, max: 150, cost: 1100 },
-    { min: 151, max: 175, cost: 1050 },
-    { min: 176, max: 250, cost: 1000 },
-    { min: 251, max: Infinity, cost: 1000 }
+    { min: 10, max: 25, cost: 1150 },   // Ajustado para tu meta de ~7,400
+    { min: 26, max: 50, cost: 1250 },   // Ajustado para tu meta de ~7,900
+    { min: 51, max: 75, cost: 950 },    // Bajamos fuerte para acercarnos a 6,500
+    { min: 76, max: 100, cost: 400 },   // Bajamos drástico para llegar a 5,700
+    { min: 101, max: 125, cost: 300 },  // Proyección: Ya casi no cobramos logística extra
+    { min: 126, max: 150, cost: 200 },  // Proyección: Solo cobramos un mínimo
+    { min: 151, max: 175, cost: 100 },  // Proyección: Simbólico
+    { min: 176, max: 250, cost: 50 },   // Proyección: Prácticamente cero
+    { min: 251, max: Infinity, cost: 0 } // Gratis, ganamos solo por volumen
 ];
 
 const launchTiers = [
@@ -135,17 +135,17 @@ function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
         }
     });
 
-    const perStudentMarginRules = [
-        { min: 10, max: 25, margin: 0.38 },
-        { min: 26, max: 50, margin: 0.35 },
-        { min: 51, max: 75, margin: 0.32 },
-        { min: 76, max: 100, margin: 0.30 },
-        { min: 101, max: 125, margin: 0.29 },
-        { min: 126, max: 150, margin: 0.28 },
-        { min: 151, max: 175, margin: 0.27 },
-        { min: 176, max: 250, margin: 0.26 },
-        { min: 251, max: Infinity, margin: 0.25 }
-    ];
+   const perStudentMarginRules = [
+    { min: 10, max: 25, margin: 0.30 },   // 30% (Bajamos del 38%)
+    { min: 26, max: 50, margin: 0.28 },   // 28% (Bajamos del 35%)
+    { min: 51, max: 75, margin: 0.25 },   // 25% (Ideal para rango medio)
+    { min: 76, max: 100, margin: 0.22 },  // 22% (Para ser agresivos en precio)
+    { min: 101, max: 125, margin: 0.20 }, // 20% (Volumen alto = margen bajo)
+    { min: 126, max: 150, margin: 0.19 }, // 19%
+    { min: 151, max: 175, margin: 0.18 }, // 18% (Mínimo saludable)
+    { min: 176, max: 250, margin: 0.18 }, // 18%
+    { min: 251, max: Infinity, margin: 0.18 } // 18%
+];
 
     const fixedCostMarginRules = [
         { min: 10, max: 25, margin: 0.38 },
