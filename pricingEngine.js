@@ -136,13 +136,13 @@ function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
     });
 
    const perStudentMarginRules = [
-    { min: 10, max: 25, margin: 0.30 },   // 30% (Bajamos del 38%)
-    { min: 26, max: 50, margin: 0.28 },   // 28% (Bajamos del 35%)
-    { min: 51, max: 75, margin: 0.25 },   // 25% (Ideal para rango medio)
-    { min: 76, max: 100, margin: 0.22 },  // 22% (Para ser agresivos en precio)
-    { min: 101, max: 125, margin: 0.20 }, // 20% (Volumen alto = margen bajo)
+    { min: 10, max: 25, margin: 0.30 },   // Mantenemos 30%
+    { min: 26, max: 50, margin: 0.29 },   // SUBIMOS: De 0.28 a 0.29 para acercarnos a los 7,900
+    { min: 51, max: 75, margin: 0.32 },   // SUBIMOS FUERTE: De 0.25 a 0.32 para subir de 5,300 a ~6,500
+    { min: 76, max: 100, margin: 0.22 },  // Mantenemos 0.22 (Ya da cerca de 5,700)
+    { min: 101, max: 125, margin: 0.20 }, // 20%
     { min: 126, max: 150, margin: 0.19 }, // 19%
-    { min: 151, max: 175, margin: 0.18 }, // 18% (Mínimo saludable)
+    { min: 151, max: 175, margin: 0.18 }, // 18%
     { min: 176, max: 250, margin: 0.18 }, // 18%
     { min: 251, max: Infinity, margin: 0.18 } // 18%
 ];
