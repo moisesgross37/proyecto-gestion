@@ -11,15 +11,15 @@ function redondeoComercial(precio) {
 // --- TABLAS DE COSTOS POR TRAMOS ---
 
 const eventCostTiers = [
-    { min: 10, max: 25, cost: 1150 },   // Ajustado para tu meta de ~7,400
-    { min: 26, max: 50, cost: 1250 },   // Ajustado para tu meta de ~7,900
-    { min: 51, max: 75, cost: 950 },    // Bajamos fuerte para acercarnos a 6,500
-    { min: 76, max: 100, cost: 400 },   // Bajamos drástico para llegar a 5,700
-    { min: 101, max: 125, cost: 300 },  // Proyección: Ya casi no cobramos logística extra
-    { min: 126, max: 150, cost: 200 },  // Proyección: Solo cobramos un mínimo
-    { min: 151, max: 175, cost: 100 },  // Proyección: Simbólico
-    { min: 176, max: 250, cost: 50 },   // Proyección: Prácticamente cero
-    { min: 251, max: Infinity, cost: 0 } // Gratis, ganamos solo por volumen
+    { min: 10, max: 25, cost: 1150 },
+    { min: 26, max: 50, cost: 1250 },
+    { min: 51, max: 75, cost: 950 },
+    { min: 76, max: 100, cost: 650 },
+    { min: 101, max: 125, cost: 550 },
+    { min: 126, max: 150, cost: 450 },  // Rango 150: Costo estable
+    { min: 151, max: 175, cost: 450 },  // MANTENEMOS el costo (antes bajaba)
+    { min: 176, max: 250, cost: 400 },  // Bajada muy suave
+    { min: 251, max: Infinity, cost: 400 } // Piso firme
 ];
 
 const launchTiers = [
@@ -136,28 +136,28 @@ function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
     });
 
    const perStudentMarginRules = [
-    { min: 10, max: 25, margin: 0.30 },   // Mantenemos 30%
-    { min: 26, max: 50, margin: 0.29 },   // SUBIMOS: De 0.28 a 0.29 para acercarnos a los 7,900
-    { min: 51, max: 75, margin: 0.32 },   // SUBIMOS FUERTE: De 0.25 a 0.32 para subir de 5,300 a ~6,500
-    { min: 76, max: 100, margin: 0.22 },  // Mantenemos 0.22 (Ya da cerca de 5,700)
-    { min: 101, max: 125, margin: 0.20 }, // 20%
-    { min: 126, max: 150, margin: 0.19 }, // 19%
-    { min: 151, max: 175, margin: 0.18 }, // 18%
-    { min: 176, max: 250, margin: 0.18 }, // 18%
-    { min: 251, max: Infinity, margin: 0.18 } // 18%
+    { min: 10, max: 25, margin: 0.30 },
+    { min: 26, max: 50, margin: 0.29 },
+    { min: 51, max: 75, margin: 0.32 },
+    { min: 76, max: 100, margin: 0.26 },
+    { min: 101, max: 125, margin: 0.28 },
+    { min: 126, max: 150, margin: 0.28 }, // Rango 150: Margen fuerte (28%)
+    { min: 151, max: 175, margin: 0.28 }, // MANTENEMOS 28% (Evita caída de precio)
+    { min: 176, max: 250, margin: 0.27 }, // Solo bajamos un 1%
+    { min: 251, max: Infinity, margin: 0.27 } // Mantenemos firme
 ];
 
     const fixedCostMarginRules = [
-        { min: 10, max: 25, margin: 0.38 },
-        { min: 26, max: 50, margin: 0.35 },
-        { min: 51, max: 75, margin: 0.32 },
-        { min: 76, max: 100, margin: 0.30 },
-        { min: 101, max: 125, margin: 0.29 },
-        { min: 126, max: 150, margin: 0.28 },
-        { min: 151, max: 175, margin: 0.27 },
-        { min: 176, max: 250, margin: 0.26 },
-        { min: 251, max: Infinity, margin: 0.25 }
-    ];
+    { min: 10, max: 25, margin: 0.30 },
+    { min: 26, max: 50, margin: 0.29 },
+    { min: 51, max: 75, margin: 0.32 },
+    { min: 76, max: 100, margin: 0.26 },
+    { min: 101, max: 125, margin: 0.28 },
+    { min: 126, max: 150, margin: 0.28 }, // Rango 150: Margen fuerte (28%)
+    { min: 151, max: 175, margin: 0.28 }, // MANTENEMOS 28% (Evita caída de precio)
+    { min: 176, max: 250, margin: 0.27 }, // Solo bajamos un 1%
+    { min: 251, max: Infinity, margin: 0.27 } // Mantenemos firme
+];
 
     const marginRules = isPerStudentQuote ? perStudentMarginRules : fixedCostMarginRules;
     const applicableMarginRule = marginRules.find(r => studentCount >= r.min && studentCount <= r.max);
