@@ -5,7 +5,6 @@ PROMOCIONALES,Thirt,Thisrt Prepromo o Depor,,225,por_estudiante
 PROMOCIONALES,Polos,Polos Sublimados,,500,por_estudiante
 PROMOCIONALES,Polos,Polos Sublimados logo Bordados,,610,por_estudiante
 PROMOCIONALES,Polos,Polos Algodon Combinando con logo bordado,,740,por_estudiante
-PROMOCIONALES,Polos,Polos Algodon Sublimado con logo bordado,,690,por_estudiante
 PROMOCIONALES,Polos,Polos para ninos,”Polo en algodón a un solo color con logo bordado”,385,por_estudiante
 PROMOCIONALES,Polo para Maestros,Polo para Maestros Sublimado logo Bordado,,500,por_estudiante
 PROMOCIONALES,Polo para Maestros,Polo para Maestros Ojo de Angel un color logo Bordado,,350,por_estudiante
@@ -84,6 +83,7 @@ INVESTIDURA,Pequenines,Investidura Para Basicas Plus,"Incluye:1 Fotografía indi
 INVESTIDURA,Pequenines,Recuerdo Escolar,"Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",800,por_estudiante
 INVESTIDURA,Pequenines,COMBO NAVIDAD,"Incluye: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales",800,por_estudiante
 INVESTIDURA,Pequenines,COMBO NAVIDAD Y RECUERDO ESCOLAR,"Incluye: COMBO NAVIDAD: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales, RECUERDO ESCOLAR: Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",1500,por_estudiante
+INVESTIDURA,Salones,Epic (NO USAR NO USAR),Capacidad Aproximada 350,30000,total_grupo
 INVESTIDURA,Salones,Coopnama (u otro mismo rango),Capacidad Aproximada 350,30000,total_grupo
 INVESTIDURA,Salones,Salon Aida Porta Latin,Capacidad Aproximada 130,25000,total_grupo
 INVESTIDURA,Salones,Auditorio Biblioteca Nacional,Capacidad Aproximada 400,60000,total_grupo
@@ -107,3 +107,4 @@ INVESTIDURA,Varios,Mesa de Dulces,,15000,escalonado
 INVESTIDURA,Varios,After Partty,"Este presupuesto se crea en base al requerimiento del cliente",75000,escalonado
 INVESTIDURA,Varios,Solo sesion de fotos en Estudio o Exterior,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,4 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",1000,por_estudiante
 INVESTIDURA,Varios,Solo Sesion de Pregraduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2, Fotografías cargadas a la web",1700,por_estudiante
+PROMOCIONALES,Polos,Polos Algodon Sublimado con logo bordado,,690,por_estudiante
