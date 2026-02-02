@@ -1666,7 +1666,8 @@ app.get('/api/agreements/:id/pdf', requireLogin, checkRole(['Administrador', 'As
         res.status(500).send('Error interno al generar el acuerdo.');
     }
 });
-app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
+// CORRECCIÓN: Se agregó 'Coordinador' a los permisos para que Griselda pueda entrar
+app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrador', 'Asesor', 'Coordinador']), async (req, res) => {
     const { id } = req.params;
     console.log(`[Details Req ${id}] Solicitud recibida.`);
     try {
@@ -1691,30 +1692,29 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
              productDetails = (quote.productids || []).map(id => `ID ${id} (productos no cargados)`);
         }
 
-        // Construir la respuesta JSON incluyendo TODOS los campos relevantes
+        // Construir la respuesta JSON incluyendo TODOS los campos relevantes (INTACTO)
         const responseData = {
             // Campos originales
             quoteNumber: quote.quotenumber,
-            clientName: quote.clientname, // Añadido para contexto
-            advisorName: quote.advisorname, // Añadido para contexto
-            status: quote.status, // Añadido para contexto
+            clientName: quote.clientname, 
+            advisorName: quote.advisorname, 
+            status: quote.status, 
             rejectionReason: quote.rejectionreason,
             products: productDetails,
             studentCount: quote.studentcount,
-            pricePerStudent: quote.preciofinalporestudiante, // Precio final (puede tener ajuste)
-            estudiantesFacturables: quote.estudiantesparafacturar, // Añadido
-            facilidadesAplicadas: quote.facilidadesaplicadas, // Añadido
-            aporteInstitucion: quote.aporte_institucion, // Añadido
-            membreteTipo: quote.membrete_tipo, // Añadido
+            pricePerStudent: quote.preciofinalporestudiante, 
+            estudiantesFacturables: quote.estudiantesparafacturar, 
+            facilidadesAplicadas: quote.facilidadesaplicadas, 
+            aporteInstitucion: quote.aporte_institucion, 
+            membreteTipo: quote.membrete_tipo, 
 
-            // --- CAMPOS DE AJUSTE AÑADIDOS ---
+            // --- CAMPOS DE AJUSTE ---
             ajusteSolicitadoMonto: quote.ajuste_solicitado_monto,
             ajusteSolicitadoComentario: quote.ajuste_solicitado_comentario,
             ajusteAprobadoMonto: quote.ajuste_aprobado_monto,
             ajusteAprobadoComentario: quote.ajuste_aprobado_comentario,
             ajusteAprobadoPor: quote.ajuste_aprobado_por,
-            ajusteFecha: quote.ajuste_fecha // Añadido fecha de aprobación
-            // --- FIN CAMPOS DE AJUSTE ---
+            ajusteFecha: quote.ajuste_fecha 
         };
         console.log(`[Details Req ${id}] Enviando detalles completos.`);
         res.json(responseData);
