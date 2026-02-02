@@ -35,43 +35,49 @@
             const input = document.getElementById('new-advisor-name');
             const list = document.getElementById('advisor-list');
             const API_URL = '/api/advisors';
-            const resourceName = 'asesores';
-            const entityDisplayName = 'Asesor';
 
-            // Reemplaza tu fetchAndDisplayItems con este:
+            // Función para cargar y mostrar los asesores
             const fetchAndDisplayItems = async () => {
                 try {
-                    // Esta parte (fetch) ya estaba bien, pero la dejamos
-                    // porque ahora solo recibirá asesores 'activos' gracias al Parche 1.1
                     const response = await fetch(API_URL); 
-                    if (!response.ok) throw new Error(`Error al obtener ${resourceName}.`);
+                    if (!response.ok) throw new Error(`Error al obtener asesores.`);
                     const items = await response.json();
+                    
                     list.innerHTML = '';
+                    
                     if (items.length === 0) {
-                        list.innerHTML = `<li>No hay ${resourceName} registrados.</li>`;
+                        list.innerHTML = `<li>No hay asesores registrados.</li>`;
                         return;
                     }
+
                     items.forEach(item => {
                         const listItem = document.createElement('li');
+                        
+                        // Si el asesor está inactivo, le ponemos un estilo visual diferente
+                        if (item.active === false) {
+                            listItem.style.opacity = '0.5';
+                            listItem.style.textDecoration = 'line-through';
+                        }
+
                         listItem.textContent = item.name;
                         
-                        // --- INICIO DE LA CORRECCIÓN 2.2 ---
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = 'Desactivar'; // <-- Texto cambiado
-                        deleteButton.classList.add('btn-delete');
-                        // Usamos la nueva función 'toggleItemStatus' que creaste en el paso 2.1
-                        deleteButton.addEventListener('click', () => toggleItemStatus(item.id)); // <-- Función cambiada
-                        // --- FIN DE LA CORRECCIÓN 2.2 ---
+                        const toggleButton = document.createElement('button');
+                        // Cambiamos el texto del botón según el estado
+                        toggleButton.textContent = item.active === false ? 'Activar' : 'Desactivar';
+                        toggleButton.className = item.active === false ? 'btn-activate' : 'btn-delete';
                         
-                        listItem.appendChild(deleteButton);
+                        toggleButton.addEventListener('click', () => toggleItemStatus(item.id, item.active));
+                        
+                        listItem.appendChild(toggleButton);
                         list.appendChild(listItem);
                     });
                 } catch (error) {
                     console.error(error);
-                    list.innerHTML = `<li>Error al cargar ${resourceName}.</li>`;
+                    list.innerHTML = `<li>Error al cargar asesores.</li>`;
                 }
             };
 
+            // Función para añadir un nuevo asesor
             const addItem = async (name) => {
                 try {
                     const response = await fetch(API_URL, {
@@ -79,42 +85,36 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name }),
                     });
-                    if (!response.ok) throw new Error(`Error al añadir ${entityDisplayName}.`);
+                    if (!response.ok) throw new Error(`Error al añadir asesor.`);
                     input.value = '';
                     await fetchAndDisplayItems();
                 } catch (error) {
                     console.error(error);
-                    alert(`No se pudo añadir el ${entityDisplayName}.`);
+                    alert(`No se pudo añadir el asesor.`);
                 }
             };
 
-            // Reemplaza tu función "deleteItem" por esta nueva función "toggleItemStatus"
-        async function toggleItemStatus(id) {
-            
-            // Cambiamos la pregunta para que sea más clara
-            const confirmMessage = `¿Estás seguro de que deseas cambiar el estado (activar/desactivar) de este ${entityDisplayName.toLowerCase()}? \n\n(Esto no lo borrará, solo lo ocultará de las listas).`;
-            
-            if (confirm(confirmMessage)) {
-                try {
-                    // Llamamos a la nueva ruta "buena" del servidor
-                    const response = await fetch(`${API_URL}/${entityId}/${id}/toggle-status`, {
-                        method: 'POST' 
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Error al cambiar el estado del ${entityDisplayName}`);
+            // NUEVA FUNCIÓN CORREGIDA: Sin 'entityId' y con lógica de estado
+            async function toggleItemStatus(id, currentStatus) {
+                const accion = (currentStatus === false) ? 'activar' : 'desactivar';
+                const confirmMessage = `¿Estás seguro de que deseas ${accion} a este asesor?\n\n(No se borrarán sus datos históricos).`;
+                
+                if (confirm(confirmMessage)) {
+                    try {
+                        // Llamada al servidor con el ID correcto
+                        const response = await fetch(`${API_URL}/${id}/toggle-status`, {
+                            method: 'PUT' // Usamos PUT porque es una actualización
+                        });
+                        
+                        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+                        
+                        await fetchAndDisplayItems(); // Recargar la lista
+                    } catch (error) {
+                        console.error('Error al cambiar estado:', error);
+                        alert('No se pudo cambiar el estado del asesor.');
                     }
-                    
-                    // Éxito, volvemos a cargar la lista
-                    // (el asesor desactivado ya no aparecerá gracias al Parche 1.1)
-                    await fetchAndDisplayItems(); 
-
-                } catch (error) {
-                    console.error(error);
-                    alert(`No se pudo cambiar el estado del ${entityDisplayName}.`);
                 }
             }
-        }
 
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
