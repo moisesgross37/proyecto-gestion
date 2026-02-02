@@ -447,23 +447,24 @@ const requireAdminOrCoordinator = (req, res, next) => {
     }
 };
 // RUTA RESTAURADA (SEGURA): No requiere la columna 'active' para funcionar
-
+// RUTA RESTAURADA: Usando la tabla 'advisors' para evitar el error de columna
 app.get('/api/advisors', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name FROM users WHERE role = $1 ORDER BY name ASC', ['Asesor']);
+        // Consultamos a la tabla 'advisors' que sí sabemos que tiene la columna 'name'
+        const result = await pool.query('SELECT id, name FROM advisors ORDER BY name ASC');
         
-        // Le agregamos el campo active de forma manual para que el HTML no de error, 
-        // pero lo traemos siempre como 'true' por ahora.
-        const advisors = result.rows.map(user => ({
-            id: user.id,
-            name: user.name,
+        // Mapeamos los resultados para que el HTML reciba el campo 'active' como true 
+        // por defecto y no se rompa la interfaz visual.
+        const advisors = result.rows.map(item => ({
+            id: item.id,
+            name: item.name,
             active: true 
         }));
         
         res.json(advisors);
     } catch (err) {
-        console.error("Error al obtener asesores:", err);
-        res.status(500).send('Error interno del servidor');
+        console.error("Error crítico al obtener asesores:", err);
+        res.status(500).json({ message: 'Error al cargar la lista de asesores.' });
     }
 });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => {
