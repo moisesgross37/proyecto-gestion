@@ -450,14 +450,15 @@ const requireAdminOrCoordinator = (req, res, next) => {
 // --- FIN RUTAS DE GESTIÓN DE USUARIOS ---
 
 // --- RUTAS DE GESTIÓN DE ASESORES (ADMIN) ---
-app.get('/api/advisors', requireLogin, async (req, res) => { // ¡requireAdmin quitado para que Coordinador pueda ver!
+// BUSCA ESTA RUTA Y ACTUALÍZALA:
+app.get('/api/advisors', requireLogin, async (req, res) => {
     try {
-        // CORRECCIÓN: Filtramos solo por asesores 'activos'
-        const result = await pool.query("SELECT * FROM advisors WHERE estado = 'activo' ORDER BY name ASC");
+        // IMPORTANTE: Asegúrate de que el SELECT incluya "active"
+        const result = await pool.query('SELECT id, name, active FROM users WHERE role = $1 ORDER BY name ASC', ['Asesor']);
         res.json(result.rows);
     } catch (err) {
-        console.error('Error en GET /api/advisors:', err);
-        res.status(500).json({ message: 'Error en el servidor al obtener asesores.' });
+        console.error(err);
+        res.status(500).send('Error al obtener asesores');
     }
 });
 
@@ -1742,9 +1743,6 @@ app.get('/api/quote-requests/:id/details', requireLogin, checkRole(['Administrad
         res.status(500).json({ message: `Error en el servidor al obtener detalles: ${error.message}` });
     }
 });
-// ======================================================================
-// ========= RUTA ACTUALIZADA PARA EL RANKING DE ASESORES (LÓGICA ESTRICTA) =====
-// ======================================================================
 app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
     try {
         const query = `
@@ -1757,12 +1755,12 @@ app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
                     visits v
                 INNER JOIN
                     centers c ON v.centername = c.name
-                -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
+                -- --- UNIFICADO CON TABLA USERS Y CAMPO ACTIVE ---
                 INNER JOIN
-                    advisors a ON v.advisorname = a.name
+                    users u ON v.advisorname = u.name
                 WHERE
-                    a.estado = 'activo'
-                -- --- FIN: MODIFICACIÓN ---
+                    u.active = true
+                -- --- FIN ---
             )
             SELECT
                 advisorname,
@@ -1791,7 +1789,6 @@ app.get('/api/advisor-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
     try {
-        // Esta consulta cuenta TODAS las visitas de asesores a centros existentes.
         const query = `
             SELECT
                 v.advisorname,
@@ -1800,12 +1797,12 @@ app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
                 visits v
             INNER JOIN
                 centers c ON v.centername = c.name
-            -- --- INICIO: MODIFICACIÓN PARA FILTRAR ASESORES ACTIVOS ---
+            -- --- UNIFICADO CON TABLA USERS Y CAMPO ACTIVE ---
             INNER JOIN 
-                advisors a ON v.advisorname = a.name
+                users u ON v.advisorname = u.name
             WHERE 
-                a.estado = 'activo'
-            -- --- FIN: MODIFICACIÓN ---
+                u.active = true
+            -- --- FIN ---
             GROUP BY 
                 v.advisorname
             ORDER BY
@@ -1826,27 +1823,21 @@ app.get('/api/advisor-visit-ranking', requireLogin, async (req, res) => {
 // ======================================================================
 app.get('/api/advisor-performance', requireLogin, async (req, res) => {
     try {
-        console.log("Iniciando cálculo de /api/advisor-performance...");
-
         const query = `
             WITH VisitCounts AS (
                 SELECT v.advisorname, COUNT(*) AS visit_count
                 FROM visits v
                 JOIN centers c ON v.centername = c.name
-                -- --- INICIO: MODIFICACIÓN 1 (FILTRAR ACTIVOS) ---
-                INNER JOIN advisors a ON v.advisorname = a.name
-                WHERE a.estado = 'activo'
-                -- --- FIN: MODIFICACIÓN 1 ---
+                INNER JOIN users u ON v.advisorname = u.name
+                WHERE u.active = true
                 GROUP BY v.advisorname
             ),
             FormalizationCounts AS (
                 SELECT v.advisorname, COUNT(*) AS formalization_count
                 FROM visits v
                 JOIN centers c ON v.centername = c.name
-                -- --- INICIO: MODIFICACIÓN 2 (FILTRAR ACTIVOS) ---
-                INNER JOIN advisors a ON v.advisorname = a.name
-                WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo' AND a.estado = 'activo'
-                -- --- FIN: MODIFICACIÓN 2 ---
+                INNER JOIN users u ON v.advisorname = u.name
+                WHERE LOWER(TRIM(v.commenttext)) = 'formalizar acuerdo' AND u.active = true
                 GROUP BY v.advisorname
             )
             SELECT
@@ -1856,22 +1847,14 @@ app.get('/api/advisor-performance', requireLogin, async (req, res) => {
             FROM VisitCounts vc
             LEFT JOIN FormalizationCounts fc ON vc.advisorname = fc.advisorname;
         `;
-
         const { rows: advisorsData } = await pool.query(query);
-        console.log(`Datos crudos de la BD: ${advisorsData.length} asesores encontrados.`);
+        
+        if (advisorsData.length === 0) return res.json([]);
 
-        if (advisorsData.length === 0) {
-            console.log("No hay datos de asesores, devolviendo array vacío.");
-            return res.json([]);
-        }
-
-        // Manejo defensivo por si no hay visitas o formalizaciones
         const visits = advisorsData.map(a => a.visit_count);
         const formalizations = advisorsData.map(a => a.formalization_count);
-        const maxVisits = visits.length > 0 ? Math.max(...visits) : 0;
-        const maxFormalizations = formalizations.length > 0 ? Math.max(...formalizations) : 0;
-
-        console.log(`Valores máximos - Visitas: ${maxVisits}, Formalizaciones: ${maxFormalizations}`);
+        const maxVisits = Math.max(...visits);
+        const maxFormalizations = Math.max(...formalizations);
 
         const performanceData = advisorsData.map(advisor => {
             const visitScore = (maxVisits > 0) ? (advisor.visit_count / maxVisits) * 70 : 0;
@@ -1880,24 +1863,19 @@ app.get('/api/advisor-performance', requireLogin, async (req, res) => {
 
             return {
                 advisorname: advisor.advisorname,
-                performance_score: parseFloat(totalScore.toFixed(1)) // Redondear a 1 decimal
+                performance_score: parseFloat(totalScore.toFixed(1))
             };
         });
 
-       
         performanceData.sort((a, b) => b.performance_score - a.performance_score);
-        console.log('Cálculo de desempeño completado exitosamente.'); // <-- ¡LÍNEA CORREGIDA!
-
         res.json(performanceData);
 
     } catch (error) {
-        console.error('ERROR DETALLADO en /api/advisor-performance:', error);
-        res.status(500).json({
-            message: 'Error en el servidor al calcular el desempeño.',
-            error: error.message // Incluir mensaje de error real
-        });
+        console.error('Error en /api/advisor-performance:', error);
+        res.status(500).json({ message: 'Error al calcular el desempeño.' });
     }
 });
+
 // ======================================================================
 // ========= INICIO: HERRAMIENTA DE DEBUG PARA VER TABLAS CRUDAS ========
 // ======================================================================
