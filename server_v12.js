@@ -446,22 +446,26 @@ const requireAdminOrCoordinator = (req, res, next) => {
         res.status(403).json({ message: 'Acceso prohibido. Se requiere rol de Administrador o Coordinador.' });
     }
 };
-// --- FIN DE LA NUEVA FUNCIÓN ---
-// --- FIN RUTAS DE GESTIÓN DE USUARIOS ---
+// RUTA RESTAURADA (SEGURA): No requiere la columna 'active' para funcionar
 
-// --- RUTAS DE GESTIÓN DE ASESORES (ADMIN) ---
-// BUSCA ESTA RUTA Y ACTUALÍZALA:
 app.get('/api/advisors', requireLogin, async (req, res) => {
     try {
-        // IMPORTANTE: Asegúrate de que el SELECT incluya "active"
-        const result = await pool.query('SELECT id, name, active FROM users WHERE role = $1 ORDER BY name ASC', ['Asesor']);
-        res.json(result.rows);
+        const result = await pool.query('SELECT id, name FROM users WHERE role = $1 ORDER BY name ASC', ['Asesor']);
+        
+        // Le agregamos el campo active de forma manual para que el HTML no de error, 
+        // pero lo traemos siempre como 'true' por ahora.
+        const advisors = result.rows.map(user => ({
+            id: user.id,
+            name: user.name,
+            active: true 
+        }));
+        
+        res.json(advisors);
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Error al obtener asesores');
+        console.error("Error al obtener asesores:", err);
+        res.status(500).send('Error interno del servidor');
     }
 });
-
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => {
     const { name } = req.body;
     if (!name || name.trim() === '') {
