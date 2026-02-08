@@ -704,26 +704,7 @@ app.get('/api/centers/search', async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor durante la búsqueda.' });
     }
 });
-// Ruta para cambiar el estado Activo/Inactivo de un Asesor
-app.put('/api/advisors/:id/toggle-status', requireLogin, checkRole(['Administrador']), async (req, res) => {
-    const { id } = req.params;
-    try {
-        // 1. Buscamos el estado actual
-        const userResult = await pool.query('SELECT active FROM users WHERE id = $1', [id]);
-        if (userResult.rows.length === 0) return res.status(404).send('Usuario no encontrado');
 
-        // 2. Invertimos el estado (si era true, ahora false)
-        const newStatus = !userResult.rows[0].active;
-
-        // 3. Guardamos el cambio
-        await pool.query('UPDATE users SET active = $1 WHERE id = $2', [newStatus, id]);
-        
-        res.json({ success: true, active: newStatus });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error al actualizar el estado del asesor');
-    }
-});
 app.put('/api/centers/:id', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
     const { name, address, sector, contactName, contactNumber } = req.body;
@@ -2895,7 +2876,6 @@ app.use((err, req, res, next) => {
       }
   }
 });
-// --- Fin Manejo de errores ---
 
 // --- Inicialización y Arranque (DE LA NUBE + AJUSTE LOCAL) ---
 // Mover loadProducts y initializeDatabase ANTES de app.listen para asegurar que estén listos

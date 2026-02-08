@@ -94,16 +94,16 @@
                 }
             };
 
-            // NUEVA FUNCIÓN CORREGIDA: Sin 'entityId' y con lógica de estado
+            // FUNCIÓN CORREGIDA: Cambiamos PUT por POST para coincidir con tu servidor
             async function toggleItemStatus(id, currentStatus) {
                 const accion = (currentStatus === false) ? 'activar' : 'desactivar';
                 const confirmMessage = `¿Estás seguro de que deseas ${accion} a este asesor?\n\n(No se borrarán sus datos históricos).`;
                 
                 if (confirm(confirmMessage)) {
                     try {
-                        // Llamada al servidor con el ID correcto
+                        // AQUÍ ESTABA EL ERROR: Cambiamos 'PUT' por 'POST'
                         const response = await fetch(`${API_URL}/${id}/toggle-status`, {
-                            method: 'PUT' // Usamos PUT porque es una actualización
+                            method: 'POST' 
                         });
                         
                         if (!response.ok) throw new Error('Error en la respuesta del servidor');
