@@ -2930,6 +2930,7 @@ app.get('/api/rankings/efficiency', async (req, res) => {
     }
 });
 
+
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
 // Middleware final para todas las demás rutas .html (requiere login genérico)
