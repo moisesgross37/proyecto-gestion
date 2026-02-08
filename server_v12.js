@@ -2894,25 +2894,22 @@ app.get('/api/reports/zombies', async (req, res) => {
         res.status(500).json({ message: 'Error al generar reporte.' });
     }
 });
-
-// 3. RANKING DE EFICIENCIA (VERSIÓN JUSTA: Desvinculada)
+// 3. RANKING DE EFICIENCIA (VERSIÓN CORREGIDA: Usando 'asesor' en español)
 app.get('/api/rankings/efficiency', async (req, res) => {
     try {
-        // LÓGICA MEJORADA:
-        // No obligamos a que el nombre del colegio coincida en la visita y la venta.
-        // Contamos TOTAL VISITAS del asesor y lo dividimos por TOTAL VENTAS del asesor.
-        
         const query = `
             WITH Visitas AS (
+                -- En la tabla visits se llama 'advisorname' (Inglés/Todo junto)
                 SELECT advisorname, COUNT(*) as total_visitas
                 FROM visits
                 GROUP BY advisorname
             ),
             Cierres AS (
-                SELECT advisor_name as advisorname, COUNT(*) as total_cierres
+                -- CORRECCIÓN: En la tabla centers se llama 'asesor' (Español)
+                SELECT asesor as advisorname, COUNT(*) as total_cierres
                 FROM centers
                 WHERE etapa_venta LIKE '%Formalizar%' OR etapa_venta LIKE '%Acuerdo%'
-                GROUP BY advisor_name
+                GROUP BY asesor
             )
             SELECT 
                 v.advisorname,
@@ -2920,7 +2917,7 @@ app.get('/api/rankings/efficiency', async (req, res) => {
                 COALESCE(c.total_cierres, 0) as total_cierres
             FROM Visitas v
             LEFT JOIN Cierres c ON v.advisorname = c.advisorname
-            WHERE COALESCE(c.total_cierres, 0) > 0  -- Solo mostramos a quienes han vendido algo
+            WHERE COALESCE(c.total_cierres, 0) > 0
             ORDER BY (v.total_visitas::decimal / GREATEST(c.total_cierres, 1)) ASC;
         `;
         
