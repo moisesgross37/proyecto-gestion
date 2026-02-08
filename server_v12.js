@@ -2839,16 +2839,12 @@ app.get('/api/productos', (req, res) => {
   // Esta es la variable 'products' que encontramos antes
   res.json(products);
 });
-// --- CORRECCIÓN FINAL: SISTEMA DE REPORTES Y ALERTAS ---
-
-// --- CORRECCIÓN FINAL (VERSIÓN 3): Usando datos de la tabla VISITS ---
-
 // --- SISTEMA DE REPORTES Y ALERTAS (VERSIÓN DEFINITIVA) ---
 
 // 1. REPORTE DE FANTASMAS (Centros activos sin visitas en 45 días)
 app.get('/api/reports/ghosts', async (req, res) => {
     try {
-        // CORRECCIÓN FINAL: Usamos 'v.visitdate' (sin guion bajo)
+        // CORRECCIÓN FINAL: Usamos 'v.visitdate' (SIN GUION BAJO)
         const query = `
             SELECT 
                 c.name as center_name, 
@@ -2870,7 +2866,7 @@ app.get('/api/reports/ghosts', async (req, res) => {
     }
 });
 
-// 2. REPORTE DE ZOMBIS (Centros con muchas visitas sin cierre)
+// 2. REPORTE DE ZOMBIS (Este ya funciona perfecto, lo dejamos igual)
 app.get('/api/reports/zombies', async (req, res) => {
     try {
         const query = `
