@@ -2244,19 +2244,20 @@ app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinad
 // 1. API PARA EL PIPELINE DE VENTAS (EMBUDO)
 app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
-        // Re-escrito para eliminar cualquier posible carácter invisible.
+        // ACTUALIZADO: Con las nuevas etapas y el nuevo orden (1 al 6)
         const query = `SELECT etapa_venta, COUNT(*) as count
             FROM centers
             WHERE etapa_venta IS NOT NULL
             GROUP BY etapa_venta
             ORDER BY
                 CASE etapa_venta
-                    WHEN 'Prospecto' THEN 1
-                    WHEN 'Cotización Presentada' THEN 2
-                    WHEN 'Negociación' THEN 3
-                    WHEN 'Acuerdo Formalizado' THEN 4
-                    WHEN 'No Logrado' THEN 5
-                    ELSE 6
+                    WHEN 'Visita Inicial' THEN 1
+                    WHEN 'Presentacion de Propuesta a Direccion' THEN 2
+                    WHEN 'Presentacion de Propuesta a Estudiantes' THEN 3
+                    WHEN 'Visita de Seguimiento' THEN 4
+                    WHEN 'Formalizar Acuerdo' THEN 5
+                    WHEN 'Acordado seguimiento para el proximo ano' THEN 6
+                    ELSE 7
                 END;`;
         
         const result = await pool.query(query);

@@ -21,7 +21,7 @@
             color: #555;
             margin-top: 2px;
         }
-        /* --- NUEVOS ESTILOS --- */
+        /* --- ESTILOS PARA LA SECCIÓN DE COTIZACIONES --- */
         #formalize-quote-section {
             background-color: #fffbe6;
             border: 1px solid #ffe58f;
@@ -57,9 +57,10 @@
                 <label for="visitDate">Fecha de Visita:</label>
                 <input type="date" id="visitDate" name="visitDate" required>
             </div>
+            
             <div class="form-group" style="position: relative;">
                 <label for="centerName">Nombre del Centro Educativo:</label>
-                <input type="text" id="centerName" name="centerName" required autocomplete="off">
+                <input type="text" id="centerName" name="centerName" required autocomplete="off" placeholder="Escribe para buscar...">
                 <div id="autocomplete-suggestions" class="autocomplete-suggestions" style="display: none;"></div>
             </div>
 
@@ -85,10 +86,21 @@
                 <label for="coordinatorContact">Número de Contacto:</label>
                 <input type="tel" id="coordinatorContact" name="contactNumber">
             </div>
+
             <div class="form-group">
-                <label for="comments">Comentarios sobre la visita:</label>
+                <label for="comments"><strong>Motivo de la Visita / Etapa Actual:</strong></label>
                 <select id="comments" name="commentText" required>
-                    <option value="">Selecciona un comentario...</option>
+                    <option value="" disabled selected>Selecciona en qué etapa estás...</option>
+                    
+                    <option value="Visita Inicial">1. Visita Inicial (Exploración)</option>
+                    
+                    <option value="Presentacion de Propuesta a Direccion">2. Presentación a Dirección</option>
+                    <option value="Presentacion de Propuesta a Estudiantes">3. Presentación a Estudiantes</option>
+                    
+                    <option value="Visita de Seguimiento">4. Seguimiento / Negociación</option>
+                    
+                    <option value="Formalizar Acuerdo">✅ FORMALIZAR ACUERDO (Cierre)</option>
+                    <option value="Acordado seguimiento para el proximo ano">📅 Acordado seguimiento próx. año</option>
                 </select>
             </div>
 
@@ -97,6 +109,7 @@
                 <div id="quote-list-container">
                     </div>
             </div>
+            
             <button type="submit" class="btn">Registrar Visita</button>
         </form>
     </div>
