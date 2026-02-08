@@ -2839,12 +2839,15 @@ app.get('/api/productos', (req, res) => {
   // Esta es la variable 'products' que encontramos antes
   res.json(products);
 });
-// --- SISTEMA DE REPORTES Y ALERTAS (VERSIÓN DEFINITIVA) ---
-
-// 1. REPORTE DE FANTASMAS (Centros activos sin visitas en 45 días)
+// --- SISTEMA DE REPORTES Y ALERTAS (CORREGIDO FINAL) ---
+// 1. REPORTE DE FANTASMAS (CORREGIDO: Sin usar la columna 'status')
 app.get('/api/reports/ghosts', async (req, res) => {
     try {
-        // CORRECCIÓN FINAL: Usamos 'v.visitdate' (SIN GUION BAJO)
+        // CORRECCIÓN FINAL:
+        // 1. Eliminamos 'c.status' (que daba error).
+        // 2. Usamos 'c.etapa_venta NOT IN (...)' para definir quién está activo.
+        // 3. Mantenemos 'v.visitdate' y 'v.advisorname' que ya sabemos que funcionan.
+        
         const query = `
             SELECT 
                 c.name as center_name, 
@@ -2853,20 +2856,22 @@ app.get('/api/reports/ghosts', async (req, res) => {
                 CURRENT_DATE - MAX(v.visitdate) as days_since
             FROM centers c
             JOIN visits v ON c.name = v.centername
-            WHERE c.status = 'active' 
+            WHERE c.etapa_venta NOT IN ('Formalizar Acuerdo', 'Acordado seguimiento para el proximo ano', 'No Logrado')
             GROUP BY c.name, v.advisorname
             HAVING MAX(v.visitdate) < CURRENT_DATE - 45
             ORDER BY days_since DESC;
         `;
+        
         const result = await pool.query(query);
         res.json(result.rows);
+
     } catch (err) {
         console.error("Error reporte fantasmas:", err);
         res.status(500).json({ message: 'Error al generar reporte.' });
     }
 });
 
-// 2. REPORTE DE ZOMBIS (Este ya funciona perfecto, lo dejamos igual)
+// 2. REPORTE DE ZOMBIS (Este ya funciona, lo dejamos igual)
 app.get('/api/reports/zombies', async (req, res) => {
     try {
         const query = `
