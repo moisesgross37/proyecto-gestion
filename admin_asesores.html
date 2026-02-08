@@ -4,120 +4,144 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Asesores - Admin</title>
-    <link rel="stylesheet" href="/estilos.css">
-    <link rel="stylesheet" href="/admin-estilos.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .container { max-width: 800px; }
+        .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-activate { background-color: #28a745; color: white; border: none; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; }
+        .audit-btn { font-weight: bold; border: 2px solid #000; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
-            <h1>Gestión de Asesores</h1>
-        </header>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-primary">Gestión de Asesores</h2>
+            <a href="/index.html" class="btn btn-outline-secondary">← Volver al Menú</a>
+        </div>
 
-        <main>
-            <div class="card">
-                <h2>Añadir Asesor</h2>
-                <form id="add-advisor-form" class="form-group">
-                    <label for="new-advisor-name">Nombre del Asesor:</label>
-                    <input type="text" id="new-advisor-name" name="name" required placeholder="Escribe el nombre completo">
-                    <button type="submit" class="btn">Añadir Asesor</button>
-                </form>
-                <hr>
-                <h3>Asesores Actuales</h3>
-                <ul id="advisor-list" class="resource-list"></ul>
+        <div class="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+            <span><strong>👮‍♂️ Auditoría de Cartera:</strong> Detecta clientes abandonados o estancados.</span>
+            <a href="/admin_reportes.html" class="btn btn-warning audit-btn">📊 Ver Alertas y Reportes</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>➕ Añadir Nuevo Asesor</h5>
             </div>
-        </main>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" id="newAdvisorName" class="form-control" placeholder="Nombre del nuevo asesor...">
+                    <button id="addAdvisorBtn" class="btn btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5>👥 Lista de Asesores Actuales</h5>
+            </div>
+            <div class="card-body">
+                <ul id="advisorList" class="list-group list-group-flush">
+                    <li class="list-group-item text-muted">Cargando...</li>
+                </ul>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('add-advisor-form');
-            const input = document.getElementById('new-advisor-name');
-            const list = document.getElementById('advisor-list');
-            const API_URL = '/api/advisors';
+        const API_URL = '/api/advisors';
 
-            // Función para cargar y mostrar los asesores (CORREGIDA)
-            const fetchAndDisplayItems = async () => {
-                try {
-                    const response = await fetch(API_URL); 
-                    if (!response.ok) throw new Error(`Error al obtener asesores.`);
-                    const items = await response.json();
-                    
-                    list.innerHTML = '';
-                    
-                    if (items.length === 0) {
-                        list.innerHTML = `<li>No hay asesores registrados.</li>`;
-                        return;
-                    }
-
-                    items.forEach(item => {
-                        const listItem = document.createElement('li');
-                        
-                        // --- CAMBIO CLAVE: Usamos 'item.estado' en español ---
-                        const estaInactivo = (item.estado === 'inactivo'); 
-
-                        // Si está inactivo, lo tachamos visualmente
-                        if (estaInactivo) {
-                            listItem.style.opacity = '0.5';
-                            listItem.style.textDecoration = 'line-through';
-                            listItem.style.backgroundColor = '#f8d7da'; // Un fondo rojizo suave
-                        }
-
-                        listItem.textContent = `${item.name} (${item.estado || 'activo'})`; // Mostramos el estado en texto
-                        
-                        const toggleButton = document.createElement('button');
-                        // El texto del botón cambia según el estado real
-                        toggleButton.textContent = estaInactivo ? 'Activar' : 'Desactivar';
-                        
-                        // Color del botón: Verde si hay que activar, Rojo si hay que desactivar
-                        toggleButton.className = estaInactivo ? 'btn-activate' : 'btn-delete';
-                        toggleButton.style.backgroundColor = estaInactivo ? '#28a745' : '#dc3545';
-                        toggleButton.style.color = 'white';
-                        toggleButton.style.marginLeft = '10px';
-                        
-                        // Pasamos el estado actual correcto a la función
-                        toggleButton.addEventListener('click', () => toggleItemStatus(item.id, item.estado));
-                        
-                        listItem.appendChild(toggleButton);
-                        list.appendChild(listItem);
-                    });
-                } catch (error) {
-                    console.error(error);
-                    list.innerHTML = `<li>Error al cargar asesores.</li>`;
-                }
-            };
-
-            
-            // FUNCIÓN CORREGIDA: Cambiamos PUT por POST para coincidir con tu servidor
-            async function toggleItemStatus(id, currentStatus) {
-                const accion = (currentStatus === false) ? 'activar' : 'desactivar';
-                const confirmMessage = `¿Estás seguro de que deseas ${accion} a este asesor?\n\n(No se borrarán sus datos históricos).`;
+        // 1. Cargar y Mostrar Asesores
+        const fetchAndDisplayItems = async () => {
+            const list = document.getElementById('advisorList');
+            try {
+                const response = await fetch(API_URL); 
+                if (!response.ok) throw new Error('Error de conexión');
+                const items = await response.json();
                 
-                if (confirm(confirmMessage)) {
-                    try {
-                        // AQUÍ ESTABA EL ERROR: Cambiamos 'PUT' por 'POST'
-                        const response = await fetch(`${API_URL}/${id}/toggle-status`, {
-                            method: 'POST' 
-                        });
-                        
-                        if (!response.ok) throw new Error('Error en la respuesta del servidor');
-                        
-                        await fetchAndDisplayItems(); // Recargar la lista
-                    } catch (error) {
-                        console.error('Error al cambiar estado:', error);
-                        alert('No se pudo cambiar el estado del asesor.');
-                    }
+                list.innerHTML = ''; // Limpiar lista
+                
+                if (items.length === 0) {
+                    list.innerHTML = `<li class="list-group-item">No hay asesores registrados.</li>`;
+                    return;
                 }
+
+                items.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    
+                    // Lógica Visual de Activo/Inactivo
+                    const estaInactivo = (item.estado === 'inactivo'); 
+                    
+                    // Nombre del Asesor
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = `${item.name} (${item.estado || 'activo'})`;
+                    if (estaInactivo) {
+                        nameSpan.style.textDecoration = 'line-through';
+                        nameSpan.style.color = '#dc3545'; // Rojo
+                    }
+                    listItem.appendChild(nameSpan);
+                    
+                    // Botón de Acción
+                    const toggleButton = document.createElement('button');
+                    toggleButton.textContent = estaInactivo ? 'Activar' : 'Desactivar';
+                    toggleButton.className = `btn btn-sm ${estaInactivo ? 'btn-activate' : 'btn-delete'}`;
+                    toggleButton.onclick = () => toggleItemStatus(item.id, item.estado);
+                    
+                    listItem.appendChild(toggleButton);
+                    list.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error(error);
+                list.innerHTML = `<li class="list-group-item text-danger">Error al cargar la lista.</li>`;
             }
+        };
 
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                const name = input.value.trim();
-                if (name) addItem(name);
-            });
+        // 2. Agregar Nuevo Asesor
+        document.getElementById('addAdvisorBtn').addEventListener('click', async () => {
+            const nameInput = document.getElementById('newAdvisorName');
+            const name = nameInput.value.trim();
+            if (!name) return alert('Escribe un nombre válido');
 
-            fetchAndDisplayItems();
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (res.ok) {
+                    nameInput.value = '';
+                    fetchAndDisplayItems(); // Recargar lista
+                } else {
+                    alert('Error al guardar');
+                }
+            } catch (err) { console.error(err); }
         });
+
+        // 3. Cambiar Estado (Soft Delete)
+        const toggleItemStatus = async (id, currentStatus) => {
+            // Confirmación de seguridad
+            if (!confirm(`¿Deseas cambiar el estado de este asesor?`)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/${id}/toggle-status`, { method: 'POST' });
+                if (res.ok) {
+                    fetchAndDisplayItems(); // Recargar lista visualmente
+                } else {
+                    alert('No se pudo cambiar el estado.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de conexión.');
+            }
+        };
+
+        // Iniciar
+        fetchAndDisplayItems();
     </script>
 </body>
 </html>
