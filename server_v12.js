@@ -2895,23 +2895,33 @@ app.get('/api/reports/zombies', async (req, res) => {
     }
 });
 
-// 3. RANKING DE EFICIENCIA (El Detector de Turistas)
+// 3. RANKING DE EFICIENCIA (VERSIÓN JUSTA: Desvinculada)
 app.get('/api/rankings/efficiency', async (req, res) => {
     try {
-        // Esta consulta es matemática pura:
-        // Divide todas las visitas entre los cierres logrados.
-        // Si el resultado es bajo (ej. 3.0), es EXCELENTE. Si es alto (ej. 10.0), es ALERTA.
+        // LÓGICA MEJORADA:
+        // No obligamos a que el nombre del colegio coincida en la visita y la venta.
+        // Contamos TOTAL VISITAS del asesor y lo dividimos por TOTAL VENTAS del asesor.
         
         const query = `
+            WITH Visitas AS (
+                SELECT advisorname, COUNT(*) as total_visitas
+                FROM visits
+                GROUP BY advisorname
+            ),
+            Cierres AS (
+                SELECT advisor_name as advisorname, COUNT(*) as total_cierres
+                FROM centers
+                WHERE etapa_venta LIKE '%Formalizar%' OR etapa_venta LIKE '%Acuerdo%'
+                GROUP BY advisor_name
+            )
             SELECT 
                 v.advisorname,
-                COUNT(v.id) as total_visitas,
-                COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END) as total_cierres
-            FROM visits v
-            JOIN centers c ON v.centername = c.name
-            GROUP BY v.advisorname
-            HAVING COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END) > 0
-            ORDER BY (COUNT(v.id)::decimal / COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END)) ASC;
+                v.total_visitas,
+                COALESCE(c.total_cierres, 0) as total_cierres
+            FROM Visitas v
+            LEFT JOIN Cierres c ON v.advisorname = c.advisorname
+            WHERE COALESCE(c.total_cierres, 0) > 0  -- Solo mostramos a quienes han vendido algo
+            ORDER BY (v.total_visitas::decimal / GREATEST(c.total_cierres, 1)) ASC;
         `;
         
         const result = await pool.query(query);
