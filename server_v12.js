@@ -2241,24 +2241,48 @@ app.get('/api/coordinator/team-performance', requireLogin, checkRole(['Coordinad
 // ========= INICIO: APIS PARA LOS NUEVOS RANKINGS ESTRATÉGICOS =========
 // ======================================================================
 
-// 1. API PARA EL PIPELINE DE VENTAS (EMBUDO)
+// 1. API PARA EL PIPELINE DE VENTAS (EMBUDO) - VERSIÓN "TRADUCTOR UNIVERSAL"
 app.get('/api/pipeline-ranking', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     try {
-        // ACTUALIZADO: Con las nuevas etapas y el nuevo orden (1 al 6)
+        // ACTUALIZADO: Agrupa nombres VIEJOS y NUEVOS en el mismo escalón (1, 2, 3...)
         const query = `SELECT etapa_venta, COUNT(*) as count
             FROM centers
             WHERE etapa_venta IS NOT NULL
             GROUP BY etapa_venta
             ORDER BY
                 CASE etapa_venta
+                    /* NIVEL 1: El Inicio */
+                    WHEN 'Prospecto' THEN 1
                     WHEN 'Visita Inicial' THEN 1
+                    WHEN '1. Visita Inicial (Exploración)' THEN 1
+
+                    /* NIVEL 2: Propuestas a Dirección */
+                    WHEN 'Cotización Presentada' THEN 2
                     WHEN 'Presentacion de Propuesta a Direccion' THEN 2
+                    WHEN '2. Presentación a Dirección' THEN 2
+
+                    /* NIVEL 3: Propuestas a Estudiantes */
                     WHEN 'Presentacion de Propuesta a Estudiantes' THEN 3
+                    WHEN '3. Presentación a Estudiantes' THEN 3
+
+                    /* NIVEL 4: Negociación y Seguimiento */
+                    WHEN 'Negociación' THEN 4
                     WHEN 'Visita de Seguimiento' THEN 4
+                    WHEN '4. Seguimiento / Negociación' THEN 4
+
+                    /* NIVEL 5: ÉXITO (Cierres) */
+                    WHEN 'Acuerdo Formalizado' THEN 5
                     WHEN 'Formalizar Acuerdo' THEN 5
+                    WHEN '✅ FORMALIZAR ACUERDO (Cierre)' THEN 5
+
+                    /* NIVEL 6: SALIDA (Año próximo / No Logrado) */
+                    WHEN 'No Logrado' THEN 6
                     WHEN 'Acordado seguimiento para el proximo ano' THEN 6
+                    WHEN '📅 Acordado seguimiento próx. año' THEN 6
+                    
+                    /* Cualquier otra cosa va al final */
                     ELSE 7
-                END;`;
+                END ASC;`;
         
         const result = await pool.query(query);
         res.json(result.rows);
