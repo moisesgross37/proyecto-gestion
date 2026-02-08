@@ -2843,21 +2843,23 @@ app.get('/api/productos', (req, res) => {
 
 // --- CORRECCIÓN FINAL (VERSIÓN 3): Usando datos de la tabla VISITS ---
 
+// --- SISTEMA DE REPORTES Y ALERTAS (VERSIÓN DEFINITIVA) ---
+
 // 1. REPORTE DE FANTASMAS (Centros activos sin visitas en 45 días)
 app.get('/api/reports/ghosts', async (req, res) => {
     try {
-        // CORRECCIÓN: Usamos 'v.advisorname' porque la base de datos nos dijo que ahí está el nombre
+        // CORRECCIÓN FINAL: Usamos 'v.visitdate' (sin guion bajo)
         const query = `
             SELECT 
                 c.name as center_name, 
                 v.advisorname as advisor_name, 
-                MAX(v.visit_date) as last_visit,
-                CURRENT_DATE - MAX(v.visit_date) as days_since
+                MAX(v.visitdate) as last_visit,
+                CURRENT_DATE - MAX(v.visitdate) as days_since
             FROM centers c
             JOIN visits v ON c.name = v.centername
             WHERE c.status = 'active' 
             GROUP BY c.name, v.advisorname
-            HAVING MAX(v.visit_date) < CURRENT_DATE - 45
+            HAVING MAX(v.visitdate) < CURRENT_DATE - 45
             ORDER BY days_since DESC;
         `;
         const result = await pool.query(query);
@@ -2871,7 +2873,6 @@ app.get('/api/reports/ghosts', async (req, res) => {
 // 2. REPORTE DE ZOMBIS (Centros con muchas visitas sin cierre)
 app.get('/api/reports/zombies', async (req, res) => {
     try {
-        // CORRECCIÓN: Usamos 'v.advisorname' y agrupamos por él
         const query = `
             SELECT 
                 c.name as center_name, 
