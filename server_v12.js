@@ -2894,41 +2894,6 @@ app.get('/api/reports/zombies', async (req, res) => {
         res.status(500).json({ message: 'Error al generar reporte.' });
     }
 });
-// 3. RANKING DE EFICIENCIA (VERSIÓN CORREGIDA: Usando 'asesor' en español)
-app.get('/api/rankings/efficiency', async (req, res) => {
-    try {
-        const query = `
-            WITH Visitas AS (
-                -- En la tabla visits se llama 'advisorname' (Inglés/Todo junto)
-                SELECT advisorname, COUNT(*) as total_visitas
-                FROM visits
-                GROUP BY advisorname
-            ),
-            Cierres AS (
-                -- CORRECCIÓN: En la tabla centers se llama 'asesor' (Español)
-                SELECT asesor as advisorname, COUNT(*) as total_cierres
-                FROM centers
-                WHERE etapa_venta LIKE '%Formalizar%' OR etapa_venta LIKE '%Acuerdo%'
-                GROUP BY asesor
-            )
-            SELECT 
-                v.advisorname,
-                v.total_visitas,
-                COALESCE(c.total_cierres, 0) as total_cierres
-            FROM Visitas v
-            LEFT JOIN Cierres c ON v.advisorname = c.advisorname
-            WHERE COALESCE(c.total_cierres, 0) > 0
-            ORDER BY (v.total_visitas::decimal / GREATEST(c.total_cierres, 1)) ASC;
-        `;
-        
-        const result = await pool.query(query);
-        res.json(result.rows);
-
-    } catch (err) {
-        console.error("Error ranking eficiencia:", err);
-        res.status(500).json({ message: 'Error al calcular eficiencia.' });
-    }
-});
 
 
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
