@@ -2839,13 +2839,12 @@ app.get('/api/productos', (req, res) => {
   // Esta es la variable 'products' que encontramos antes
   res.json(products);
 });
-// --- NUEVO: SISTEMA DE REPORTES Y ALERTAS ---
+// --- CORRECCIÓN: SISTEMA DE REPORTES Y ALERTAS ---
 
 // 1. REPORTE DE FANTASMAS (Centros activos sin visitas en 45 días)
 app.get('/api/reports/ghosts', async (req, res) => {
     try {
-        // Buscamos centros donde la última visita fue hace más de 45 días
-        // Ojo: Asumimos que la tabla 'visits' tiene 'visit_date' y 'center_name'
+        // CORRECCIÓN: Cambiado v.center_name por v.centername
         const query = `
             SELECT 
                 c.name as center_name, 
@@ -2853,7 +2852,7 @@ app.get('/api/reports/ghosts', async (req, res) => {
                 MAX(v.visit_date) as last_visit,
                 CURRENT_DATE - MAX(v.visit_date) as days_since
             FROM centers c
-            JOIN visits v ON c.name = v.center_name
+            JOIN visits v ON c.name = v.centername
             WHERE c.status = 'active' 
             GROUP BY c.name, c.advisor_name
             HAVING MAX(v.visit_date) < CURRENT_DATE - 45
@@ -2870,7 +2869,7 @@ app.get('/api/reports/ghosts', async (req, res) => {
 // 2. REPORTE DE ZOMBIS (Centros con muchas visitas sin cierre)
 app.get('/api/reports/zombies', async (req, res) => {
     try {
-        // Buscamos centros con 4 o más visitas que NO estén cerrados ni pasados al prox año
+        // CORRECCIÓN: Cambiado v.center_name por v.centername
         const query = `
             SELECT 
                 c.name as center_name, 
@@ -2878,7 +2877,7 @@ app.get('/api/reports/zombies', async (req, res) => {
                 c.etapa_venta,
                 COUNT(v.id) as visit_count
             FROM centers c
-            JOIN visits v ON c.name = v.center_name
+            JOIN visits v ON c.name = v.centername
             WHERE c.etapa_venta NOT IN ('Formalizar Acuerdo', 'Acordado seguimiento para el proximo ano', 'No Logrado')
             GROUP BY c.name, c.advisor_name, c.etapa_venta
             HAVING COUNT(v.id) >= 4
@@ -2891,7 +2890,7 @@ app.get('/api/reports/zombies', async (req, res) => {
         res.status(500).json({ message: 'Error al generar reporte.' });
     }
 });
-// --- FIN DEL CÓDIGO AÑADIDO ---
+
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
 // Middleware final para todas las demás rutas .html (requiere login genérico)
