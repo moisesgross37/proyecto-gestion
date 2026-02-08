@@ -446,25 +446,26 @@ const requireAdminOrCoordinator = (req, res, next) => {
         res.status(403).json({ message: 'Acceso prohibido. Se requiere rol de Administrador o Coordinador.' });
     }
 };
-// RUTA RESTAURADA (SEGURA): No requiere la columna 'active' para funcionar
-// RUTA RESTAURADA: Usando la tabla 'advisors' para evitar el error de columna
+// RUTA CORREGIDA: Ahora lee la verdad de la base de datos
 app.get('/api/advisors', requireLogin, async (req, res) => {
     try {
-        // Consultamos a la tabla 'advisors' que sí sabemos que tiene la columna 'name'
-        const result = await pool.query('SELECT id, name FROM advisors ORDER BY name ASC');
+        // 1. Pedimos ID, NOMBRE y ESTADO
+        const result = await pool.query("SELECT id, name, estado FROM advisors ORDER BY name ASC");
         
-        // Mapeamos los resultados para que el HTML reciba el campo 'active' como true 
-        // por defecto y no se rompa la interfaz visual.
+        // 2. Traducimos para que el HTML entienda
         const advisors = result.rows.map(item => ({
             id: item.id,
             name: item.name,
-            active: true 
+            // AQUÍ ESTÁ EL ARREGLO:
+            // Si la base de datos dice 'activo', ponemos true. Si dice 'inactivo', false.
+            active: (item.estado === 'activo'), 
+            estado: item.estado 
         }));
         
         res.json(advisors);
     } catch (err) {
-        console.error("Error crítico al obtener asesores:", err);
-        res.status(500).json({ message: 'Error al cargar la lista de asesores.' });
+        console.error("Error al obtener asesores:", err);
+        res.status(500).json({ message: 'Error al cargar la lista.' });
     }
 });
 app.post('/api/advisors', requireLogin, requireAdmin, async (req, res) => {
