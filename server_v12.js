@@ -2841,20 +2841,22 @@ app.get('/api/productos', (req, res) => {
 });
 // --- CORRECCIÓN FINAL: SISTEMA DE REPORTES Y ALERTAS ---
 
+// --- CORRECCIÓN FINAL (VERSIÓN 3): Usando datos de la tabla VISITS ---
+
 // 1. REPORTE DE FANTASMAS (Centros activos sin visitas en 45 días)
 app.get('/api/reports/ghosts', async (req, res) => {
     try {
-        // CORRECCIÓN: Usamos 'c.advisorname' y 'v.centername' (todo junto)
+        // CORRECCIÓN: Usamos 'v.advisorname' porque la base de datos nos dijo que ahí está el nombre
         const query = `
             SELECT 
                 c.name as center_name, 
-                c.advisorname as advisor_name, 
+                v.advisorname as advisor_name, 
                 MAX(v.visit_date) as last_visit,
                 CURRENT_DATE - MAX(v.visit_date) as days_since
             FROM centers c
             JOIN visits v ON c.name = v.centername
             WHERE c.status = 'active' 
-            GROUP BY c.name, c.advisorname
+            GROUP BY c.name, v.advisorname
             HAVING MAX(v.visit_date) < CURRENT_DATE - 45
             ORDER BY days_since DESC;
         `;
@@ -2869,17 +2871,17 @@ app.get('/api/reports/ghosts', async (req, res) => {
 // 2. REPORTE DE ZOMBIS (Centros con muchas visitas sin cierre)
 app.get('/api/reports/zombies', async (req, res) => {
     try {
-        // CORRECCIÓN: Usamos 'c.advisorname' y 'v.centername' (todo junto)
+        // CORRECCIÓN: Usamos 'v.advisorname' y agrupamos por él
         const query = `
             SELECT 
                 c.name as center_name, 
-                c.advisorname as advisor_name, 
+                v.advisorname as advisor_name, 
                 c.etapa_venta,
                 COUNT(v.id) as visit_count
             FROM centers c
             JOIN visits v ON c.name = v.centername
             WHERE c.etapa_venta NOT IN ('Formalizar Acuerdo', 'Acordado seguimiento para el proximo ano', 'No Logrado')
-            GROUP BY c.name, c.advisorname, c.etapa_venta
+            GROUP BY c.name, v.advisorname, c.etapa_venta
             HAVING COUNT(v.id) >= 4
             ORDER BY visit_count DESC;
         `;
