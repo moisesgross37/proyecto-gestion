@@ -36,7 +36,7 @@
             const list = document.getElementById('advisor-list');
             const API_URL = '/api/advisors';
 
-            // Función para cargar y mostrar los asesores
+            // Función para cargar y mostrar los asesores (CORREGIDA)
             const fetchAndDisplayItems = async () => {
                 try {
                     const response = await fetch(API_URL); 
@@ -53,20 +53,30 @@
                     items.forEach(item => {
                         const listItem = document.createElement('li');
                         
-                        // Si el asesor está inactivo, le ponemos un estilo visual diferente
-                        if (item.active === false) {
+                        // --- CAMBIO CLAVE: Usamos 'item.estado' en español ---
+                        const estaInactivo = (item.estado === 'inactivo'); 
+
+                        // Si está inactivo, lo tachamos visualmente
+                        if (estaInactivo) {
                             listItem.style.opacity = '0.5';
                             listItem.style.textDecoration = 'line-through';
+                            listItem.style.backgroundColor = '#f8d7da'; // Un fondo rojizo suave
                         }
 
-                        listItem.textContent = item.name;
+                        listItem.textContent = `${item.name} (${item.estado || 'activo'})`; // Mostramos el estado en texto
                         
                         const toggleButton = document.createElement('button');
-                        // Cambiamos el texto del botón según el estado
-                        toggleButton.textContent = item.active === false ? 'Activar' : 'Desactivar';
-                        toggleButton.className = item.active === false ? 'btn-activate' : 'btn-delete';
+                        // El texto del botón cambia según el estado real
+                        toggleButton.textContent = estaInactivo ? 'Activar' : 'Desactivar';
                         
-                        toggleButton.addEventListener('click', () => toggleItemStatus(item.id, item.active));
+                        // Color del botón: Verde si hay que activar, Rojo si hay que desactivar
+                        toggleButton.className = estaInactivo ? 'btn-activate' : 'btn-delete';
+                        toggleButton.style.backgroundColor = estaInactivo ? '#28a745' : '#dc3545';
+                        toggleButton.style.color = 'white';
+                        toggleButton.style.marginLeft = '10px';
+                        
+                        // Pasamos el estado actual correcto a la función
+                        toggleButton.addEventListener('click', () => toggleItemStatus(item.id, item.estado));
                         
                         listItem.appendChild(toggleButton);
                         list.appendChild(listItem);
@@ -77,23 +87,7 @@
                 }
             };
 
-            // Función para añadir un nuevo asesor
-            const addItem = async (name) => {
-                try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name }),
-                    });
-                    if (!response.ok) throw new Error(`Error al añadir asesor.`);
-                    input.value = '';
-                    await fetchAndDisplayItems();
-                } catch (error) {
-                    console.error(error);
-                    alert(`No se pudo añadir el asesor.`);
-                }
-            };
-
+            
             // FUNCIÓN CORREGIDA: Cambiamos PUT por POST para coincidir con tu servidor
             async function toggleItemStatus(id, currentStatus) {
                 const accion = (currentStatus === false) ? 'activar' : 'desactivar';
