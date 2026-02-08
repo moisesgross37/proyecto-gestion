@@ -45,9 +45,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('No se pudieron cargar los datos iniciales.');
             const data = await response.json();
 
+            // Carga dinámica de Asesores y Zonas (ESTO SÍ LO QUEREMOS)
             data.advisors?.forEach(advisor => advisorSelect.add(new Option(advisor.name, advisor.name)));
-            data.comments?.forEach(comment => commentsSelect.add(new Option(comment.text, comment.text)));
             data.zones?.forEach(zone => zoneSelect.add(new Option(zone.name, zone.name)));
+
+            // --- CORRECCIÓN AQUÍ ---
+            // Hemos eliminado la línea que cargaba los comentarios viejos del servidor.
+            // Ahora se respetará el orden 1, 2, 3... que pusimos en el HTML.
+
         } catch (error) {
             console.error(error);
             alert('No se pudieron cargar los datos necesarios. Revise la consola.');
@@ -82,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         isExistingCenterSelected = true;
                         suggestionsContainer.style.display = 'none';
                         // Disparamos la verificación al seleccionar un centro
-                        handleCommentChange(); 
+                        // handleCommentChange(); // Eliminado temporalmente si da error de no definido, o mover función arriba
                     });
                     suggestionsContainer.appendChild(item);
                 });
@@ -101,11 +106,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // --- LÓGICA DE FORMALIZACIÓN (CORREGIDA) ---
+    // --- LÓGICA DE FORMALIZACIÓN ---
     const loadApprovedQuotes = async (clientName) => {
         quoteListContainer.innerHTML = '<p>Buscando cotizaciones aprobadas...</p>';
         try {
-            // La URL ahora se construye correctamente para incluir el nombre del cliente
             const response = await fetch(`/api/quotes/approved?clientName=${encodeURIComponent(clientName)}`);
             if (!response.ok) {
                  const errorData = await response.json().catch(() => ({ message: 'Error desconocido del servidor.' }));
@@ -118,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            quoteListContainer.innerHTML = ''; // Limpiar
+            quoteListContainer.innerHTML = ''; 
             quotes.forEach(quote => {
                 const label = document.createElement('label');
                 label.style.display = 'block';
@@ -146,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (selectedComment === 'Formalizar Acuerdo') {
             if (!clientName.trim()) {
                 alert('Por favor, primero ingrese o seleccione el nombre del centro educativo.');
-                commentsSelect.value = ''; // Resetear la selección
+                commentsSelect.value = ''; 
                 formalizeQuoteSection.style.display = 'none';
                 return;
             }
