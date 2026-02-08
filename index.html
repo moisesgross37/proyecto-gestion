@@ -27,7 +27,14 @@
         <div id="conversion-ranking-container" class="ranking-card">
         </div>
 
-        <div id="follow-up-ranking-container" class="ranking-card" style="display: none;">
+        <div id="efficiency-ranking-container" class="ranking-card">
+            <h3>🎯 Eficiencia de Cierre (Visitas por Venta)</h3>
+            <p class="text-muted" style="font-size: 0.8em; margin-bottom: 10px;">
+                ¿Cuántas visitas "cuesta" lograr 1 contrato? (Menos es mejor)
+            </p>
+            <ul id="efficiency-list" class="resource-list">
+                <li class="list-group-item text-center">Cargando inteligencia...</li>
+            </ul>
         </div>
 
         <nav class="nav-grid" id="menu-buttons-container">
@@ -58,33 +65,89 @@
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        📈 Ranking Interno del Equipo (Basado en Días de Seguimiento)
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                            <div>
-                                <strong class="text-success">🏆 Asesor Destacado (Menor tiempo)</strong>
-                                <p class="mb-0" id="top-performer-name">Cargando...</p>
-                            </div>
-                            <span class="badge bg-success rounded-pill fs-6" id="top-performer-days">--</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                            <div>
-                                <strong class="text-warning">🛠️ Asesor con Oportunidad (Mayor tiempo)</strong>
-                                <p class="mb-0" id="improvement-opportunity-name">Cargando...</p>
-                            </div>
-                            <span class="badge bg-warning rounded-pill fs-6" id="improvement-opportunity-days">--</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
     </div>
     
     <script src="/main.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('efficiency-list');
+            try {
+                // Llamamos a la nueva ruta inteligente que creamos en server.js
+                const response = await fetch('/api/rankings/efficiency');
+                
+                if (!response.ok) {
+                    throw new Error('Error de conexión con el servidor');
+                }
+
+                const data = await response.json();
+                
+                if(data.length === 0) {
+                    list.innerHTML = '<li class="list-group-item text-muted">Aún no hay suficientes datos de cierres para medir eficiencia.</li>';
+                    return;
+                }
+
+                list.innerHTML = ''; // Limpiar mensaje de carga
+                
+                data.forEach((item, index) => {
+                    // Calculamos el promedio: Visitas Totales / Cierres Totales
+                    // Si el número es 3.0, significa que va 3 veces y cierra.
+                    const promedio = parseFloat(item.total_visitas) / parseFloat(item.total_cierres);
+                    const promedioFixed = promedio.toFixed(1);
+                    
+                    // Semáforo de Colores y Emojis
+                    let colorBadge = 'bg-success'; // Verde (Excelente - Francotirador)
+                    let icon = '🎯'; // Tiro al blanco
+                    let textColor = 'text-white';
+                    
+                    // Lógica del Semáforo
+                    if (promedio >= 1 && promedio <= 3.9) {
+                        // Excelente (1 a 4 visitas)
+                        colorBadge = 'bg-success'; 
+                        icon = '🥇';
+                    } else if (promedio >= 4.0 && promedio <= 6.9) {
+                        // Normal/Precaución (4 a 7 visitas)
+                        colorBadge = 'bg-warning'; 
+                        textColor = 'text-dark';
+                        icon = '😐';
+                    } else {
+                        // Malo (Más de 7 visitas para cerrar uno)
+                        colorBadge = 'bg-danger'; 
+                        icon = '🐢'; // Tortuga (Lento)
+                    }
+
+                    // Destacar al TOP 1
+                    let rowStyle = "";
+                    if (index === 0) {
+                        rowStyle = "border-left: 5px solid gold; background-color: #fffbea;";
+                        icon = '🏆 ' + icon;
+                    }
+
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.style = rowStyle;
+                    li.innerHTML = `
+                        <div>
+                            <strong>${index + 1}. ${item.advisorname}</strong>
+                            <div style="font-size: 0.85em; color: #6c757d;">
+                                ${item.total_cierres} cierres en ${item.total_visitas} visitas totales
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <span class="badge ${colorBadge} ${textColor} rounded-pill" style="font-size: 1.1em;">
+                                ${icon} ${promedioFixed}
+                            </span>
+                            <div style="font-size: 0.7em; margin-top: 2px;">visitas/cierre</div>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error cargando eficiencia:', error);
+                // No mostramos error feo al usuario, solo en consola. Dejamos vacío o un mensaje suave.
+                list.innerHTML = '<li class="list-group-item text-center text-muted">Datos de eficiencia no disponibles por el momento.</li>';
+            }
+        });
+    </script>
 </body>
 </html>

@@ -2895,6 +2895,34 @@ app.get('/api/reports/zombies', async (req, res) => {
     }
 });
 
+// 3. RANKING DE EFICIENCIA (El Detector de Turistas)
+app.get('/api/rankings/efficiency', async (req, res) => {
+    try {
+        // Esta consulta es matemática pura:
+        // Divide todas las visitas entre los cierres logrados.
+        // Si el resultado es bajo (ej. 3.0), es EXCELENTE. Si es alto (ej. 10.0), es ALERTA.
+        
+        const query = `
+            SELECT 
+                v.advisorname,
+                COUNT(v.id) as total_visitas,
+                COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END) as total_cierres
+            FROM visits v
+            JOIN centers c ON v.centername = c.name
+            GROUP BY v.advisorname
+            HAVING COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END) > 0
+            ORDER BY (COUNT(v.id)::decimal / COUNT(DISTINCT CASE WHEN c.etapa_venta LIKE '%Formalizar%' OR c.etapa_venta LIKE '%Acuerdo%' THEN c.name END)) ASC;
+        `;
+        
+        const result = await pool.query(query);
+        res.json(result.rows);
+
+    } catch (err) {
+        console.error("Error ranking eficiencia:", err);
+        res.status(500).json({ message: 'Error al calcular eficiencia.' });
+    }
+});
+
 app.get('/*.html', requireLogin, (req, res) => { const requestedPath = path.join(__dirname, req.path); if (fs.existsSync(requestedPath)) { res.sendFile(requestedPath); } else { res.status(404).send('Página no encontrada'); } });
 
 // Middleware final para todas las demás rutas .html (requiere login genérico)
