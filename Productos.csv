@@ -24,7 +24,7 @@ PROMOCIONALES,Otros,Pantalones Deportivos,,400,por_estudiante
 PROMOCIONALES,Otros,Pantalones Confeccionados,,700,por_estudiante
 PROMOCIONALES,Otros,Pantalones tipo Cargo Confeccionados,,1035,por_estudiante
 PROMOCIONALES,Otros,Toallitas Bordadas,,160,por_estudiante
-PROMOCIONALES,Otros,Termos Sublimados,,130,por_estudiante
+PROMOCIONALES,Otros,Termos Sublimados,,140,por_estudiante
 PROMOCIONALES,Otros,Llaveros Sublimados,,50,por_estudiante
 PROMOCIONALES,Otros,Llaveros Fotos,,50,por_estudiante
 PROMOCIONALES,Otros,Botones Promocional,,50,por_estudiante
@@ -38,10 +38,10 @@ PROMOCIONALES,Gratuidades,Banderola Gratis,,50,por_estudiante
 PROMOCIONALES,Varios,Llaveros Sublimables,,50,por_estudiante
 PROMOCIONALES,Varios,LLaveros porta con fotos,,50,por_estudiante
 PROMOCIONALES,Varios,Botones Promocional,,50,por_estudiante
-PROMOCIONALES,Varios,Termos sublimados,,100,por_estudiante
+PROMOCIONALES,Varios,Termos sublimados,,140,por_estudiante
 PROMOCIONALES,Varios,Toallitas Bordadas,,88,por_estudiante
-PROMOCIONALES,Varios,Bordado Extra,,88,por_estudiante
-PROMOCIONALES,Varios,Aplique extra,,100,por_estudiante
+PROMOCIONALES,Varios,Bordado Extra Normal,,100,por_estudiante
+PROMOCIONALES,Varios,Aplique extra,,150,por_estudiante
 PROMOCIONALES,Varios,Extra Polos Sublimados,,600,por_estudiante
 PROMOCIONALES,Varios,Extra Polos Sublimados logo Bordados,,710,por_estudiante
 PROMOCIONALES,Varios,Extra Polos Algodon Combinando,,800,por_estudiante
@@ -77,24 +77,24 @@ LANZAMIENTOS,Varios,Pantalla Led 3x2 Metros,"Incluye: Pantalla, Tecnico, Truss",
 INVESTIDURA,Investidura Bachiller,Sesion de fotos en Estudio o en Exterior,"Incluye: Transporte ejecutivo confortable (ida y vuelta), Fotógrafo profesional,2 Fotografías grupales en blanco, Resumen de fotos de blanco cargado a la web",580,por_estudiante
 INVESTIDURA,Investidura Bachiller,Sesion de fotos de Pre Graduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2,Fotografías cargadas a la web",930,por_estudiante
 INVESTIDURA,Investidura Bachiller,Realizacion del Evento,"Incluye:Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Placa a la máxima excelencia académica, Placa de reconocimiento a docente, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Video de vivencias de los estudiantes, Video TBT, Personal de protocolo y staff de ejecución, Anuario para la Dirección.",0,costo_por_rango
-INVESTIDURA,CENTROS PREPARA,Investidura Centros PREPARAS,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Placa a la máxima excelencia académica, Placa de reconocimiento a docente, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Video de vivencias de los estudiantes, Video TBT, Personal de protocolo y staff de ejecución, Anuario para la Dirección.",1930,por_estudiante
-INVESTIDURA,Pequenines,Investidura Para Basicas,"Incluye:1 Fotografía individual de graduado tamaño 08x10 enmarcada, 1 Fotografía familiar tamaño 5x7, 2 Llaveros,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Personal de protocolo y staff de ejecución, Coctel y Palomitas.",1500,por_estudiante
-INVESTIDURA,Pequenines,Investidura Para Basicas Plus,"Incluye:1 Fotografía individual de graduado tamaño 08x10 enmarcada, 1 Fotografía familiar tamaño 5x7, 2 Llaveros,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Personal de protocolo y staff de ejecución, Coctel y Palomitas.",2100,por_estudiante
-INVESTIDURA,Pequenines,Recuerdo Escolar,"Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",800,por_estudiante
-INVESTIDURA,Pequenines,COMBO NAVIDAD,"Incluye: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales",800,por_estudiante
-INVESTIDURA,Pequenines,COMBO NAVIDAD Y RECUERDO ESCOLAR,"Incluye: COMBO NAVIDAD: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales, RECUERDO ESCOLAR: Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",1500,por_estudiante
-INVESTIDURA,Salones,Epic (NO USAR NO USAR),Capacidad Aproximada 350,30000,total_grupo
+INVESTIDURA,CENTROS PREPARA,Investidura Centros PREPARAS,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Placa a la máxima excelencia académica, Placa de reconocimiento a docente, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Video de vivencias de los estudiantes, Video TBT, Personal de protocolo y staff de ejecución, Anuario para la Dirección.",2100,por_estudiante
+INVESTIDURA,Pequenines,Investidura Para Basicas,"Incluye:1 Fotografía individual de graduado tamaño 08x10 enmarcada, 1 Fotografía familiar tamaño 5x7, 2 Llaveros,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Personal de protocolo y staff de ejecución, Coctel y Palomitas.",1600,por_estudiante
+INVESTIDURA,Pequenines,Investidura Para Basicas Primiun,"Incluye:1 Fotografía individual de graduado tamaño 08x10 enmarcada, 1 Fotografía familiar tamaño 5x7, 2 Llaveros,Fotografías cargadas a la web, Toga, birrete, esclavina y borla de primera calidad para cada estudiante, Instalación de un stand personalizado en la entrada del salón para fotografías y selfies de bienvenida, Colación de grados: entrega de pergaminos durante el desfile, Medallas, Pergaminos enmarcados y sin enmarcar, Ambientación del salón, Coordinación y creación del programa, con manejo logístico integral, Instalación y manejo de sistema de sonido profesional, Cobertura fotográfica de todo el evento, Maestría de ceremonia, Instalación de mesa directiva y mesas adjuntas con Membretes, post-it, lapiceros, arreglos florales, Personal de protocolo y staff de ejecución, Coctel y Palomitas.",2100,por_estudiante
+INVESTIDURA,Pequenines,Recuerdo Escolar,"Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",900,por_estudiante
+INVESTIDURA,Pequenines,COMBO NAVIDAD,"Incluye: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales",900,por_estudiante
+INVESTIDURA,Pequenines,COMBO NAVIDAD Y RECUERDO ESCOLAR,"Incluye: COMBO NAVIDAD: Ambientacion del espacio de trabajo, Fotografo y Staff, 1 Fotografía familiar tamaño 08x10 enmarcada, 1 Taza Sublimada con foto familiar, 2 Llaveros con foto familiar,Fotografías digitales, RECUERDO ESCOLAR: Incluye:1 Fotografía enmarcada 8x10, 1 Fotografía tamaño 5x7 en portaretrato, 9 fotos tipos cartera, Fotografías cargadas a la web,",1600,por_estudiante
+INVESTIDURA,Salones,Issffaa,Capacidad Aproximada 500,50000,total_grupo
 INVESTIDURA,Salones,Coopnama (u otro mismo rango),Capacidad Aproximada 350,30000,total_grupo
-INVESTIDURA,Salones,Salon Aida Porta Latin,Capacidad Aproximada 130,25000,total_grupo
-INVESTIDURA,Salones,Auditorio Biblioteca Nacional,Capacidad Aproximada 400,60000,total_grupo
+INVESTIDURA,Salones,Salon Aida Porta Latin,Capacidad Aproximada 100,25000,total_grupo
+INVESTIDURA,Salones,Auditorio Biblioteca Nacional,Capacidad Aproximada 400,90000,total_grupo
 INVESTIDURA,Salones,Auditorio La Fama,Capacidad Aproximada 900,130000,total_grupo
-INVESTIDURA,Salones,Auditorio Casa San Pablo,Capacidad Aproximada 1100,135000,total_grupo
+INVESTIDURA,Salones,Auditorio Casa San Pablo,Capacidad Aproximada 1100,140000,total_grupo
 INVESTIDURA,Salones,Salon Sambil,Capacidad Aproximada 1300,295000,total_grupo
 INVESTIDURA,Salones,Hotel Catalonia Ibizza 2do Nivel,,400000,total_grupo
 INVESTIDURA,Salones,Salon Restauracion MIDE,Capacidad Aproximada 500,200000,total_grupo
 INVESTIDURA,Salones,Salon Independencia MIDE,Capacidad Aproximada 1500,350000,total_grupo
-INVESTIDURA,Salones,En el Centro con Facilidades,,20000,total_grupo
-INVESTIDURA,Salones,En el Centro sin Facilidades,,30000,total_grupo
+INVESTIDURA,Salones,En el Centro con Facilidades,,30000,total_grupo
+INVESTIDURA,Salones,En el Centro sin Facilidades,,40000,total_grupo
 INVESTIDURA,Varios,Stand Personalizado,,20000,escalonado
 INVESTIDURA,Varios,Plataforma 360,,10000,escalonado
 INVESTIDURA,Varios,Esclavina Sublimada,,175,por_estudiante
@@ -109,3 +109,5 @@ INVESTIDURA,Varios,Solo sesion de fotos en Estudio o Exterior,"Incluye: Transpor
 INVESTIDURA,Varios,Solo Sesion de Pregraduacion,"Incluye:1 Fotografía individual de graduado tamaño 10x13 enmarcada con cañuela de primera, 1 Fotografía de padrinos tamaño 5x7, 1 Fotografía familiar tamaño 5x7, 1 Fotografía de gala, 1 Fotografía tamaño 2x2, Fotografías cargadas a la web",1700,por_estudiante
 PROMOCIONALES,Polos,Polos Algodon Sublimado con logo bordado,,690,por_estudiante
 INVESTIDURA,Pequenines,Fotos Estilo Graduacion,"Incluye:1 fotografía individual del graduado tamaño 8x10 enmarcada, 1 fotografía familiar tamaño 5x7, 2 llaveros, Fotos digitales cargadas a la web, Kit togas Calidad 1A,",900,por_estudiante
+PROMOCIONALES,Varios,Bordado Extra Espalda,,200,por_estudiante
+INVESTIDURA,Salones,Auditorio UNPHU,Capacidad Aproximada 400,100000,total_grupo
