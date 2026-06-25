@@ -136,10 +136,10 @@ function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
     });
 
    const perStudentMarginRules = [
-    { min: 10, max: 25, margin: 0.45 },
-    { min: 26, max: 50, margin: 0.35 },
-    { min: 51, max: 75, margin: 0.32 },
-    { min: 76, max: 100, margin: 0.26 },
+    { min: 10, max: 25, margin: 0.55 },
+    { min: 26, max: 50, margin: 0.45 },
+    { min: 51, max: 75, margin: 0.35 },
+    { min: 76, max: 100, margin: 0.30 },
     { min: 101, max: 125, margin: 0.28 },
     { min: 126, max: 150, margin: 0.28 }, // Rango 150: Margen fuerte (28%)
     { min: 151, max: 175, margin: 0.28 }, // MANTENEMOS 28% (Evita caída de precio)
