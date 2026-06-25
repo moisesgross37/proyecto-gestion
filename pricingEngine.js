@@ -136,8 +136,8 @@ function assembleQuote(quoteInput, db, ajuste_aprobado_monto = 0) {
     });
 
    const perStudentMarginRules = [
-    { min: 10, max: 25, margin: 0.30 },
-    { min: 26, max: 50, margin: 0.29 },
+    { min: 10, max: 25, margin: 0.45 },
+    { min: 26, max: 50, margin: 0.35 },
     { min: 51, max: 75, margin: 0.32 },
     { min: 76, max: 100, margin: 0.26 },
     { min: 101, max: 125, margin: 0.28 },
