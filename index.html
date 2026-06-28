@@ -11,56 +11,111 @@
     <div class="container">
         <h1>Menú Principal</h1>
         <p>Bienvenido, <span id="user-name">Usuario</span>.</p>
-        
-        <div id="bono-quincenal-container" class="ranking-card">
+                          
+<div id="quotes-production-container" class="ranking-card">
+            <h3>📑 Producción de Presupuestos</h3>
+            <p class="text-muted" style="font-size: 0.8em; margin-bottom: 10px;">
+                (Máximo 2 contabilizados por centro educativo)
+            </p>
+            <ul id="quotes-production-list" class="resource-list">
+                <li class="list-group-item text-center">Calculando producción...</li>
+            </ul>
         </div>
-
-        <div id="strategic-performance-container" class="ranking-card" style="display: none;">
-        </div>
-
-        <div id="pipeline-container" class="ranking-card">
-        </div>
-
-        <div id="reach-ranking-container" class="ranking-card">
-        </div>
-
         <div id="conversion-ranking-container" class="ranking-card">
         </div>
 
-        <div id="follow-up-ranking-container" class="ranking-card" style="display: none;">
-        </div>
-
+       
         <nav class="nav-grid" id="menu-buttons-container">
         </nav>
         
         <a href="#" id="logout-btn" class="back-link" style="margin-top: 20px;">Cerrar Sesión</a>
     </div>
     
-    <div id="team-pulse-panel" class="container mt-5" style="display: none;">
-        <h2 class="text-center mb-4">Panel de Desempeño del Equipo</h2>
-        <div class="row text-center">
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">🎯 Tasa de Cierre del Equipo</h5>
-                        <p class="display-4 fw-bold" id="team-closing-rate">--%</p>
-                        <small class="text-muted">(Formalizaciones / Total de Visitas)</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">⏱️ Promedio de Seguimiento del Equipo</h5>
-                        <p class="display-4 fw-bold" id="team-follow-up-average">-- días</p>
-                        <small class="text-muted">(Promedio de tiempo sin visitar a un prospecto activo)</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+        
     <script src="/main.js"></script>
+<script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('quotes-production-list');
+            if (!list) return;
+
+            try {
+                const response = await fetch('/api/rankings/quotes-production');
+                if (!response.ok) throw new Error('Error conectando al servidor');
+                
+                const data = await response.json();
+                
+                if(data.length === 0) {
+                    list.innerHTML = '<li class="list-group-item text-muted">Aún no hay presupuestos registrados.</li>';
+                    return;
+                }
+
+                list.innerHTML = ''; 
+                
+                data.forEach((item, index) => {
+                    let icon = '📝';
+                    let rowStyle = "";
+                    
+                    if (index === 0) {
+                        rowStyle = "border-left: 5px solid #4CAF50; background-color: #f1f8e9;";
+                        icon = '🏆';
+                    } else if (index === 1) {
+                        icon = '🥈';
+                    } else if (index === 2) {
+                        icon = '🥉';
+                    }
+
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.style = rowStyle;
+                    li.innerHTML = `
+                        <div>
+                            <strong>${index + 1}. ${item.advisorname}</strong>
+                        </div>
+                        <div class="text-center">
+                            <span class="badge bg-primary rounded-pill" style="font-size: 1.1em;">
+                                ${icon} ${item.production_score}
+                            </span>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error cargando producción:', error);
+                list.innerHTML = '<li class="list-group-item text-center text-danger">Error al cargar datos.</li>';
+            }
+            // === INICIO: RENDERIZAR TASA DE CONVERSIÓN ===
+    try {
+        const convResponse = await fetch('/api/conversion-ranking');
+        if (convResponse.ok) {
+            const convData = await convResponse.json();
+            const convContainer = document.getElementById('conversion-ranking-container');
+
+            let convHtml = `
+                <h3>🚀 Tasa de Conversión</h3>
+                <ul class="resource-list">
+            `;
+
+            if (convData.length === 0) {
+                convHtml += `<li class="list-group-item text-muted">Aún no hay datos calculados.</li>`;
+            } else {
+                convData.forEach((item, index) => {
+                    convHtml += `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>${index + 1}. ${item.advisorname}</div>
+                            <div class="text-end" style="min-width: 60px;">${item.conversion_rate}%</div>
+                        </li>
+                    `;
+                });
+            }
+            convHtml += `</ul>`;
+            convContainer.innerHTML = convHtml;
+        }
+    } catch (error) {
+        console.error('Error cargando ranking de conversión:', error);
+    }
+    // === FIN: RENDERIZAR TASA DE CONVERSIÓN ===
+        });
+    </script>
 
     </body>
 </html>

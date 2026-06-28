@@ -62,12 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
         loadIceRanking();
 
         // 2. LOS DEMÁS RANKINGS: VISIBILIDAD CONDICIONAL
+        loadConversionRanking();
         if (['Administrador', 'Coordinador'].includes(user.rol)) {
             // Si es Jefe: Cargar toda la data para análisis
             loadStrategicPerformanceIndex(); // Histórico
             loadPipelineRanking();
             loadReachRanking();
-            loadConversionRanking();
+            
             loadFollowUpRanking();
         } else {
             // Si es Asesor: OCULTAR los contenedores vacíos para que no estorben
@@ -75,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'strategic-performance-container',
                 'pipeline-container',
                 'reach-ranking-container',
-                'conversion-ranking-container',
+                
                 'follow-up-ranking-container'
             ];
             idsToHide.forEach(id => {
