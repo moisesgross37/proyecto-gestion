@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fichas Técnicas</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .autocomplete-suggestions {
+            border: 1px solid #ccc; border-top: none;
+            max-height: 200px; overflow-y: auto;
+            position: absolute; background-color: white;
+            width: calc(100% - 2px); 
+            box-sizing: border-box; z-index: 1000;
+        }
+        .autocomplete-suggestions div { padding: 10px; cursor: pointer; }
+        .autocomplete-suggestions div:hover { background-color: #f0f0f0; }
+        
+        .ficha-section {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .ficha-section h3 {
+            margin-top: 0;
+            color: #343a40;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 5px;
+            font-size: 1.2em;
+        }
+@media print {
+            body { background-color: white; font-size: 12px; }
+            .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            header, .back-button, button, #searchCenter, label[for="searchCenter"], .alert-text { display: none !important; }
+            .ficha-section { border: 1px solid #000; margin-bottom: 10px; padding: 10px; break-inside: avoid; page-break-inside: avoid; }
+            input, select, textarea { border: none !important; background: transparent !important; padding: 0 !important; font-size: 12px !important; color: #000 !important; }
+            input::placeholder, textarea::placeholder { color: transparent !important; } /* Oculta los "Ej: Azul" al imprimir */
+            .flex-row { gap: 10px; margin-bottom: 5px; }
+            .form-group { margin-bottom: 5px; }
+            hr { display: none; }
+            @page { margin: 1cm; } /* Reduce los márgenes de la hoja */
+        }
+        .flex-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .flex-row .form-group { flex: 1; min-width: 200px; }
+        .readonly-field { background-color: #e9ecef; cursor: not-allowed; }
+        .alert-text { color: #dc3545; font-size: 0.85em; font-weight: bold; display: block; margin-top: 5px;}
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 900px;">
+        <header>
+            <a href="/index.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Buscador de Fichas Técnicas</h1>
+        </header>
+
+        <div class="form-group" style="position: relative;">
+            <label for="searchCenter"><strong>🔍 Buscar Centro Educativo:</strong></label>
+            <input type="text" id="searchCenter" placeholder="Escribe el nombre del centro para cargar su ficha..." autocomplete="off">
+            <div id="suggestions" class="autocomplete-suggestions" style="display: none;"></div>
+        </div>
+
+        <div id="fichaContainer" style="display: none;">
+            
+            <div class="ficha-section">
+                <h3>🏢 Datos del Acuerdo (Solo Lectura)</h3>
+                <div class="flex-row">
+                    <div class="form-group">
+                        <label>Asesor a cargo:</label>
+                        <input type="text" id="autoAsesor" class="readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad Estudiantes:</label>
+                        <input type="text" id="autoCantidad" class="readonly-field" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio por Estudiante:</label>
+                        <input type="text" id="autoPrecio" class="readonly-field" readonly>
+                    </div>
+                </div>
+                <div class="flex-row">
+                    <div class="form-group">
+                        <label>Contacto Principal (Centro):</label>
+                        <input type="text" id="autoContactoNombre" class="readonly-field" readonly>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                    <label style="color: #d39e00;">📋 Resumen del Paquete y Extras (Desde el Presupuesto):</label>
+                    <textarea id="autoExtras" class="readonly-field" rows="12" readonly style="width: 100%; border: 1px solid #ced4da; background-color: #fff3cd; color: #856404; font-weight: bold;"></textarea>
+                </div>
+                    <div class="form-group">
+                        <label>Teléfono (Centro):</label>
+                        <input type="text" id="autoContactoTel" class="readonly-field" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <form id="fichaForm">
+                <input type="hidden" id="nombreCentroHidden" name="nombre_centro">
+                
+                <div class="ficha-section" style="background-color: #e6f2ff; border-color: #b3d9ff;">
+                    <h3 style="color: #005ce6; border-bottom-color: #b3d9ff;">📋 Logística y Operaciones (Editable)</h3>
+                    
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="esCentroNuevo">¿Es Centro Nuevo?</label>
+                            <select id="esCentroNuevo" name="es_centro_nuevo">
+                                <option value="false">No (Logo en oficina)</option>
+                                <option value="true">Sí</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="logoGroup" style="display: none;">
+    <label for="logoUrl">Subir Logo Institucional:</label>
+    <input type="file" id="logoUrl" name="archivo_logo" accept="image/png, image/jpeg, image/jpg">
+    
+    <div id="cajaLogoGuardado" style="display: none; margin-top: 8px; padding: 8px; background-color: #e9ecef; border-radius: 4px;">
+        <a id="linkLogoGuardado" href="#" target="_blank" style="text-decoration: none; color: #0056b3; font-weight: bold;">
+            🖼️ Ver Logo Guardado
+        </a>
+    </div>
+</div>
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="colorToga">Color de Toga a usar:</label>
+                            <input type="text" id="colorToga" name="color_toga" placeholder="Ej: Azul Marino">
+                        </div>
+                        <div class="form-group">
+                            <label for="colorEsclavina">Color de Esclavina a usar:</label>
+                            <input type="text" id="colorEsclavina" name="color_esclavina" placeholder="Ej: Dorado con borde blanco">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ubicacionUrl">Ubicación del Centro (Location):</label>
+                        <input type="url" id="ubicacionUrl" name="ubicacion_url" placeholder="Link de Google Maps o Waze...">
+                    </div>
+
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="estudianteNombre">Nombre del Estudiante Enlace:</label>
+                            <input type="text" id="estudianteNombre" name="estudiante_nombre" placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div class="form-group">
+                            <label for="estudianteContacto">Contacto del Estudiante:</label>
+                            <input type="tel" id="estudianteContacto" name="estudiante_contacto" placeholder="809-000-0000">
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #b3d9ff; margin: 20px 0;">
+
+                    <div class="form-group">
+            <label for="formularioUrl">Formulario Definitivo:</label>
+            <input type="file" id="formularioUrl" name="formulario_url" multiple accept=".pdf, .doc, .docx, .jpg, .png">
+            <div id="cajaFormulario" style="display: none; margin-top: 5px;">
+    <a id="linkFormulario" href="#" target="_blank" style="text-decoration: none; color: #0056b3; font-weight: bold;">📄 Ver Formulario Guardado</a>
+</div>
+            <span class="alert-text">⚠️ Agregar SOLAMENTE si es el definitivo (No se aceptan cambios).</span>
+        </div>
+
+        <div class="form-group">
+            <label for="listadoUrl">Listado de Estudiantes:</label>
+            <input type="file" id="listadoUrl" name="listado_estudiantes_url" multiple accept=".xlsx, .xls, .csv, .pdf, .doc, .docx">
+            <div id="cajaListado" style="display: none; margin-top: 5px;">
+    <a id="linkListado" href="#" target="_blank" style="text-decoration: none; color: #0056b3; font-weight: bold;">📄 Ver Listado Guardado</a>
+</div>
+            <span class="alert-text">⚠️ Agregar SOLAMENTE si es el definitivo (No se aceptan cambios).</span>
+        </div>
+
+        <div class="form-group">
+            <label for="pistasUrl">Pistas o Himnos Extras:</label>
+            <input type="file" id="pistasUrl" name="pistas_himnos_url" multiple accept="audio/*">
+            <div id="cajaPistas" style="display: none; margin-top: 5px;">
+    <a id="linkPistas" href="#" target="_blank" style="text-decoration: none; color: #0056b3; font-weight: bold;">🎵 Ver Pistas Guardadas</a>
+</div>
+        </div>
+        <div class="form-group" id="cajaArchivosGuardados" style="display: none; background-color: #e9ecef; padding: 10px; border-radius: 5px;">
+            <label style="color: #0c5460; font-weight: bold;">📁 Archivos Adjuntos a esta Ficha:</label>
+            <div id="listaArchivos" style="display: flex; flex-direction: column; gap: 5px;">
+                </div>
+        </div>
+
+                    <div class="form-group">
+                        <label for="comentarios">Comentarios / Notas Especiales:</label>
+                        <textarea id="comentarios" name="comentarios_destacados" rows="3" placeholder="Ej: No permiten fotos con flash, usar luces led..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" style="background-color: #28a745; width: 100%; font-size: 1.1em;">💾 Guardar / Actualizar Ficha</button>
+                    <button type="button" onclick="window.print()" class="btn" style="background-color: #6c757d; width: 100%; margin-top: 10px; font-size: 1.1em;">🖨️ Imprimir Ficha Técnica</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="buscar_ficha.js"></script>
+</body>
+</html>

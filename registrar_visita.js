@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const centerSectorInput = document.getElementById('centerSector');
     const formalizeQuoteSection = document.getElementById('formalize-quote-section');
     const quoteListContainer = document.getElementById('quote-list-container');
+    
+   
 
     let isExistingCenterSelected = false;
 

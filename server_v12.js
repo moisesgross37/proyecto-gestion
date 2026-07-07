@@ -12,6 +12,35 @@ const PDFDocument = require('pdfkit');
 const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 
+const multer = require('multer');
+
+
+// Definimos la carpeta de destino: 
+// Si estamos en Render, usamos el disco (/var/data/fichas_tecnicas)
+// Si estamos en tu Mac local, usamos una carpeta interna
+const uploadDir = process.env.RENDER ? '/var/data/fichas_tecnicas' : path.join(__dirname, 'uploads');
+
+// Crear la carpeta automáticamente si no existe
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configuración de almacenamiento
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        // Renombramos el archivo para que sea único (fecha + nombre original)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+});
+
+
+
+const upload = multer({ storage: storage });
+
 // Asegúrate que estos archivos existen en tu proyecto
 const { assembleQuote } = require('./pricingEngine.js');
 const { checkRole } = require('./permissions.js');
@@ -19,6 +48,45 @@ const { checkRole } = require('./permissions.js');
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// --- 1. HACER LA CARPETA PÚBLICA ---
+// Esto permite que el sistema pueda leer y descargar los archivos después
+app.use('/archivos', express.static(uploadDir));
+
+// --- 2. RUTA PARA RECIBIR MÚLTIPLES ARCHIVOS ---
+app.post('/api/fichas-tecnicas/upload', upload.any(), (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            // En vez de dar error, le decimos al formulario "todo bien, no hay archivos nuevos, usa tu memoria"
+            return res.json({ mensaje: 'Sin archivos nuevos', archivos: {} });
+        }
+
+        // Creamos un objeto para clasificar cada archivo según el botón del que vino
+        const archivosClasificados = {};
+
+        req.files.forEach(file => {
+            // file.fieldname nos dirá si vino de 'archivo_logo', 'listado_estudiantes_url', etc.
+            const nombreDelBoton = file.fieldname; 
+            const rutaDelArchivo = `/archivos/${file.filename}`;
+
+            // Guardamos las rutas en listas separadas (por si suben 3 pistas de audio juntas)
+            if (!archivosClasificados[nombreDelBoton]) {
+                archivosClasificados[nombreDelBoton] = [];
+            }
+            archivosClasificados[nombreDelBoton].push(rutaDelArchivo);
+        });
+
+        // Le devolvemos al frontend los archivos perfectamente organizados
+        res.json({
+            mensaje: 'Archivos procesados correctamente',
+            archivos: archivosClasificados
+        });
+
+    } catch (error) {
+        console.error('Error interno al subir archivos:', error);
+        res.status(500).json({ error: 'Error del servidor al procesar los archivos.' });
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 // --- FIN: DEPENDENCIAS Y CONFIG INICIAL ---
@@ -1223,6 +1291,117 @@ app.post('/api/quote-requests/:id/archive', requireLogin, async (req, res) => {
     } catch (err) {
         console.error(`Error en POST /api/quote-requests/${id}/archive:`, err);
         res.status(500).json({ message: 'Error interno del servidor al archivar.' });
+    }
+});
+app.post('/api/ficha-tecnica', async (req, res) => {
+    const d = req.body;
+    try {
+        const query = `
+            INSERT INTO fichas_tecnicas (
+                nombre_centro, es_centro_nuevo, logo_url, color_toga, color_esclavina,
+                ubicacion_url, estudiante_nombre, estudiante_contacto, formulario_url,
+                listado_estudiantes_url, pistas_himnos_url, comentarios_destacados, 
+                enlaces_archivos, ultima_actualizacion
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP)
+            ON CONFLICT (nombre_centro) DO UPDATE SET
+                es_centro_nuevo = EXCLUDED.es_centro_nuevo,
+                logo_url = EXCLUDED.logo_url,
+                color_toga = EXCLUDED.color_toga,
+                color_esclavina = EXCLUDED.color_esclavina,
+                ubicacion_url = EXCLUDED.ubicacion_url,
+                estudiante_nombre = EXCLUDED.estudiante_nombre,
+                estudiante_contacto = EXCLUDED.estudiante_contacto,
+                formulario_url = EXCLUDED.formulario_url,
+                listado_estudiantes_url = EXCLUDED.listado_estudiantes_url,
+                pistas_himnos_url = EXCLUDED.pistas_himnos_url,
+                comentarios_destacados = EXCLUDED.comentarios_destacados,
+                enlaces_archivos = EXCLUDED.enlaces_archivos,
+                ultima_actualizacion = CURRENT_TIMESTAMP;
+        `;
+
+        const values = [
+            d.nombre_centro, d.es_centro_nuevo, d.logo_url, d.color_toga, d.color_esclavina,
+            d.ubicacion_url, d.estudiante_nombre, d.estudiante_contacto, d.formulario_url,
+            d.listado_estudiantes_url, d.pistas_himnos_url, d.comentarios_destacados,
+            JSON.stringify(d.enlaces_archivos || []) 
+        ];
+
+        await pool.query(query, values);
+        res.json({ success: true, message: 'Ficha guardada correctamente.' });
+    } catch (error) {
+        console.error('Error al guardar ficha técnica:', error);
+        res.status(500).json({ message: 'Error interno del servidor al guardar.' });
+    }
+});
+// --- RUTA: OBTENER FICHA TÉCNICA Y DATOS AUTOMÁTICOS ---
+app.get('/api/ficha-tecnica/:nombreCentro', async (req, res) => {
+    const nombreCentro = req.params.nombreCentro;
+    
+    try {
+        // 1. Buscamos los datos manuales de la ficha (si ya existen)
+        const fichaResult = await pool.query('SELECT * FROM fichas_tecnicas WHERE nombre_centro = $1', [nombreCentro]);
+        let data = fichaResult.rows.length > 0 ? fichaResult.rows[0] : {};
+
+        // 2. Buscamos el contacto del centro (De tu tabla 'centers')
+        const centerResult = await pool.query('SELECT contactname, contactnumber FROM centers WHERE name = $1 LIMIT 1', [nombreCentro]);
+        if (centerResult.rows.length > 0) {
+            data.contacto_nombre = centerResult.rows[0].contactname;
+            data.contacto_tel = centerResult.rows[0].contactnumber;
+        }
+
+        // 3. Buscamos el Asesor y el ID de la cotización formalizada
+        const formalizedResult = await pool.query('SELECT advisor_name, quote_id FROM formalized_centers WHERE center_name = $1 LIMIT 1', [nombreCentro]);
+        
+        if (formalizedResult.rows.length > 0) {
+            data.asesor = formalizedResult.rows[0].advisor_name;
+            const quoteId = formalizedResult.rows[0].quote_id;
+
+            // 4. Buscamos estudiantes, precio y los EXTRAS numéricos (productids)
+            if (quoteId) {
+                const quoteResult = await pool.query('SELECT studentcount, preciofinalporestudiante, productids FROM quotes WHERE id = $1 LIMIT 1', [quoteId]);
+                
+                if (quoteResult.rows.length > 0) {
+                    data.cantidad_estudiantes = quoteResult.rows[0].studentcount;
+                    data.precio_estudiante = quoteResult.rows[0].preciofinalporestudiante;
+                    
+                    let extras = "Ninguno";
+                    const savedProductIds = quoteResult.rows[0].productids;
+
+                    // Si hay IDs guardados y es un arreglo (ej: [76, 77, 90])
+                    if (savedProductIds && Array.isArray(savedProductIds) && savedProductIds.length > 0) {
+                        
+                        // Traducimos cada número buscando en tu variable global 'products'
+                        console.log("=== ESCÁNER DE PRODUCTO 76 ===");
+                        console.log(products.find(p => p.id == 76));
+                        console.log("==============================");
+                        // Traducimos cada número buscando en la variable global 'products'
+                        const nombresExtra = savedProductIds.map(idABuscar => {
+                            const productoEncontrado = products.find(p => p.id == idABuscar);
+                            
+                            if (productoEncontrado) {
+                                // Dejamos pasar absolutamente todo para que sirva de resumen completo
+                                return productoEncontrado['PRODUCTO / SERVICIO'] || `Item #${idABuscar}`;
+                            }
+                            return null;
+                        }).filter(Boolean);
+
+                        if (nombresExtra.length > 0) {
+                            // Le agregamos un punto a cada ítem y los unimos con un salto de línea (\n)
+                            extras = nombresExtra.map(item => `• ${item}`).join('\n');
+                        }
+                    }
+                    
+                    data.requerimientos_especiales = extras;
+                }
+            }
+        }
+
+        // Devolvemos todo junto al buscador
+        res.json(data);
+
+    } catch (error) {
+        console.error('Error al obtener la ficha técnica:', error);
+        res.status(500).json({ message: 'Error interno al consultar la base de datos.' });
     }
 });
 

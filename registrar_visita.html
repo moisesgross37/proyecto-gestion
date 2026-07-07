@@ -37,6 +37,7 @@
         #quote-list-container input {
             margin-right: 10px;
         }
+       
     </style>
 </head>
 <body>
@@ -91,24 +92,22 @@
                 <label for="comments"><strong>Motivo de la Visita / Etapa Actual:</strong></label>
                 <select id="comments" name="commentText" required>
                     <option value="" disabled selected>Selecciona en qué etapa estás...</option>
-                    
                     <option value="Visita Inicial">1. Visita Inicial (Exploración)</option>
-                    
                     <option value="Presentacion de Propuesta a Direccion">2. Presentación a Dirección</option>
                     <option value="Presentacion de Propuesta a Estudiantes">3. Presentación a Estudiantes</option>
-                    
                     <option value="Visita de Seguimiento">4. Seguimiento / Negociación</option>
-                    
                     <option value="Formalizar Acuerdo">✅ FORMALIZAR ACUERDO (Cierre)</option>
                     <option value="Acordado seguimiento para el proximo ano">📅 Acordado seguimiento próx. año</option>
                 </select>
             </div>
 
+            <!-- SECCIÓN AMARILLA: COTIZACIONES -->
             <div id="formalize-quote-section" style="display: none;">
                 <label for="quote-list-container"><strong>Seleccione la Cotización a Formalizar:</strong></label>
-                <div id="quote-list-container">
-                    </div>
+                <div id="quote-list-container"></div>
             </div>
+
+            
             
             <button type="submit" class="btn">Registrar Visita</button>
         </form>
