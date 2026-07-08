@@ -572,9 +572,9 @@ app.get('/api/visits', requireLogin, async (req, res) => {
 app.post('/api/visits', requireLogin, async (req, res) => {
     const { centerName, centerAddress, centerSector, advisorName, visitDate, commentText, contactName, contactNumber, formalizedQuoteId } = req.body;
 
-    if (!centerName || !centerAddress || !advisorName || !visitDate || !commentText) { // Añadida validación más completa
-        return res.status(400).json({ message: 'Nombre del centro, dirección, asesor, fecha y comentario son obligatorios.' });
-    }
+    if (!centerName || !advisorName || !visitDate || !commentText) { 
+    return res.status(400).json({ message: 'Nombre del centro, asesor, fecha y comentario son obligatorios.' });
+}
 
     const client = await pool.connect();
     try {
@@ -585,8 +585,8 @@ app.post('/api/visits', requireLogin, async (req, res) => {
         let centerId;
         if (centerResult.rows.length === 0) {
             const newCenterResult = await client.query(
-                'INSERT INTO centers (name, address, sector, contactname, contactnumber, etapa_venta) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-                [centerName, centerAddress, centerSector || null, contactName || null, contactNumber || null, 'Prospecto'] // Usar NULL si están vacíos
+                'INSERT INTO centers (name, address, sector, contactname, contactnumber, etapa_venta, asesor) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+                [centerName, centerAddress, centerSector || null, contactName || null, contactNumber || null, 'Prospecto', advisorName]
             );
             centerId = newCenterResult.rows[0].id;
         } else {
@@ -757,15 +757,20 @@ app.get('/api/centers', requireLogin, async (req, res) => {
 // ========= FIN: RUTA MEJORADA DE GESTIÓN DE CENTROS (CON ROLES) ========
 // ======================================================================
 app.get('/api/centers/search', async (req, res) => {
-    console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!"); // <-- AÑADE ESTO
+    console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!"); 
+    
     const searchTerm = (req.query.q || '').toLowerCase();
+    const asesor = req.query.asesor || ''; // <-- 1. Capturamos el asesor que mandó la pantalla
+
     try {
+        // 2. Modificamos la consulta para exigir que el centro pertenezca a ese asesor
         const result = await pool.query(
             `SELECT id, name, address, sector, contactname, contactnumber
              FROM centers
-             WHERE LOWER(name) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(sector) LIKE $1
-             LIMIT 10`, // Limitar resultados para performance
-            [`%${searchTerm}%`]
+             WHERE (LOWER(name) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(sector) LIKE $1)
+             AND asesor = $2 
+             LIMIT 10`, 
+            [`%${searchTerm}%`, asesor] // <-- 3. Inyectamos las dos variables
         );
         res.json(result.rows);
     } catch (err) {
@@ -773,6 +778,7 @@ app.get('/api/centers/search', async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor durante la búsqueda.' });
     }
 });
+
 
 app.put('/api/centers/:id', requireLogin, checkRole(['Administrador', 'Asesor']), async (req, res) => {
     const { id } = req.params;

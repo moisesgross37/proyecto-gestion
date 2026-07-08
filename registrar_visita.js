@@ -14,9 +14,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formalizeQuoteSection = document.getElementById('formalize-quote-section');
     const quoteListContainer = document.getElementById('quote-list-container');
     
-   
-
     let isExistingCenterSelected = false;
+
+    // --- BLOQUEO INICIAL DEL BUSCADOR ---
+    centerNameInput.disabled = true;
+    centerNameInput.placeholder = "Selecciona tu nombre arriba primero...";
+
+    // --- DESBLOQUEO AL SELECCIONAR ASESOR ---
+    advisorSelect.addEventListener('change', () => {
+        if (advisorSelect.value && advisorSelect.value.trim() !== '') {
+            centerNameInput.disabled = false;
+            centerNameInput.placeholder = "Escribe para buscar...";
+        } else {
+            centerNameInput.disabled = true;
+            centerNameInput.placeholder = "Selecciona tu nombre arriba primero...";
+            centerNameInput.value = '';
+            resetCenterFields();
+        }
+    });
 
     // --- Funciones Auxiliares ---
     const setCurrentDate = () => {
@@ -25,18 +40,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const setAddressFieldsReadOnly = (isReadOnly) => {
-        centerAddressInput.readOnly = isReadOnly;
-        centerSectorInput.readOnly = isReadOnly;
         const lockedColor = '#e9ecef';
-        centerAddressInput.style.backgroundColor = isReadOnly ? lockedColor : '';
-        centerSectorInput.style.backgroundColor = isReadOnly ? lockedColor : '';
+        if (centerAddressInput) {
+            centerAddressInput.readOnly = isReadOnly;
+            centerAddressInput.style.backgroundColor = isReadOnly ? lockedColor : '';
+        }
+        if (centerSectorInput) {
+            centerSectorInput.readOnly = isReadOnly;
+            centerSectorInput.style.backgroundColor = isReadOnly ? lockedColor : '';
+        }
     };
     
     const resetCenterFields = () => {
-        coordinatorNameInput.value = '';
-        coordinatorContactInput.value = '';
-        centerAddressInput.value = '';
-        centerSectorInput.value = '';
+        if (coordinatorNameInput) coordinatorNameInput.value = '';
+        if (coordinatorContactInput) coordinatorContactInput.value = '';
+        if (centerAddressInput) centerAddressInput.value = '';
+        if (centerSectorInput) centerSectorInput.value = '';
         setAddressFieldsReadOnly(false);
         isExistingCenterSelected = false;
     };
@@ -47,13 +66,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('No se pudieron cargar los datos iniciales.');
             const data = await response.json();
 
-            // Carga dinámica de Asesores y Zonas (ESTO SÍ LO QUEREMOS)
+            // Carga dinámica de Asesores y Zonas
             data.advisors?.forEach(advisor => advisorSelect.add(new Option(advisor.name, advisor.name)));
             data.zones?.forEach(zone => zoneSelect.add(new Option(zone.name, zone.name)));
-
-            // --- CORRECCIÓN AQUÍ ---
-            // Hemos eliminado la línea que cargaba los comentarios viejos del servidor.
-            // Ahora se respetará el orden 1, 2, 3... que pusimos en el HTML.
 
         } catch (error) {
             console.error(error);
@@ -61,9 +76,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // --- Lógica de Autocompletado ---
+    // --- Lógica de Autocompletado (CON FILTRO DE ASESOR) ---
     centerNameInput.addEventListener('input', async () => {
         const searchTerm = centerNameInput.value;
+        const asesorSeleccionado = advisorSelect.value; // Capturamos el asesor
+
         if (isExistingCenterSelected) {
             resetCenterFields();
         }
@@ -72,24 +89,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         try {
-            const response = await fetch(`/api/centers/search?q=${encodeURIComponent(searchTerm)}`);
+            // ENVIAMOS EL ASESOR AL SERVIDOR EN LA RUTA
+            const response = await fetch(`/api/centers/search?q=${encodeURIComponent(searchTerm)}&asesor=${encodeURIComponent(asesorSeleccionado)}`);
             const centers = await response.json();
             suggestionsContainer.innerHTML = '';
+            
             if (centers.length > 0) {
                 centers.forEach(center => {
                     const item = document.createElement('div');
-                    item.innerHTML = `<strong>${center.name}</strong><div class="suggestion-address">${center.address}</div>`;
+                    item.innerHTML = `<strong>${center.name}</strong><div class="suggestion-address">${center.address || 'Sin dirección registrada'}</div>`;
                     item.addEventListener('click', () => {
                         centerNameInput.value = center.name;
-                        centerAddressInput.value = center.address || '';
-                        centerSectorInput.value = center.sector || '';
-                        coordinatorNameInput.value = center.contactname || '';
-                        coordinatorContactInput.value = center.contactnumber || '';
+                        if (centerAddressInput) centerAddressInput.value = center.address || '';
+                        if (centerSectorInput) centerSectorInput.value = center.sector || '';
+                        if (coordinatorNameInput) coordinatorNameInput.value = center.contactname || '';
+                        if (coordinatorContactInput) coordinatorContactInput.value = center.contactnumber || '';
+                        
                         setAddressFieldsReadOnly(true);
                         isExistingCenterSelected = true;
                         suggestionsContainer.style.display = 'none';
-                        // Disparamos la verificación al seleccionar un centro
-                        // handleCommentChange(); // Eliminado temporalmente si da error de no definido, o mover función arriba
                     });
                     suggestionsContainer.appendChild(item);
                 });
@@ -200,6 +218,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             isExistingCenterSelected = false;
             formalizeQuoteSection.style.display = 'none';
             quoteListContainer.innerHTML = '';
+            
+            // Volvemos a bloquear el campo de centro tras enviar el formulario
+            centerNameInput.disabled = true;
+            centerNameInput.placeholder = "Selecciona tu nombre arriba primero...";
 
         } catch (error) {
             alert(`Error: ${error.message}`);
