@@ -757,21 +757,35 @@ app.get('/api/centers', requireLogin, async (req, res) => {
 // ========= FIN: RUTA MEJORADA DE GESTIÓN DE CENTROS (CON ROLES) ========
 // ======================================================================
 app.get('/api/centers/search', async (req, res) => {
-    console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!"); 
-    
+    console.log("¡PETICIÓN RECIBIDA EN RUTA PÚBLICA /api/centers/search!");
+
     const searchTerm = (req.query.q || '').toLowerCase();
-    const asesor = req.query.asesor || ''; // <-- 1. Capturamos el asesor que mandó la pantalla
+    const asesor = req.query.asesor || ''; // Capturamos el asesor si el frontend lo envía
 
     try {
-        // 2. Modificamos la consulta para exigir que el centro pertenezca a ese asesor
-        const result = await pool.query(
-            `SELECT id, name, address, sector, contactname, contactnumber
-             FROM centers
-             WHERE (LOWER(name) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(sector) LIKE $1)
-             AND asesor = $2 
-             LIMIT 10`, 
-            [`%${searchTerm}%`, asesor] // <-- 3. Inyectamos las dos variables
-        );
+        let result;
+        
+        // Si mandan un asesor (ej. módulo de asesores), filtramos estrictamente.
+        // Si viene vacío (ej. Ficha Técnica o Administrador), buscamos en toda la base.
+        if (asesor !== '') {
+            result = await pool.query(
+                `SELECT id, name, address, sector, contactname, contactnumber
+                 FROM centers
+                 WHERE (LOWER(name) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(sector) LIKE $1)
+                 AND asesor = $2
+                 LIMIT 10`,
+                [`%${searchTerm}%`, asesor]
+            );
+        } else {
+            result = await pool.query(
+                `SELECT id, name, address, sector, contactname, contactnumber
+                 FROM centers
+                 WHERE (LOWER(name) LIKE $1 OR LOWER(address) LIKE $1 OR LOWER(sector) LIKE $1)
+                 LIMIT 10`,
+                [`%${searchTerm}%`]
+            );
+        }
+        
         res.json(result.rows);
     } catch (err) {
         console.error('Error en la búsqueda de centros:', err);
